@@ -1,13 +1,20 @@
 """
 Wi-Fi SSID detection module.
 Detects current connected Wi-Fi network on macOS.
+Provides background polling loop for SSID change detection.
 """
 
+import asyncio
 import logging
 import subprocess
-from typing import Optional
+from typing import Callable, Optional
+
+from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Tracks the last known SSID across polling cycles
+_previous_ssid: Optional[str] = None
 
 
 def get_current_ssid() -> Optional[str]:
@@ -75,3 +82,38 @@ def _get_ssid_via_system_profiler() -> Optional[str]:
         logger.debug("system_profiler failed: %s", e)
 
     return None
+
+
+async def wifi_polling_loop(
+    on_change: Optional[Callable[[Optional[str], Optional[str]], None]] = None,
+) -> None:
+    """
+    Background loop that checks Wi-Fi SSID every N seconds.
+
+    Detects changes and logs them. Optionally calls on_change(old_ssid, new_ssid)
+    when the SSID changes — this hook will be used by session_manager in Phase 2.
+
+    Runs forever until the task is cancelled.
+    """
+    global _previous_ssid
+    interval = settings.wifi_check_interval_seconds
+
+    # Capture initial state
+    _previous_ssid = get_current_ssid()
+    logger.info("Wi-Fi polling started — current SSID: %s, interval: %ds", _previous_ssid, interval)
+
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            current_ssid = get_current_ssid()
+
+            if current_ssid != _previous_ssid:
+                logger.info("SSID changed: %s -> %s", _previous_ssid, current_ssid)
+                if on_change is not None:
+                    on_change(_previous_ssid, current_ssid)
+                _previous_ssid = current_ssid
+            else:
+                logger.debug("SSID unchanged: %s", current_ssid)
+
+        except Exception:
+            logger.exception("Error during Wi-Fi poll")

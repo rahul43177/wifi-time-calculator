@@ -167,41 +167,26 @@ print(get_current_ssid())  # Returned: 'iPhone'
 
 ---
 
-### Task 1.2: Add Windows Support (Optional for MVP)
-**Description:** Add Windows SSID detection if needed  
-**Dependencies:** Task 1.1  
+### Task 1.2: Create Background Wi-Fi Polling Loop ✅ DONE
+**Description:** Async loop that checks Wi-Fi every 30 seconds
+**Dependencies:** Task 1.1
 **Acceptance Criteria:**
-- [ ] Function detects OS and uses appropriate command
-- [ ] Works on Windows using netsh command
-
-**Implementation Note:** Can be skipped if only using macOS for MVP
-
----
-
-### Task 1.3: Create Background Wi-Fi Polling Loop
-**Description:** Async loop that checks Wi-Fi every 30 seconds  
-**Dependencies:** Task 1.1  
-**Acceptance Criteria:**
-- [ ] Loop runs in background
-- [ ] Checks SSID every 30 seconds
-- [ ] Logs SSID changes to console
-- [ ] Doesn't block main thread
+- [x] Loop runs in background
+- [x] Checks SSID every 30 seconds
+- [x] Logs SSID changes to console
+- [x] Doesn't block main thread
 
 **File:** `app/wifi_detector.py`
 
-**Key Implementation Points:**
-- Use `asyncio` for background task
-- Store previous SSID to detect changes
-- Log when SSID changes
-- Handle exceptions without crashing loop
-
-**Test:** Run and change Wi-Fi - should see log messages
+> **Implementation Note:** Added `wifi_polling_loop(on_change)` using asyncio.
+> Includes an `on_change` callback hook for session_manager integration (Phase 2).
+> Tested: starts cleanly, polls correctly, cancels without errors.
 
 ---
 
-### Task 1.4: Integrate with FastAPI Lifespan
-**Description:** Start Wi-Fi polling when server starts  
-**Dependencies:** Task 1.3, Task 0.2 (main.py)  
+### Task 1.3: Integrate with FastAPI Lifespan
+**Description:** Start Wi-Fi polling when server starts
+**Dependencies:** Task 1.2, Task 0.2 (main.py)
 **Acceptance Criteria:**
 - [ ] Polling starts automatically with server
 - [ ] Stops gracefully on shutdown
@@ -223,9 +208,9 @@ uvicorn app.main:app --reload
 
 ---
 
-### Task 1.5: Add Logging Configuration
-**Description:** Set up proper logging for debugging  
-**Dependencies:** Task 0.3  
+### Task 1.4: Add Logging Configuration
+**Description:** Set up proper logging for debugging
+**Dependencies:** Task 0.3
 **Acceptance Criteria:**
 - [ ] Logs show timestamps
 - [ ] Different log levels work
