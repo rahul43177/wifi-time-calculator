@@ -24,12 +24,12 @@
 
 **Estimated Time:** 15-30 minutes
 
-### Task 0.1: Environment Preparation
-**Description:** Set up development environment and project structure  
-**Dependencies:** None  
+### Task 0.1: Environment Preparation ✅ DONE
+**Description:** Set up development environment and project structure
+**Dependencies:** None
 **Acceptance Criteria:**
-- [ ] Python 3.11+ installed and verified
-- [ ] Virtual environment created
+- [x] Python 3.11+ installed and verified (Python 3.12.1)
+- [x] Virtual environment created (venv/)
 
 
 **Steps:**
@@ -42,12 +42,12 @@ source venv/bin/activate
 
 ---
 
-### Task 0.2: Project Structure Creation
-**Description:** Create all necessary folders and files  
-**Dependencies:** Task 0.1  
+### Task 0.2: Project Structure Creation ✅ DONE
+**Description:** Create all necessary folders and files
+**Dependencies:** Task 0.1
 **Acceptance Criteria:**
-- [ ] All folders exist as per spec
-- [ ] Basic files created with placeholder content
+- [x] All folders exist as per spec
+- [x] Basic files created with placeholder content
 
 **Steps:**
 ```bash
@@ -88,12 +88,12 @@ office-wifi-tracker/
 
 ---
 
-### Task 0.3: Dependencies Installation
-**Description:** Install all required Python packages  
-**Dependencies:** Task 0.1  
+### Task 0.3: Dependencies Installation ✅ DONE
+**Description:** Install all required Python packages
+**Dependencies:** Task 0.1
 **Acceptance Criteria:**
-- [ ] requirements.txt populated
-- [ ] All packages installed without errors
+- [x] requirements.txt populated
+- [x] All packages installed without errors
 
 **requirements.txt contents:**
 ```
@@ -113,18 +113,20 @@ pip install -r requirements.txt
 
 ---
 
-### Task 0.4: Configuration Setup
-**Description:** Create configuration file for office Wi-Fi name  
-**Dependencies:** Task 0.2  
+### Task 0.4: Configuration Setup ✅ DONE
+**Description:** Create configuration file for office Wi-Fi name
+**Dependencies:** Task 0.2
 **Acceptance Criteria:**
-- [ ] .env file created with OFFICE_WIFI_NAME
-- [ ] config.py loads settings correctly
+- [x] .env file created with OFFICE_WIFI_NAME
+- [x] config.py loads settings correctly
+
+> **Note:** Port changed from 8000 → **8787** to avoid conflict with dev work.
 
 **.env contents:**
 ```
 OFFICE_WIFI_NAME=YourOfficeWiFiName
 SERVER_HOST=127.0.0.1
-SERVER_PORT=8000
+SERVER_PORT=8787
 LOG_LEVEL=INFO
 WORK_DURATION_HOURS=4
 WIFI_CHECK_INTERVAL_SECONDS=30
@@ -140,27 +142,27 @@ TIMER_CHECK_INTERVAL_SECONDS=60
 
 ---
 
-### Task 1.1: Implement SSID Detection for macOS
-**Description:** Create function to get current Wi-Fi SSID using macOS system command  
-**Dependencies:** Task 0.2, 0.3  
+### Task 1.1: Implement SSID Detection for macOS ✅ DONE
+**Description:** Create function to get current Wi-Fi SSID using macOS system command
+**Dependencies:** Task 0.2, 0.3
 **Acceptance Criteria:**
-- [ ] Function returns current SSID or None if disconnected
-- [ ] Works on macOS
-- [ ] Handles errors gracefully
+- [x] Function returns current SSID or None if disconnected
+- [x] Works on macOS
+- [x] Handles errors gracefully
 
 **File:** `app/wifi_detector.py`
 
-**Key Implementation Points:**
-- Use subprocess to run: `/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I`
-- Parse output for SSID line
-- Return None if not connected
-- Add error handling for command failures
-- Add type hints and docstrings
+> **Implementation Note:** The `airport -I` command is deprecated on modern macOS and returned no data.
+> Implemented a **two-method fallback approach:**
+> 1. **Primary:** `networksetup -getairportnetwork en0` (fast, ~0.1s)
+> 2. **Fallback:** `system_profiler SPAirPortDataType` (slower ~1-2s, more reliable)
+>
+> Tested successfully — detected SSID `iPhone` (hotspot) via the fallback method.
 
 **Test Command:**
 ```python
 from app.wifi_detector import get_current_ssid
-print(get_current_ssid())  # Should print your current Wi-Fi name
+print(get_current_ssid())  # Returned: 'iPhone'
 ```
 
 ---
