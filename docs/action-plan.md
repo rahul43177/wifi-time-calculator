@@ -265,14 +265,14 @@ print(get_current_ssid())  # Returned: 'iPhone'
 
 ---
 
-### Task 2.2: Implement Session State Machine
+### Task 2.2: Implement Session State Machine ✅ DONE
 **Description:** Create session manager with IDLE/IN_OFFICE_SESSION/COMPLETED states  
 **Dependencies:** Task 2.1  
 **Acceptance Criteria:**
-- [ ] Tracks current session state
-- [ ] Stores active session in memory
-- [ ] Transitions between states correctly
-- [ ] Persists state to file on changes
+- [x] Tracks current session state
+- [x] Stores active session in memory
+- [x] Transitions between states correctly
+- [x] Persists state to file on changes
 
 **File:** `app/session_manager.py`
 
@@ -280,6 +280,15 @@ print(get_current_ssid())  # Returned: 'iPhone'
 - `SessionState` Enum (IDLE, IN_OFFICE_SESSION, COMPLETED)
 - `Session` dataclass with start_time, end_time, ssid, etc.
 - `SessionManager` class with state machine logic
+
+> **Implementation Note:** Implemented deterministic, thread-safe `SessionManager` with:
+> - Explicit transitions: `IDLE -> IN_OFFICE_SESSION -> COMPLETED -> IDLE`
+> - Guarded invalid transitions (double start, end/complete without active session)
+> - File persistence through `file_store.append_session` on every state change
+> - Injectable `now_provider` and `persist_func` for deterministic testing
+>
+> **Tests:** `tests/test_phase_2_2.py` (12 tests) — core transitions, persistence calls,
+> COMPLETED→IDLE path, persistence failure behavior, and duration edge cases — all passing.
 
 **State Transitions:**
 ```
@@ -290,14 +299,14 @@ IN_OFFICE_SESSION + 4h_complete → COMPLETED (update file)
 
 ---
 
-### Task 2.3: Integrate Session Manager with Wi-Fi Detector
+### Task 2.3: Integrate Session Manager with Wi-Fi Detector ✅ DONE
 **Description:** Connect Wi-Fi change events to session manager  
 **Dependencies:** Task 2.2, Phase 1  
 **Acceptance Criteria:**
-- [ ] Wi-Fi connect to office → starts session
-- [ ] Wi-Fi disconnect from office → ends session
-- [ ] Sessions written to daily log file
-- [ ] Works across multiple connect/disconnect cycles
+- [x] Wi-Fi connect to office → starts session
+- [x] Wi-Fi disconnect from office → ends session
+- [x] Sessions written to daily log file
+- [x] Works across multiple connect/disconnect cycles
 
 **Files:** `app/wifi_detector.py`, `app/session_manager.py`
 
@@ -305,6 +314,15 @@ IN_OFFICE_SESSION + 4h_complete → COMPLETED (update file)
 - Pass SSID changes to session manager
 - Check if SSID matches OFFICE_WIFI_NAME
 - Call session_manager.start_session() or end_session()
+
+> **Implementation Note:** Added SSID transition routing in `wifi_detector`:
+> - `process_ssid_change(old_ssid, new_ssid)` handles office connect/disconnect transitions
+> - `get_session_manager()` provides a shared lazy-initialized `SessionManager`
+> - `wifi_polling_loop()` now invokes `process_ssid_change` on each SSID change before optional callback
+>
+> **Tests:** `tests/test_phase_2_3.py` (7 tests) — office connect/disconnect behavior,
+> non-office no-op behavior, multi-cycle transitions, polling-loop integration hook, and
+> end-to-end persistence to daily log files, plus exception-resilience handling — all passing.
 
 **Test:** Connect/disconnect Wi-Fi and verify sessions appear in `data/sessions_2026-02-12.log`
 
@@ -1146,4 +1164,3 @@ Before considering MVP complete:
 **Next Step:** Start with [Pre-Development Setup](#pre-development-setup) → Task 0.1
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!
-

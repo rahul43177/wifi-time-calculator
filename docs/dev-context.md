@@ -106,15 +106,15 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 | 1 | 1.3 | Integrate with FastAPI lifespan | 3 tests | DONE |
 | 1 | 1.4 | Logging configuration | 10 tests | DONE |
 | 2 | 2.1 | File storage module (JSON Lines) | 13 tests | DONE |
+| 2 | 2.2 | Session state machine (IDLE/IN_OFFICE_SESSION/COMPLETED) | 12 tests | DONE |
+| 2 | 2.3 | Integrate session manager with Wi-Fi detector | 7 tests | DONE |
 
-**Total: 42 tests, all passing, 0 warnings**
+**Total: 61 tests, all passing, 0 warnings**
 
 ### Next Up
 
 | Phase | Task | Description | Status |
 |-------|------|-------------|--------|
-| 2 | 2.2 | Session state machine (IDLE/IN_OFFICE_SESSION/COMPLETED) | NOT STARTED |
-| 2 | 2.3 | Integrate session manager with Wi-Fi detector | NOT STARTED |
 | 2 | 2.4 | File rotation logic (>5MB → archive) | NOT STARTED |
 | 2 | 2.5 | Session recovery on restart | NOT STARTED |
 | 2 | 2.6 | Data validation with Pydantic models | NOT STARTED |
@@ -132,10 +132,10 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 app/
 ├── __init__.py          — Package init
 ├── config.py            — Settings via pydantic-settings (ConfigDict)
-├── wifi_detector.py     — SSID detection + async polling loop
+├── wifi_detector.py     — SSID detection + polling + session transition routing
 ├── main.py              — FastAPI app, lifespan, logging setup
 ├── file_store.py        — JSON Lines file storage (thread-safe)
-├── session_manager.py   — STUB (SessionState enum, Session model, SessionManager shell)
+├── session_manager.py   — Session state machine + persistence hooks
 ├── timer_engine.py      — STUB (function signatures only, returns None)
 └── notifier.py          — STUB (logs message, returns False)
 ```
@@ -149,7 +149,9 @@ tests/
 ├── test_phase_1_2.py    — 5 tests: Polling loop (change detection, callback, error survival)
 ├── test_phase_1_3.py    — 3 tests: FastAPI lifespan (health, root, task lifecycle)
 ├── test_phase_1_4.py    — 10 tests: Logging (console, file, levels, duplicates, directory)
-└── test_phase_2_1.py    — 13 tests: File storage (naming, append, read, unicode, concurrency)
+├── test_phase_2_1.py    — 13 tests: File storage (naming, append, read, unicode, concurrency)
+├── test_phase_2_2.py    — 12 tests: Session state machine transitions + edge cases
+└── test_phase_2_3.py    — 7 tests: Wi-Fi/session integration + persistence flow + exception resilience
 ```
 
 ### Configuration & Docs
@@ -211,7 +213,9 @@ settings = Settings()
 ### 5.2 wifi_detector.py — Key Functions
 
 - `get_current_ssid() -> Optional[str]` — Two-method fallback (networksetup → system_profiler)
-- `wifi_polling_loop(on_change=None)` — Async infinite loop, polls every 30s, calls `on_change(old_ssid, new_ssid)` on change
+- `get_session_manager() -> SessionManager` — Shared lazy-initialized session manager for integration
+- `process_ssid_change(old_ssid, new_ssid)` — Maps SSID transitions to `start_session()` / `end_session()`
+- `wifi_polling_loop(on_change=None)` — Async infinite loop; on SSID change, updates session state and triggers optional callback
 
 ### 5.3 main.py — App Structure
 
@@ -227,12 +231,16 @@ settings = Settings()
 - `read_sessions(date=None) -> list[dict]` — Skips blank/corrupted lines gracefully
 - All file operations use `encoding="utf-8"` and `ensure_ascii=False` for unicode support
 
-### 5.5 session_manager.py — Current State (STUB)
+### 5.5 session_manager.py — Current State
 
-Has skeleton code that will be implemented in Task 2.2:
+Implements Task 2.2 state machine:
 - `SessionState` enum: IDLE, IN_OFFICE_SESSION, COMPLETED
 - `Session` Pydantic model: date, ssid, start_time, end_time, duration_minutes, completed_4h
-- `SessionManager` class: state, active_session, start_session(), end_session() (all stubs)
+- `SessionManager` class with:
+  - `start_session(ssid)` for IDLE → IN_OFFICE_SESSION
+  - `mark_session_completed()` for IN_OFFICE_SESSION → COMPLETED
+  - `end_session()` for IN_OFFICE_SESSION/COMPLETED → IDLE
+  - persistence hooks via `file_store.append_session`
 
 ---
 
@@ -330,4 +338,3 @@ Any AI agent continuing this project MUST:
 
 If any rule above is violated,
 the implementation is considered INVALID.
-

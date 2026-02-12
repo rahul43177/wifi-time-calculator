@@ -10,11 +10,50 @@ import subprocess
 from typing import Callable, Optional
 
 from app.config import settings
+from app.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 
 # Tracks the last known SSID across polling cycles
 _previous_ssid: Optional[str] = None
+_session_manager: Optional[SessionManager] = None
+
+
+def get_session_manager() -> SessionManager:
+    """
+    Return the shared SessionManager instance for Wi-Fi integration.
+
+    Lazily initializes the manager to avoid import-time side effects and to
+    support test-time dependency injection via mocking.
+    """
+    global _session_manager
+    if _session_manager is None:
+        _session_manager = SessionManager()
+    return _session_manager
+
+
+def process_ssid_change(old_ssid: Optional[str], new_ssid: Optional[str]) -> None:
+    """
+    Route Wi-Fi SSID transitions to the session state machine.
+
+    Transition rules:
+    - Non-office -> office: start session
+    - Office -> non-office: end session
+
+    Args:
+        old_ssid: Previous Wi-Fi SSID.
+        new_ssid: Newly detected Wi-Fi SSID.
+    """
+    office_ssid = settings.office_wifi_name
+    manager = get_session_manager()
+
+    try:
+        if new_ssid == office_ssid and old_ssid != office_ssid:
+            manager.start_session(office_ssid)
+        elif old_ssid == office_ssid and new_ssid != office_ssid:
+            manager.end_session()
+    except Exception:
+        logger.exception("Failed to process session transition for SSID change")
 
 
 def get_current_ssid() -> Optional[str]:
@@ -109,6 +148,7 @@ async def wifi_polling_loop(
 
             if current_ssid != _previous_ssid:
                 logger.info("SSID changed: %s -> %s", _previous_ssid, current_ssid)
+                process_ssid_change(_previous_ssid, current_ssid)
                 if on_change is not None:
                     on_change(_previous_ssid, current_ssid)
                 _previous_ssid = current_ssid
