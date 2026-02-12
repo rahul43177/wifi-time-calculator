@@ -108,14 +108,14 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 | 2 | 2.1 | File storage module (JSON Lines) | 13 tests | DONE |
 | 2 | 2.2 | Session state machine (IDLE/IN_OFFICE_SESSION/COMPLETED) | 12 tests | DONE |
 | 2 | 2.3 | Integrate session manager with Wi-Fi detector | 7 tests | DONE |
+| 2 | 2.4 | File rotation logic (>5MB → archive) | 8 tests | DONE |
 
-**Total: 61 tests, all passing, 0 warnings**
+**Total: 69 tests, all passing, 0 warnings**
 
 ### Next Up
 
 | Phase | Task | Description | Status |
 |-------|------|-------------|--------|
-| 2 | 2.4 | File rotation logic (>5MB → archive) | NOT STARTED |
 | 2 | 2.5 | Session recovery on restart | NOT STARTED |
 | 2 | 2.6 | Data validation with Pydantic models | NOT STARTED |
 | 3 | 3.1-3.6 | Timer engine, notifications, completion logic | NOT STARTED |
@@ -134,7 +134,7 @@ app/
 ├── config.py            — Settings via pydantic-settings (ConfigDict)
 ├── wifi_detector.py     — SSID detection + polling + session transition routing
 ├── main.py              — FastAPI app, lifespan, logging setup
-├── file_store.py        — JSON Lines file storage (thread-safe)
+├── file_store.py        — JSON Lines storage + 5MB rotation + archive support
 ├── session_manager.py   — Session state machine + persistence hooks
 ├── timer_engine.py      — STUB (function signatures only, returns None)
 └── notifier.py          — STUB (logs message, returns False)
@@ -151,7 +151,8 @@ tests/
 ├── test_phase_1_4.py    — 10 tests: Logging (console, file, levels, duplicates, directory)
 ├── test_phase_2_1.py    — 13 tests: File storage (naming, append, read, unicode, concurrency)
 ├── test_phase_2_2.py    — 12 tests: Session state machine transitions + edge cases
-└── test_phase_2_3.py    — 7 tests: Wi-Fi/session integration + persistence flow + exception resilience
+├── test_phase_2_3.py    — 7 tests: Wi-Fi/session integration + persistence flow + exception resilience
+└── test_phase_2_4.py    — 8 tests: File rotation + archive integrity + collision/error handling
 ```
 
 ### Configuration & Docs
@@ -227,8 +228,8 @@ settings = Settings()
 ### 5.4 file_store.py — Storage Module
 
 - `get_log_path(date=None) -> Path` — Returns `data/sessions_DD-MM-YYYY.log`
-- `append_session(session_dict) -> bool` — Thread-safe via `threading.Lock`, creates dir if needed
-- `read_sessions(date=None) -> list[dict]` — Skips blank/corrupted lines gracefully
+- `append_session(session_dict) -> bool` — Thread-safe append with pre-write 5MB rotation
+- `read_sessions(date=None) -> list[dict]` — Reads base/part logs from data + archive, skips corrupted lines
 - All file operations use `encoding="utf-8"` and `ensure_ascii=False` for unicode support
 
 ### 5.5 session_manager.py — Current State

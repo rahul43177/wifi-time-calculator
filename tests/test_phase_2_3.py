@@ -133,7 +133,7 @@ def test_integration_persists_sessions_to_daily_log_file() -> None:
                     process_ssid_change("HomeWifi", "OfficeWifi")
                     process_ssid_change("OfficeWifi", "HomeWifi")
 
-            sessions = read_sessions(datetime(2026, 2, 12))
+            sessions = read_sessions()
 
     assert len(sessions) == 2
     assert sessions[0]["ssid"] == "OfficeWifi"

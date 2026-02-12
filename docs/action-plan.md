@@ -328,14 +328,14 @@ IN_OFFICE_SESSION + 4h_complete → COMPLETED (update file)
 
 ---
 
-### Task 2.4: Implement File Rotation Logic
+### Task 2.4: Implement File Rotation Logic ✅ DONE
 **Description:** Rotate files when they exceed 5MB  
 **Dependencies:** Task 2.1  
 **Acceptance Criteria:**
-- [ ] Checks file size before writing
-- [ ] Moves file to archive/ if > 5MB
-- [ ] Creates new part file (sessions_YYYY-MM-DD_part2.log)
-- [ ] Maintains data integrity
+- [x] Checks file size before writing
+- [x] Moves file to archive/ if > 5MB
+- [x] Creates new part file (sessions_DD-MM-YYYY_part2.log)
+- [x] Maintains data integrity
 
 **File:** `app/file_store.py`
 
@@ -344,6 +344,18 @@ IN_OFFICE_SESSION + 4h_complete → COMPLETED (update file)
 - Move to archive: `shutil.move()`
 - Update filename with part number
 - Handle edge cases (archive folder doesn't exist, etc.)
+
+> **Implementation Note:** Added rotation in `append_session()` with:
+> - pre-write size check against 5MB threshold
+> - archive move for oversized active log file
+> - automatic next-part file naming (`_part2`, `_part3`, ...)
+> - fallback-safe archive path handling and collision-safe archive filenames
+> - read compatibility across base/part files in both `data/` and `archive/`
+>
+> **Tests:** `tests/test_phase_2_4.py` (8 tests) — rotation trigger, archive move,
+> part-file creation, multi-rotation behavior, strict `>` threshold behavior,
+> data integrity across rotated files, archive collision filename handling,
+> and move/error failure handling — all passing.
 
 ---
 
