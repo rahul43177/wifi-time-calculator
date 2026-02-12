@@ -216,3 +216,105 @@ def read_sessions(date: datetime | None = None) -> list[dict[str, Any]]:
             logger.error("Failed to read %s: %s", log_path, e)
 
     return sessions
+
+
+def update_session(
+    *,
+    session_date: str,
+    ssid: str,
+    start_time: str,
+    updates: dict[str, Any],
+) -> bool:
+    """
+    Update the latest matching active session record in-place.
+
+    Matching criteria:
+    - same date, ssid, start_time
+    - end_time is None (active/incomplete session snapshot)
+
+    Args:
+        session_date: Session date in DD-MM-YYYY format.
+        ssid: Session SSID.
+        start_time: Session start time in HH:MM:SS format.
+        updates: Fields to update in the matched session entry.
+
+    Returns:
+        True when an entry is updated and persisted, False otherwise.
+    """
+    if not updates:
+        logger.warning("update_session called with empty updates; skipping")
+        return False
+
+    try:
+        date_obj = datetime.strptime(session_date, "%d-%m-%Y")
+    except ValueError:
+        logger.warning("update_session received invalid session_date: %s", session_date)
+        return False
+
+    try:
+        with _write_lock:
+            log_paths = _get_read_paths(date_obj)
+            if not log_paths:
+                logger.warning(
+                    "No log files found for %s while updating session",
+                    session_date,
+                )
+                return False
+
+            # Walk newest-first to update the latest matching active snapshot.
+            for log_path in reversed(log_paths):
+                try:
+                    with open(log_path, "r", encoding="utf-8") as f:
+                        lines = f.readlines()
+                except OSError as e:
+                    logger.error("Failed to read %s during update: %s", log_path, e)
+                    continue
+
+                for index in range(len(lines) - 1, -1, -1):
+                    stripped = lines[index].strip()
+                    if not stripped:
+                        continue
+                    try:
+                        entry = json.loads(stripped)
+                    except json.JSONDecodeError:
+                        continue
+
+                    if (
+                        entry.get("date") == session_date
+                        and entry.get("ssid") == ssid
+                        and entry.get("start_time") == start_time
+                        and entry.get("end_time") is None
+                    ):
+                        updated_entry = dict(entry)
+                        updated_entry.update(updates)
+
+                        if updated_entry == entry:
+                            logger.info(
+                                "Session already up-to-date in %s; no update required",
+                                log_path.name,
+                            )
+                            return False
+
+                        lines[index] = (
+                            json.dumps(updated_entry, ensure_ascii=False) + "\n"
+                        )
+                        try:
+                            with open(log_path, "w", encoding="utf-8") as f:
+                                f.writelines(lines)
+                        except OSError as e:
+                            logger.error("Failed to persist update to %s: %s", log_path, e)
+                            return False
+
+                        logger.info("Session updated in %s", log_path.name)
+                        return True
+
+            logger.warning(
+                "No matching active session found for update: %s %s %s",
+                session_date,
+                ssid,
+                start_time,
+            )
+            return False
+    except OSError as e:
+        logger.error("update_session failed due to filesystem error: %s", e)
+        return False

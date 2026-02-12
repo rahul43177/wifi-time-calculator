@@ -41,25 +41,15 @@ Phase:
 
 ---
 
-### Task 3.2: Create Background Timer Loop
-**Description:** Check timer every 60 seconds
-**Dependencies:** Task 3.1
+### Task 3.5: Integrate Timer with FastAPI
+**Description:** Start timer loop as background task  
+**Dependencies:** Task 3.2, Phase 1 Task 1.4  
 **Acceptance Criteria:**
-- [ ] Runs every 60 seconds
-- [ ] Only checks when session is active
-- [ ] Logs remaining time (or overtime amount if past target)
-- [ ] Detects completion (4h + buffer reached)
-- [ ] Continues running after completion to track total office time
+- [ ] Timer starts with server
+- [ ] Runs alongside Wi-Fi detector
+- [ ] Stops gracefully on shutdown
 
-**File:** `app/timer_engine.py`
-
-**Key Implementation Points:**
-- Use asyncio for background task
-- Get active session from session manager
-- Calculate remaining time including buffer
-- Log every minute for debugging
-- Trigger notification when completed
-- Keep loop alive after completion — elapsed time keeps growing for reporting
+**File:** `app/main.py`
 
 ---
 

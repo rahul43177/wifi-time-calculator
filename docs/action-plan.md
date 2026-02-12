@@ -529,14 +529,14 @@ BUFFER_MINUTES=10  # Added to .env / config.py
 
 ---
 
-### Task 3.3: Implement Notification System
+### Task 3.3: Implement Notification System ✅ DONE
 **Description:** Send macOS notification when 4h + buffer completed
 **Dependencies:** Task 3.2
 **Acceptance Criteria:**
-- [ ] Sends notification when (4h + buffer) completes
-- [ ] Only sends once per session
-- [ ] Message includes buffer info: "4 hours + 10 min buffer completed. You may leave."
-- [ ] Doesn't crash if notification fails
+- [x] Sends notification when (4h + buffer) completes
+- [x] Only sends once per session
+- [x] Message includes buffer info: "4 hours + 10 min buffer completed. You may leave."
+- [x] Doesn't crash if notification fails
 
 **File:** `app/notifier.py`
 
@@ -551,15 +551,27 @@ osascript -e 'display notification "4 hours + 10 min buffer completed. You may l
 - `send_notification(title: str, message: str) → bool`
 - `can_send_notifications() → bool`
 
+> **Implementation Note:** Replaced skeleton `app/notifier.py` with production-ready macOS notification sender:
+> - `send_notification(title, message)` executes `osascript -e 'display notification ...'` via `subprocess.run` with 10s timeout
+> - `can_send_notifications()` returns `True` only on macOS (Darwin)
+> - `_escape_osascript_string()` escapes backslashes and double quotes for safe AppleScript embedding
+> - Graceful failure handling: `subprocess.TimeoutExpired`, `FileNotFoundError`, `OSError`, and non-zero exit codes all return `False` with logged warnings
+> - Non-macOS platforms are gated at entry — subprocess is never called
+> - "Once per session" logic is handled by `timer_polling_loop()` (Task 3.2) via `notified_session_key`
+>
+> **Tests:** `tests/test_phase_3_3.py` (27 tests) — platform gating, string escaping, happy path,
+> all failure modes (timeout, missing binary, OS error, non-zero exit), subprocess kwargs,
+> command format, logging, and integration message format — all passing.
+
 ---
 
-### Task 3.4: Add Completion Flag to Session
+### Task 3.4: Add Completion Flag to Session ✅ DONE
 **Description:** Mark session as completed in file when 4 hours reached  
 **Dependencies:** Task 3.3, Phase 2  
 **Acceptance Criteria:**
-- [ ] Updates session log with completed_4h = true
-- [ ] Only updates once
-- [ ] Persists immediately to file
+- [x] Updates session log with completed_4h = true
+- [x] Only updates once
+- [x] Persists immediately to file
 
 **Files:** `app/timer_engine.py`, `app/file_store.py`
 
@@ -569,17 +581,55 @@ osascript -e 'display notification "4 hours + 10 min buffer completed. You may l
 - Use file locking if needed (probably not for MVP)
 - Log the update
 
+> **Implementation Note:** Added in-place completion persistence:
+> - `app/file_store.py` now includes `update_session(...)` which:
+>   - acquires the module write lock
+>   - locates the latest matching active session (`end_time is None`)
+>   - updates the JSON line in-place
+>   - persists immediately to disk
+>   - avoids duplicate writes when data is already up-to-date
+> - `app/timer_engine.py` `timer_polling_loop()` now:
+>   - persists `completed_4h=True` as soon as completion is detected
+>   - updates in-memory `active_session.completed_4h` after successful persistence
+>   - avoids repeat completion updates for already-completed sessions
+>
+> **Tests:** `tests/test_phase_3_4.py` (8 tests) — file update happy path,
+> no-match/no-op behavior, corrupted-line handling, invalid date handling,
+> immediate timer-loop persistence, no repeat writes, and retry behavior on
+> transient persistence failures — all passing.
+
 ---
 
-### Task 3.5: Integrate Timer with FastAPI
+### Task 3.5: Integrate Timer with FastAPI ✅ DONE
 **Description:** Start timer loop as background task  
 **Dependencies:** Task 3.2, Phase 1 Task 1.4  
 **Acceptance Criteria:**
-- [ ] Timer starts with server
-- [ ] Runs alongside Wi-Fi detector
-- [ ] Stops gracefully on shutdown
+- [x] Timer starts with server
+- [x] Runs alongside Wi-Fi detector
+- [x] Stops gracefully on shutdown
 
 **File:** `app/main.py`
+
+**Key Implementation Points:**
+- Import `timer_polling_loop` from `app.timer_engine`
+- Start it as a background task in FastAPI lifespan
+- Add to `_background_tasks` list for graceful shutdown
+- Runs concurrently with Wi-Fi polling loop
+
+> **Implementation Note:** Timer integration with FastAPI lifespan:
+> - `app/main.py` now imports `timer_polling_loop` from `app.timer_engine`
+> - Timer task starts on server startup alongside Wi-Fi detector
+> - Both tasks added to `_background_tasks` list
+> - Shutdown sequence cancels both tasks gracefully with `asyncio.gather(..., return_exceptions=True)`
+> - Exception in one task does not crash the other
+>
+> **Tests:** `tests/test_phase_3_5.py` (7 tests) — both tasks start, run concurrently,
+> stop gracefully, survive individual task exceptions, endpoints work correctly — all passing.
+>
+> **QA Fix:** Corrected test patch targets from `app.wifi_detector.get_current_ssid` to
+> `app.main.get_current_ssid` to ensure deterministic test isolation (since `app.main`
+> imports the function directly). Updated `docs/dev-context.md` to reflect completed
+> `notifier.py` implementation and added missing test file entries.
 
 ---
 
@@ -604,9 +654,9 @@ TEST_DURATION_MINUTES=2
 ### ✅ Phase 3 Definition of Done
 
 - [x] Timer calculates remaining time correctly (including buffer)
-- [ ] Notification appears when (4 hours + buffer) completes
+- [x] Notification appears when (4 hours + buffer) completes
 - [ ] Only one notification per session
-- [ ] Session marked as completed in log file
+- [x] Session marked as completed in log file
 - [x] Elapsed time continues tracking after completion (for weekly reports)
 - [ ] Test mode works with 2-minute duration
 - [ ] Timer survives app restart (resumes correctly)
@@ -1210,6 +1260,6 @@ Before considering MVP complete:
 
 ---
 
-**Current State:** Phase 3 Tasks 3.1-3.2 DONE (111 tests passing, 0 warnings). Next: Task 3.3.
+**Current State:** Phase 3 Tasks 3.1-3.5 DONE (153 tests passing, 0 warnings). Next: Task 3.6.
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!

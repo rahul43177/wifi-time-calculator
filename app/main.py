@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse
 
 from app.config import settings
 from app.session_manager import SessionState
+from app.timer_engine import timer_polling_loop
 from app.wifi_detector import get_current_ssid, get_session_manager, wifi_polling_loop
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -84,7 +85,10 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(wifi_task)
     logger.info("Wi-Fi monitoring started")
 
-    # TODO: Start timer engine background task (Phase 3)
+    # Start timer polling background task
+    timer_task = asyncio.create_task(timer_polling_loop())
+    _background_tasks.append(timer_task)
+    logger.info("Timer engine started")
 
     yield
 

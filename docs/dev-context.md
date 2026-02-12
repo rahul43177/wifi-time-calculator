@@ -113,14 +113,17 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 | 2 | 2.6 | Data validation with Pydantic models | 6 tests | DONE |
 | 3 | 3.1 | Timer calculation logic (elapsed/remaining/buffer/format/completion) | 14 tests | DONE |
 | 3 | 3.2 | Background timer loop (polling/logging/completion detection) | 9 tests | DONE |
+| 3 | 3.3 | Notification system (macOS osascript integration) | 27 tests | DONE |
+| 3 | 3.4 | Completion flag persistence in session logs | 8 tests | DONE |
+| 3 | 3.5 | Timer integration with FastAPI lifespan | 7 tests | DONE |
 
-**Total: 111 tests, all passing, 0 warnings**
+**Total: 153 tests, all passing, 0 warnings**
 
 ### Next Up
 
 | Phase | Task | Description | Status |
 |-------|------|-------------|--------|
-| 3 | 3.3-3.6 | Notification system, completion persistence, app integration | NOT STARTED |
+| 3 | 3.6 | Testing mode (short duration) | NOT STARTED |
 | 4 | 4.1-4.5 | Live dashboard UI (HTML + Vanilla JS + Jinja2) | NOT STARTED |
 | 5 | 5.1-5.4 | Analytics & Charts (weekly/monthly + Chart.js) | NOT STARTED |
 | 6 | 6.1-6.5 | Auto-start on boot (launchd) | NOT STARTED |
@@ -140,7 +143,7 @@ app/
 ├── file_store.py        — JSON Lines storage + 5MB rotation + archive support
 ├── session_manager.py   — Session state machine + persistence hooks
 ├── timer_engine.py      — Timer helpers + background polling loop for active sessions
-└── notifier.py          — STUB (logs message, returns False)
+└── notifier.py          — macOS notification system (osascript integration)
 ```
 
 ### Test Files
@@ -159,7 +162,10 @@ tests/
 ├── test_phase_2_5.py    — 13 tests: Session recovery (resume/close/edge cases/persist warning/lifespan/fresh session)
 ├── test_phase_2_6.py    — 6 tests: Session data validation (persist/reject/error clarity/edge cases)
 ├── test_phase_3_1.py    — 14 tests: Timer calculations + buffer + formatting + timezone + invalid states
-└── test_phase_3_2.py    — 9 tests: Background timer loop behavior + edge-case resilience
+├── test_phase_3_2.py    — 9 tests: Background timer loop behavior + edge-case resilience
+├── test_phase_3_3.py    — 27 tests: Notification system (platform gating, escaping, failures)
+├── test_phase_3_4.py    — 8 tests: Completion flag persistence (file update + timer-loop integration)
+└── test_phase_3_5.py    — 7 tests: Timer integration with FastAPI (lifespan, concurrency, shutdown)
 ```
 
 ### Configuration & Docs
@@ -238,6 +244,7 @@ settings = Settings()
 - `get_log_path(date=None) -> Path` — Returns `data/sessions_DD-MM-YYYY.log`
 - `append_session(session_dict) -> bool` — Thread-safe append with pre-write 5MB rotation
 - `read_sessions(date=None) -> list[dict]` — Reads base/part logs from data + archive, skips corrupted lines
+- `update_session(...) -> bool` — Thread-safe in-place update of the latest matching active session line
 - All file operations use `encoding="utf-8"` and `ensure_ascii=False` for unicode support
 
 ### 5.5 session_manager.py — Current State
@@ -257,12 +264,13 @@ Implements Task 2.2 state machine + Task 2.5 recovery + Task 2.6 validation:
 
 ### 5.6 timer_engine.py — Current State
 
-Implements Task 3.1 + Task 3.2 timer logic:
+Implements Task 3.1 + Task 3.2 + Task 3.4 timer logic:
 - `get_elapsed_time(start_time, now=None)` — elapsed duration with timezone-awareness and safe clamping
 - `get_remaining_time(start_time, target_hours, buffer_minutes, now=None)` — target minus elapsed, can be negative
 - `format_time_display(td)` — HH:MM:SS output including negative durations
 - `is_completed(start_time, target_hours, buffer_minutes, now=None)` — completion check at target boundary
 - `timer_polling_loop()` — async periodic timer checks for active sessions with remaining/overtime logs and completion detection
+- Completion detection now persists `completed_4h=True` immediately via `file_store.update_session(...)`
 
 ---
 

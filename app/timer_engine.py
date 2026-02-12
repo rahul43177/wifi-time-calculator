@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from typing import Any, Optional
 
 from app.config import settings
+from app.file_store import update_session
 from app.notifier import send_notification
 from app.wifi_detector import get_session_manager
 
@@ -262,7 +263,30 @@ async def timer_polling_loop() -> None:
                 target_hours=settings.work_duration_hours,
                 buffer_minutes=settings.buffer_minutes,
             )
-            if getattr(active_session, "completed_4h", False):
+            was_marked_completed = bool(getattr(active_session, "completed_4h", False))
+
+            if completed and not was_marked_completed:
+                persisted = update_session(
+                    session_date=active_session.date,
+                    ssid=active_session.ssid,
+                    start_time=active_session.start_time,
+                    updates={"completed_4h": True},
+                )
+                if persisted:
+                    active_session.completed_4h = True
+                    logger.info(
+                        "Session completion persisted: %s %s",
+                        active_session.date,
+                        active_session.start_time,
+                    )
+                else:
+                    logger.warning(
+                        "Failed to persist session completion: %s %s",
+                        active_session.date,
+                        active_session.start_time,
+                    )
+
+            if was_marked_completed:
                 notified_session_key = session_key
 
             if completed and session_key != notified_session_key:
