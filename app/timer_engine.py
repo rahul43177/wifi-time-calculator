@@ -198,6 +198,56 @@ def _normalize_interval_seconds(value: Any) -> float:
     return 60.0
 
 
+def _is_enabled_test_mode(value: Any) -> bool:
+    """
+    Return True only for an explicit boolean True value.
+
+    Args:
+        value: Candidate test-mode value from settings.
+
+    Returns:
+        True only when value is exactly True.
+    """
+    return isinstance(value, bool) and value
+
+
+def _resolve_target_components(
+    *,
+    test_mode: Any,
+    test_duration_minutes: Any,
+    work_duration_hours: Any,
+    buffer_minutes: Any,
+) -> tuple[int, int]:
+    """
+    Resolve effective timer target components.
+
+    In test mode, target is expressed as minutes only:
+        target_hours = 0, buffer_minutes = TEST_DURATION_MINUTES
+
+    In normal mode, target uses:
+        WORK_DURATION_HOURS + BUFFER_MINUTES
+
+    Args:
+        test_mode: Test mode flag.
+        test_duration_minutes: Test duration in minutes.
+        work_duration_hours: Normal work target in hours.
+        buffer_minutes: Normal buffer in minutes.
+
+    Returns:
+        Tuple of (target_hours, buffer_minutes).
+    """
+    if _is_enabled_test_mode(test_mode):
+        safe_test_minutes = _normalize_non_negative_int(
+            test_duration_minutes,
+            "test_duration_minutes",
+        )
+        return 0, safe_test_minutes
+
+    safe_work_hours = _normalize_non_negative_int(work_duration_hours, "work_duration_hours")
+    safe_buffer_minutes = _normalize_non_negative_int(buffer_minutes, "buffer_minutes")
+    return safe_work_hours, safe_buffer_minutes
+
+
 async def timer_polling_loop() -> None:
     """
     Background loop that checks timer progress at a fixed interval.
@@ -235,11 +285,18 @@ async def timer_polling_loop() -> None:
             if start_dt is None:
                 continue
 
+            target_hours, target_buffer_minutes = _resolve_target_components(
+                test_mode=getattr(settings, "test_mode", False),
+                test_duration_minutes=getattr(settings, "test_duration_minutes", 2),
+                work_duration_hours=getattr(settings, "work_duration_hours", 4),
+                buffer_minutes=getattr(settings, "buffer_minutes", 10),
+            )
+
             elapsed = get_elapsed_time(start_dt)
             remaining = get_remaining_time(
                 start_time=start_dt,
-                target_hours=settings.work_duration_hours,
-                buffer_minutes=settings.buffer_minutes,
+                target_hours=target_hours,
+                buffer_minutes=target_buffer_minutes,
             )
 
             elapsed_display = format_time_display(elapsed)
@@ -260,8 +317,8 @@ async def timer_polling_loop() -> None:
 
             completed = is_completed(
                 start_time=start_dt,
-                target_hours=settings.work_duration_hours,
-                buffer_minutes=settings.buffer_minutes,
+                target_hours=target_hours,
+                buffer_minutes=target_buffer_minutes,
             )
             was_marked_completed = bool(getattr(active_session, "completed_4h", False))
 
@@ -291,10 +348,15 @@ async def timer_polling_loop() -> None:
 
             if completed and session_key != notified_session_key:
                 title = "Office Wi-Fi Tracker"
-                message = (
-                    f"{settings.work_duration_hours} hours + "
-                    f"{settings.buffer_minutes} min buffer completed. You may leave."
-                )
+                if _is_enabled_test_mode(getattr(settings, "test_mode", False)):
+                    message = (
+                        f"Test mode: {target_buffer_minutes} min completed. You may leave."
+                    )
+                else:
+                    message = (
+                        f"{target_hours} hours + "
+                        f"{target_buffer_minutes} min buffer completed. You may leave."
+                    )
                 send_notification(title, message)
                 notified_session_key = session_key
 

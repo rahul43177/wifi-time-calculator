@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Wi-Fi Tracker</title>
+    <style>
+        :root {
+            --surface: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --green: #15803d;
+            --red: #b91c1c;
+            --progress: #2563eb;
+            --progress-bg: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            color: var(--text);
+            background: #f8fafc;
+            line-height: 1.4;
+        }
+
+        .dashboard {
+            max-width: 900px;
+            margin: 24px auto;
+            padding: 0 16px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .tabs {
+            display: inline-flex;
+            gap: 8px;
+        }
+
+        .tab {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--muted);
+            background: #f9fafb;
+        }
+
+        .tab.active {
+            color: var(--text);
+            background: #eef2ff;
+            border-color: #c7d2fe;
+        }
+
+        .status-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .connected {
+            color: var(--green);
+        }
+
+        .connected .status-dot {
+            background: var(--green);
+        }
+
+        .disconnected {
+            color: var(--red);
+        }
+
+        .disconnected .status-dot {
+            background: var(--red);
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .timer {
+            font-size: clamp(2.1rem, 7vw, 3.3rem);
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.04em;
+            margin: 6px 0 10px;
+        }
+
+        .progress-wrap {
+            margin-top: 10px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 0.92rem;
+            margin-bottom: 6px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 12px;
+            border-radius: 999px;
+            background: var(--progress-bg);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 56%;
+            height: 100%;
+            background: var(--progress);
+        }
+
+        .completion {
+            margin-top: 10px;
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+
+        th {
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .total {
+            margin-top: 10px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+<main class="dashboard">
+    <section class="card header">
+        <h1 class="title">Office Wi-Fi Tracker</h1>
+        <nav class="tabs" aria-label="Dashboard sections">
+            <span class="tab active">Live</span>
+            <span class="tab">Today</span>
+            <span class="tab">Weekly (Soon)</span>
+            <span class="tab">Monthly (Soon)</span>
+        </nav>
+    </section>
+
+    <section class="card">
+        <div id="connection-status" class="status-line connected">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span>Connected to <strong id="current-ssid">{{ office_wifi_name }}</strong></span>
+        </div>
+        <p class="muted" id="session-started-at">Started at <span id="start-time">09:42:10</span></p>
+    </section>
+
+    <section class="card">
+        <p class="muted" id="timer-mode-label">Remaining (target: <span id="target-display">{{ target_display }}</span>)</p>
+        <div id="timer-display" class="timer">01:44:30</div>
+        <div class="progress-wrap">
+            <div class="progress-label">
+                <span>Progress</span>
+                <span id="progress-percent">56%</span>
+            </div>
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="56">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+        </div>
+        <p id="completion-banner" class="completion">Completed! Total: <span id="completed-total">04:10:05</span></p>
+    </section>
+
+    <section class="card">
+        <h2>Today's Sessions</h2>
+        <table id="today-sessions-table" aria-label="Today's sessions">
+            <thead>
+            <tr>
+                <th>Start</th>
+                <th>End</th>
+                <th>Duration</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody id="today-sessions-body">
+            <tr>
+                <td>09:42:10</td>
+                <td>&mdash;</td>
+                <td>2h 15m</td>
+                <td>Active</td>
+            </tr>
+            </tbody>
+        </table>
+        <p class="total">Total: <span id="today-total-display">2h 15m</span></p>
+    </section>
+</main>
+</body>
+</html>

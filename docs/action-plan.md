@@ -633,13 +633,13 @@ osascript -e 'display notification "4 hours + 10 min buffer completed. You may l
 
 ---
 
-### Task 3.6: Add Testing Mode (Short Duration)
+### Task 3.6: Add Testing Mode (Short Duration) ✅ DONE
 **Description:** Allow shorter duration for testing (e.g., 2 minutes)  
 **Dependencies:** Task 3.1  
 **Acceptance Criteria:**
-- [ ] Config option for TEST_MODE
-- [ ] When enabled, uses 2-minute duration
-- [ ] Easy to toggle on/off
+- [x] Config option for TEST_MODE
+- [x] When enabled, uses 2-minute duration
+- [x] Easy to toggle on/off
 
 **Files:** `app/config.py`, `.env`
 
@@ -649,17 +649,34 @@ TEST_MODE=true
 TEST_DURATION_MINUTES=2
 ```
 
+> **Implementation Note:** Added test-mode target resolution in `app/timer_engine.py`:
+> - `_resolve_target_components(...)` chooses effective timer target
+> - Normal mode: `WORK_DURATION_HOURS + BUFFER_MINUTES`
+> - Test mode (`TEST_MODE=true`): `0h + TEST_DURATION_MINUTES` (e.g., 2 minutes)
+> - `timer_polling_loop()` now uses resolved targets for remaining/completion checks
+> - Completion notification message reflects test mode when enabled
+> - Strict boolean check for `TEST_MODE` to avoid accidental activation from mocked/non-bool values
+>
+> `app/config.py` and `.env` already expose:
+> - `test_mode: bool = False`
+> - `test_duration_minutes: int = 2`
+> - `TEST_MODE` / `TEST_DURATION_MINUTES` environment keys
+>
+> **Tests:** `tests/test_phase_3_6.py` (7 tests) — target resolution behavior,
+> toggle on/off coverage, invalid test-mode input handling, timer-loop integration,
+> and test-mode completion message verification — all passing.
+
 ---
 
 ### ✅ Phase 3 Definition of Done
 
 - [x] Timer calculates remaining time correctly (including buffer)
 - [x] Notification appears when (4 hours + buffer) completes
-- [ ] Only one notification per session
+- [x] Only one notification per session
 - [x] Session marked as completed in log file
 - [x] Elapsed time continues tracking after completion (for weekly reports)
-- [ ] Test mode works with 2-minute duration
-- [ ] Timer survives app restart (resumes correctly)
+- [x] Test mode works with 2-minute duration
+- [x] Timer survives app restart (resumes correctly)
 
 ---
 
@@ -675,10 +692,10 @@ TEST_DURATION_MINUTES=2
 **Description:** Backend endpoints that power the dashboard
 **Dependencies:** Phase 3 complete
 **Acceptance Criteria:**
-- [ ] `GET /api/status` returns current session state + timer info
-- [ ] `GET /api/today` returns today's sessions + total time
-- [ ] Both return proper JSON with correct types
-- [ ] Handle edge cases (no session, no data)
+- [x] `GET /api/status` returns current session state + timer info
+- [x] `GET /api/today` returns today's sessions + total time
+- [x] Both return proper JSON with correct types
+- [x] Handle edge cases (no session, no data)
 
 **File:** `app/main.py`
 
@@ -718,19 +735,32 @@ TEST_DURATION_MINUTES=2
 }
 ```
 
+> **Implementation Note:** Added typed dashboard APIs in `app/main.py`:
+> - `GET /api/status` now returns connection state, active-session timer data
+>   (elapsed, remaining, completion, progress), and resolved target display.
+> - `GET /api/today` now returns today's deduplicated session snapshots and
+>   aggregated total minutes/display.
+> - Response schemas use Pydantic models for stable JSON typing.
+> - Edge handling included for empty logs, no active session, malformed session
+>   timestamps, and test-mode target overrides.
+>
+> **Tests:** `tests/test_phase_4_1.py` (10 tests) — schema stability, normal
+> and empty states, overtime behavior, test-mode behavior, malformed state
+> handling, and today-session aggregation — all passing.
+
 ---
 
 ### Task 4.2: Create HTML Dashboard Template
 **Description:** Single-page Jinja2 template with live timer, status, and session table
 **Dependencies:** Task 4.1
 **Acceptance Criteria:**
-- [ ] Shows connection status (green connected / red disconnected)
-- [ ] Large countdown timer display (HH:MM:SS)
-- [ ] Progress bar (0% → 100%)
-- [ ] After completion: shows "Completed! Total: HH:MM:SS" in green
-- [ ] Today's sessions table (Start | End | Duration | Status)
-- [ ] Today's total office time summary
-- [ ] Tab/section navigation placeholders for Weekly & Monthly views
+- [x] Shows connection status (green connected / red disconnected)
+- [x] Large countdown timer display (HH:MM:SS)
+- [x] Progress bar (0% → 100%)
+- [x] After completion: shows "Completed! Total: HH:MM:SS" in green
+- [x] Today's sessions table (Start | End | Duration | Status)
+- [x] Today's total office time summary
+- [x] Tab/section navigation placeholders for Weekly & Monthly views
 
 **File:** `templates/index.html`
 
@@ -752,6 +782,23 @@ TEST_DURATION_MINUTES=2
 │ Total: 2h 15m                       │
 └─────────────────────────────────────┘
 ```
+
+> **Implementation Note:** Added `templates/index.html` as a single-page Jinja2
+> dashboard template with:
+> - status panel (connected/disconnected visual states),
+> - large timer display,
+> - progress bar section,
+> - completion banner placeholder,
+> - today's sessions table and total summary,
+> - tab placeholders for Live/Today/Weekly/Monthly.
+>
+> Updated `GET /` in `app/main.py` to render `index.html` via
+> `Jinja2Templates`, passing `office_wifi_name` and resolved target display
+> from backend settings.
+>
+> **Tests:** `tests/test_phase_4_2.py` (5 tests) — template rendering,
+> required section presence, tab placeholders, and backend context wiring for
+> office SSID + test-mode target display — all passing.
 
 ---
 
@@ -1260,6 +1307,6 @@ Before considering MVP complete:
 
 ---
 
-**Current State:** Phase 3 Tasks 3.1-3.5 DONE (153 tests passing, 0 warnings). Next: Task 3.6.
+**Current State:** ✅ **Phase 4 Tasks 4.1-4.2 COMPLETE** — Dashboard backend APIs and Jinja template UI scaffold implemented. 175 tests passing, 0 warnings.
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!

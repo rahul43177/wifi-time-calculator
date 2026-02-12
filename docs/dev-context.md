@@ -116,15 +116,17 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 | 3 | 3.3 | Notification system (macOS osascript integration) | 27 tests | DONE |
 | 3 | 3.4 | Completion flag persistence in session logs | 8 tests | DONE |
 | 3 | 3.5 | Timer integration with FastAPI lifespan | 7 tests | DONE |
+| 3 | 3.6 | Testing mode (short duration target override) | 7 tests | DONE |
+| 4 | 4.1 | Dashboard status/today API endpoints | 10 tests | DONE |
+| 4 | 4.2 | Jinja2 dashboard template scaffold | 5 tests | DONE |
 
-**Total: 153 tests, all passing, 0 warnings**
+**Total: 175 tests, all passing, 0 warnings**
 
 ### Next Up
 
 | Phase | Task | Description | Status |
 |-------|------|-------------|--------|
-| 3 | 3.6 | Testing mode (short duration) | NOT STARTED |
-| 4 | 4.1-4.5 | Live dashboard UI (HTML + Vanilla JS + Jinja2) | NOT STARTED |
+| 4 | 4.3-4.5 | Live dashboard UI (HTML + Vanilla JS + Jinja2) | IN PROGRESS |
 | 5 | 5.1-5.4 | Analytics & Charts (weekly/monthly + Chart.js) | NOT STARTED |
 | 6 | 6.1-6.5 | Auto-start on boot (launchd) | NOT STARTED |
 
@@ -139,7 +141,7 @@ app/
 ├── __init__.py          — Package init
 ├── config.py            — Settings via pydantic-settings (ConfigDict)
 ├── wifi_detector.py     — SSID detection + polling + session transition routing
-├── main.py              — FastAPI app, lifespan, logging setup
+├── main.py              — FastAPI app, lifespan, APIs, Jinja dashboard route
 ├── file_store.py        — JSON Lines storage + 5MB rotation + archive support
 ├── session_manager.py   — Session state machine + persistence hooks
 ├── timer_engine.py      — Timer helpers + background polling loop for active sessions
@@ -165,7 +167,10 @@ tests/
 ├── test_phase_3_2.py    — 9 tests: Background timer loop behavior + edge-case resilience
 ├── test_phase_3_3.py    — 27 tests: Notification system (platform gating, escaping, failures)
 ├── test_phase_3_4.py    — 8 tests: Completion flag persistence (file update + timer-loop integration)
-└── test_phase_3_5.py    — 7 tests: Timer integration with FastAPI (lifespan, concurrency, shutdown)
+├── test_phase_3_5.py    — 7 tests: Timer integration with FastAPI (lifespan, concurrency, shutdown)
+├── test_phase_3_6.py    — 7 tests: Testing mode target override (toggle + integration checks)
+├── test_phase_4_1.py    — 10 tests: Dashboard API status/today schema + edge-case handling
+└── test_phase_4_2.py    — 5 tests: Dashboard template rendering + placeholders/context wiring
 ```
 
 ### Configuration & Docs
@@ -186,7 +191,7 @@ docs/
 ```
 data/                    — Session log files (gitignored)
 data/archive/            — Rotated files (future)
-templates/               — HTML templates (Phase 4)
+templates/               — HTML templates (includes dashboard `index.html`)
 static/                  — CSS, JS (Phase 4)
 logs/                    — Application logs (gitignored)
 venv/                    — Python virtual environment
@@ -237,7 +242,11 @@ settings = Settings()
 - `setup_logging()` — Console + optional RotatingFileHandler, guarded by `_logging_configured` flag
 - `lifespan(app)` — Creates `wifi_polling_loop` as asyncio task, cancels on shutdown via `asyncio.gather(..., return_exceptions=True)`
 - `_background_tasks: list[asyncio.Task]` — Holds references for graceful shutdown
-- Endpoints: `GET /` (HTML placeholder), `GET /health` (JSON status)
+- Endpoints:
+  - `GET /` (Jinja2 dashboard template)
+  - `GET /health` (JSON status)
+  - `GET /api/status` (live session/timer status for dashboard)
+  - `GET /api/today` (today's sessions + total minutes/display)
 
 ### 5.4 file_store.py — Storage Module
 
@@ -264,13 +273,15 @@ Implements Task 2.2 state machine + Task 2.5 recovery + Task 2.6 validation:
 
 ### 5.6 timer_engine.py — Current State
 
-Implements Task 3.1 + Task 3.2 + Task 3.4 timer logic:
+Implements Task 3.1 + Task 3.2 + Task 3.4 + Task 3.5 + Task 3.6 timer logic:
 - `get_elapsed_time(start_time, now=None)` — elapsed duration with timezone-awareness and safe clamping
 - `get_remaining_time(start_time, target_hours, buffer_minutes, now=None)` — target minus elapsed, can be negative
 - `format_time_display(td)` — HH:MM:SS output including negative durations
 - `is_completed(start_time, target_hours, buffer_minutes, now=None)` — completion check at target boundary
 - `timer_polling_loop()` — async periodic timer checks for active sessions with remaining/overtime logs and completion detection
 - Completion detection now persists `completed_4h=True` immediately via `file_store.update_session(...)`
+- Timer loop now also runs via FastAPI lifespan startup/shutdown integration (`app.main`)
+- Test mode support: when `TEST_MODE=true`, effective target is `TEST_DURATION_MINUTES`
 
 ---
 

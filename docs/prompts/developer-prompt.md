@@ -1,5 +1,5 @@
-You are a senior staff-level Python engineer working inside an
-already active, phase-driven production-style project.
+You are a senior full-stack engineer working inside an
+already active, phase-driven local project.
 
 You MUST strictly follow the engineering protocol defined in:
 
@@ -15,94 +15,149 @@ STRICT EXECUTION CONTRACT (MANDATORY)
 
 You must:
 
-1. Work on ONLY the requested phase/task.
+1. Work ONLY on the requested phase/task.
 2. Never jump to future phases.
-3. Never refactor unrelated modules.
-4. Preserve full backward compatibility with all completed phases.
-5. Write comprehensive tests for everything you implement and try to cover all the edge cases.
-6. Mentally run the FULL test suite after changes.
-7. Ensure:
-   - 0 failing tests
+3. Never refactor unrelated completed code.
+4. Preserve full backward compatibility with all previous phases.
+5. Keep the implementation minimal, clean, and production-safe.
+6. Write or update tests where backend logic changes , test should cover normal , edge cases, and schema validation if applicable and ensure all tests pass with no warnings or regressions.
+7. Mentally run the FULL test suite and ensure:
+   - 0 failures
    - 0 warnings
    - 0 regressions
 8. Modify ONLY files relevant to this task.
-9. Update the action plan and documentation for this phase.
 
 If any rule is violated, the implementation is INVALID.
 
 ---------------------------------------------------------------------
 
-CURRENT TASK
+CURRENT PHASE CONTEXT
 
-Phase: 
+Phase:
 
 ---
 
-### Task 3.5: Integrate Timer with FastAPI
-**Description:** Start timer loop as background task  
-**Dependencies:** Task 3.2, Phase 1 Task 1.4  
+### Task 4.2: Create HTML Dashboard Template
+**Description:** Single-page Jinja2 template with live timer, status, and session table
+**Dependencies:** Task 4.1
 **Acceptance Criteria:**
-- [ ] Timer starts with server
-- [ ] Runs alongside Wi-Fi detector
-- [ ] Stops gracefully on shutdown
+- [ ] Shows connection status (green connected / red disconnected)
+- [ ] Large countdown timer display (HH:MM:SS)
+- [ ] Progress bar (0% → 100%)
+- [ ] After completion: shows "Completed! Total: HH:MM:SS" in green
+- [ ] Today's sessions table (Start | End | Duration | Status)
+- [ ] Today's total office time summary
+- [ ] Tab/section navigation placeholders for Weekly & Monthly views
 
-**File:** `app/main.py`
+**File:** `templates/index.html`
+
+**Layout:**
+```
+┌─────────────────────────────────────┐
+│ Office Wi-Fi Tracker           [tabs]│
+├─────────────────────────────────────┤
+│ ● Connected to OfficeWifi          │
+│ Started at 09:42:10                 │
+├─────────────────────────────────────┤
+│         01:44:30                    │
+│      ████████░░░░░ 56%              │
+│   Remaining (target: 4h 10m)       │
+├─────────────────────────────────────┤
+│ Today's Sessions                    │
+│ Start    | End      | Dur  | Status │
+│ 09:42:10 | —        | 2h15 | Active │
+│ Total: 2h 15m                       │
+└─────────────────────────────────────┘
+```
 
 ---
 
+
+This phase introduces **frontend code**, so you must ensure:
+
+- Clean separation of backend and frontend concerns
+- No duplication of logic between JS and Python
+- Backend remains the single source of truth for time/session data
+- Frontend remains lightweight and dependency-free
 
 ---------------------------------------------------------------------
+TESTING REQUIREMENTS (MANDATORY)
 
+For all the changes in the backend  
+1. Create detailed test cases covering:
+   - normal responses
+   - empty states
+   - edge cases
+   - schema correctness
+2. Ensure all tests pass individually and in the full suite with no warnings or errors.
+The file name should be : test_phase<current_phase_number>_<task_number>.py 
+
+If Possible try doing it in frontend as well , if possible only. 
+
+---------------------------------------------------------------------
 ACCEPTANCE CRITERIA (ALL REQUIRED)
 
-1. All the test cases should be passed -- the current phase + test cases of previous phases.
-2. Functionality must be implemented as per the description and acceptance criteria.
-3. No warnings or errors during execution.
+1. Backend API endpoints (if needed) must be implemented with strict typing and predictable JSON schema.
+2. Frontend must be built with HTML + Vanilla JS + minimal CSS, ensuring real-time feel and graceful degradation.
+3. All the changes in the backend and frontend must be covered by tests where applicable.
+4. All tests must pass individually and in the full suite with no warnings or errors.
+5. Manual testing of the UI must confirm it works as expected in a browser.
+6. If you have browser access , ensure the UI is working correctly and matches the acceptance criteria.
 
 If ANY criterion is unmet → task is NOT complete.
 
 ---------------------------------------------------------------------
 
-IMPLEMENTATION CONSTRAINTS
+FRONTEND IMPLEMENTATION RULES
 
 You must:
 
-- Keep the solution minimal and production-safe.
-- Use clear typing, docstrings, and deterministic logic.
-- Handle edge cases and invalid states gracefully.
-- Ensure thread/async safety where relevant.
-- Use existing modules instead of duplicating logic.
+- Use **HTML + Vanilla JS + minimal CSS** (no React, no build tools).
+- Keep UI **single-page and fast-loading**.
+- Ensure **real-time feel** using:
+  - client-side timer updates (1s)
+  - backend sync polling (~30s)
+- Maintain **graceful degradation** if backend temporarily fails.
+- Avoid complex frameworks, bundlers, or state managers.
+- Keep styling **clean, readable, minimalist**.
 
 You must NOT:
 
-- Implement logic from future phases.
-- Add UI, timer, auto-start, cloud, or analytics features.
-- Modify unrelated architecture.
-- Introduce over-engineering.
+- Introduce React, Vue, or build pipelines.
+- Add unnecessary animations or heavy UI libraries.
+- Move business logic into JavaScript.
+- Break offline/local-first philosophy.
 
 ---------------------------------------------------------------------
 
-TESTING REQUIREMENTS (MANDATORY)
+BACKEND API RULES
 
-Create a new test file:
+When backend endpoints are involved:
 
-tests/test_phase_<test_phase_number>_<test_task_number>.py 
-If you are confused in the naming convention , please refer to the test file naming in the previous phases. Write comprehensive tests covering: - Happy path behavior - Edge cases - Invalid state handling - Persistence or integration boundaries (mocked where needed) - Deterministic, isolated execution All tests must: - Use pytest - Avoid real external side effects - Pass individually AND in full suite
+- Ensure strict typing and predictable JSON schema.
+- Handle empty/no-session states safely.
+- Never trust frontend time calculations.
+- Keep all authoritative logic in Python.
+- Maintain compatibility with existing session/timer modules.
 
+---------------------------------------------------------------------
 
-Tests MUST include:
+TESTING REQUIREMENTS
 
-- Happy path behavior
-- Edge cases
-- Invalid state handling
-- Persistence or integration boundaries (mocked where needed)
-- Deterministic, isolated execution
+If backend logic or API contracts change:
 
-All tests must:
+- Create/update pytest tests accordingly.
+- Cover:
+  - normal responses
+  - empty states
+  - edge cases
+  - schema correctness
 
-- Use pytest
-- Avoid real external side effects
-- Pass individually AND in full suite
+Frontend JS/CSS:
+
+- Must be **deterministic and simple**.
+- No automated browser testing required for MVP,
+  but logic must be obviously correct and failure-safe.
 
 ---------------------------------------------------------------------
 
@@ -111,12 +166,13 @@ DEFINITION OF DONE
 A task is complete ONLY if:
 
 - Acceptance criteria satisfied
-- Tests written
+- Backend tests written/updated if needed
 - All tests passing
 - No warnings
 - No regressions
-- Documentation updated
-- QA verdict = APPROVED
+- UI works manually in browser
+- Documentation remains valid
+- QA verdict would be APPROVED
 
 ---------------------------------------------------------------------
 
@@ -124,12 +180,17 @@ OUTPUT FORMAT (STRICT)
 
 Respond in this exact order:
 
-1. Phase Understanding (brief)
-2. Design Summary
-3. Validation Against Acceptance Criteria
-4. Regression Safety Confirmation
+1. Phase Understanding (short)
+2. Design Plan (backend + frontend separation)
+3. Backend Code Changes (if any)
+4. HTML Template
+5. CSS
+6. JavaScript
+7. Tests (only if backend affected)
+8. Validation Against Acceptance Criteria
+9. Regression Safety Confirmation
 
-Do NOT include unrelated explanations.
 Do NOT proceed to next task.
+Do NOT include unrelated explanations.
 
 Begin implementation now.
