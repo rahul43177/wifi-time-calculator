@@ -41,31 +41,34 @@ Phase:
 
 ---
 
-### Task 2.6: Add Data Validation
-**Description:** Validate session data before saving  
-**Dependencies:** Task 2.1  
+### Task 3.2: Create Background Timer Loop
+**Description:** Check timer every 60 seconds
+**Dependencies:** Task 3.1
 **Acceptance Criteria:**
-- [ ] Uses Pydantic models for validation
-- [ ] Rejects invalid data
-- [ ] Clear error messages
+- [ ] Runs every 60 seconds
+- [ ] Only checks when session is active
+- [ ] Logs remaining time (or overtime amount if past target)
+- [ ] Detects completion (4h + buffer reached)
+- [ ] Continues running after completion to track total office time
 
-**File:** `app/session_manager.py`
+**File:** `app/timer_engine.py`
 
-**Pydantic Model:**
-```python
-class SessionLog(BaseModel):
-    date: str
-    ssid: str
-    start_time: str
-    end_time: Optional[str] = None
-    duration_minutes: Optional[int] = None
-    completed_4h: bool = False
-```
+**Key Implementation Points:**
+- Use asyncio for background task
+- Get active session from session manager
+- Calculate remaining time including buffer
+- Log every minute for debugging
+- Trigger notification when completed
+- Keep loop alive after completion — elapsed time keeps growing for reporting
 
 ---
 
+
 Test file:
-tests/test_phase_2_5.py
+
+tests/test_phase_<test_phase_number>_<test_task_number>.py 
+If you are confused in the naming convention , please refer to the test file naming in the previous phases. Write comprehensive tests covering: - Happy path behavior - Edge cases - Invalid state handling - Persistence or integration boundaries (mocked where needed) - Deterministic, isolated execution All tests must: - Use pytest - Avoid real external side effects - Pass individually AND in full suite
+
 
 ---------------------------------------------------------------------
 

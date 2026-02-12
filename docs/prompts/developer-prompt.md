@@ -36,30 +36,31 @@ CURRENT TASK
 
 Phase: 
 
+
 ---
 
-### Task 2.6: Add Data Validation
-**Description:** Validate session data before saving  
-**Dependencies:** Task 2.1  
+### Task 3.2: Create Background Timer Loop
+**Description:** Check timer every 60 seconds
+**Dependencies:** Task 3.1
 **Acceptance Criteria:**
-- [ ] Uses Pydantic models for validation
-- [ ] Rejects invalid data
-- [ ] Clear error messages
+- [ ] Runs every 60 seconds
+- [ ] Only checks when session is active
+- [ ] Logs remaining time (or overtime amount if past target)
+- [ ] Detects completion (4h + buffer reached)
+- [ ] Continues running after completion to track total office time
 
-**File:** `app/session_manager.py`
+**File:** `app/timer_engine.py`
 
-**Pydantic Model:**
-```python
-class SessionLog(BaseModel):
-    date: str
-    ssid: str
-    start_time: str
-    end_time: Optional[str] = None
-    duration_minutes: Optional[int] = None
-    completed_4h: bool = False
-```
+**Key Implementation Points:**
+- Use asyncio for background task
+- Get active session from session manager
+- Calculate remaining time including buffer
+- Log every minute for debugging
+- Trigger notification when completed
+- Keep loop alive after completion — elapsed time keeps growing for reporting
 
 ---
+
 
 ---------------------------------------------------------------------
 
@@ -136,9 +137,8 @@ Respond in this exact order:
 
 1. Phase Understanding (brief)
 2. Design Summary
-3. Full Test Suite
-4. Validation Against Acceptance Criteria
-5. Regression Safety Confirmation
+3. Validation Against Acceptance Criteria
+4. Regression Safety Confirmation
 
 Do NOT include unrelated explanations.
 Do NOT proceed to next task.

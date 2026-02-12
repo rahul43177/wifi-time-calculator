@@ -111,14 +111,16 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 | 2 | 2.4 | File rotation logic (>5MB → archive) | 8 tests | DONE |
 | 2 | 2.5 | Session recovery on restart | 13 tests | DONE |
 | 2 | 2.6 | Data validation with Pydantic models | 6 tests | DONE |
+| 3 | 3.1 | Timer calculation logic (elapsed/remaining/buffer/format/completion) | 14 tests | DONE |
+| 3 | 3.2 | Background timer loop (polling/logging/completion detection) | 9 tests | DONE |
 
-**Total: 88 tests, all passing, 0 warnings**
+**Total: 111 tests, all passing, 0 warnings**
 
 ### Next Up
 
 | Phase | Task | Description | Status |
 |-------|------|-------------|--------|
-| 3 | 3.1-3.6 | Timer engine, notifications, completion logic | NOT STARTED |
+| 3 | 3.3-3.6 | Notification system, completion persistence, app integration | NOT STARTED |
 | 4 | 4.1-4.5 | Live dashboard UI (HTML + Vanilla JS + Jinja2) | NOT STARTED |
 | 5 | 5.1-5.4 | Analytics & Charts (weekly/monthly + Chart.js) | NOT STARTED |
 | 6 | 6.1-6.5 | Auto-start on boot (launchd) | NOT STARTED |
@@ -137,7 +139,7 @@ app/
 ├── main.py              — FastAPI app, lifespan, logging setup
 ├── file_store.py        — JSON Lines storage + 5MB rotation + archive support
 ├── session_manager.py   — Session state machine + persistence hooks
-├── timer_engine.py      — STUB (function signatures only, returns None)
+├── timer_engine.py      — Timer helpers + background polling loop for active sessions
 └── notifier.py          — STUB (logs message, returns False)
 ```
 
@@ -155,7 +157,9 @@ tests/
 ├── test_phase_2_3.py    — 7 tests: Wi-Fi/session integration + persistence flow + exception resilience
 ├── test_phase_2_4.py    — 8 tests: File rotation + archive integrity + collision/error handling
 ├── test_phase_2_5.py    — 13 tests: Session recovery (resume/close/edge cases/persist warning/lifespan/fresh session)
-└── test_phase_2_6.py    — 6 tests: Session data validation (persist/reject/error clarity/edge cases)
+├── test_phase_2_6.py    — 6 tests: Session data validation (persist/reject/error clarity/edge cases)
+├── test_phase_3_1.py    — 14 tests: Timer calculations + buffer + formatting + timezone + invalid states
+└── test_phase_3_2.py    — 9 tests: Background timer loop behavior + edge-case resilience
 ```
 
 ### Configuration & Docs
@@ -200,6 +204,7 @@ class Settings(BaseSettings):
     log_to_file: bool = False
     log_file_path: str = "logs/app.log"
     work_duration_hours: int = 4
+    buffer_minutes: int = 10
     wifi_check_interval_seconds: int = 30
     timer_check_interval_seconds: int = 60
     test_mode: bool = False
@@ -249,6 +254,15 @@ Implements Task 2.2 state machine + Task 2.5 recovery + Task 2.6 validation:
   - `_persist_state(session)` — validates using `SessionLog` before persisting
   - persistence hooks via `file_store.append_session`
   - Injectable `read_sessions_func` for deterministic testing of recovery
+
+### 5.6 timer_engine.py — Current State
+
+Implements Task 3.1 + Task 3.2 timer logic:
+- `get_elapsed_time(start_time, now=None)` — elapsed duration with timezone-awareness and safe clamping
+- `get_remaining_time(start_time, target_hours, buffer_minutes, now=None)` — target minus elapsed, can be negative
+- `format_time_display(td)` — HH:MM:SS output including negative durations
+- `is_completed(start_time, target_hours, buffer_minutes, now=None)` — completion check at target boundary
+- `timer_polling_loop()` — async periodic timer checks for active sessions with remaining/overtime logs and completion detection
 
 ---
 

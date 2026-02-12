@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     
     # Work duration settings
     work_duration_hours: int = 4
+    buffer_minutes: int = 10
     
     # Check intervals (in seconds)
     wifi_check_interval_seconds: int = 30

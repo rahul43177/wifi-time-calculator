@@ -453,16 +453,16 @@ class SessionLog(BaseModel):
 
 ---
 
-### Task 3.1: Implement Timer Calculation Logic
+### Task 3.1: Implement Timer Calculation Logic ✅ DONE
 **Description:** Calculate elapsed and remaining time for active session
 **Dependencies:** Phase 2 complete
 **Acceptance Criteria:**
-- [ ] Calculates elapsed time: now - start_time
-- [ ] Calculates remaining time: (4h + buffer) - elapsed
-- [ ] Includes configurable `BUFFER_MINUTES` (default 10) in target
-- [ ] Returns formatted strings (HH:MM:SS)
-- [ ] Handles timezone correctly
-- [ ] Elapsed time keeps increasing after target is reached (no cap)
+- [x] Calculates elapsed time: now - start_time
+- [x] Calculates remaining time: (4h + buffer) - elapsed
+- [x] Includes configurable `BUFFER_MINUTES` (default 10) in target
+- [x] Returns formatted strings (HH:MM:SS)
+- [x] Handles timezone correctly
+- [x] Elapsed time keeps increasing after target is reached (no cap)
 
 **File:** `app/timer_engine.py`, `app/config.py`
 
@@ -479,17 +479,30 @@ BUFFER_MINUTES=10  # Added to .env / config.py
 
 **Important:** `remaining` can go negative. Negative remaining means overtime — the timer keeps tracking total elapsed time even after completion for weekly reporting purposes.
 
+> **Implementation Note:** Implemented deterministic timer utilities in `app/timer_engine.py`:
+> - `get_elapsed_time(...)` with timezone-aware handling and future-time clamping
+> - `get_remaining_time(...)` using target + buffer and allowing negative overtime values
+> - `format_time_display(...)` for positive/negative HH:MM:SS formatting
+> - `is_completed(...)` based on target + buffer completion
+> - Safe handling for invalid states (invalid type inputs, timezone mismatch, negative config values)
+>
+> Added `buffer_minutes: int = 10` to `app/config.py` for configurable buffer support.
+>
+> **Tests:** `tests/test_phase_3_1.py` (14 tests) — elapsed/remaining calculations,
+> timezone-aware behavior, overtime handling, formatting, invalid state handling,
+> and completion boundary behavior — all passing.
+
 ---
 
-### Task 3.2: Create Background Timer Loop
+### Task 3.2: Create Background Timer Loop ✅ DONE
 **Description:** Check timer every 60 seconds
 **Dependencies:** Task 3.1
 **Acceptance Criteria:**
-- [ ] Runs every 60 seconds
-- [ ] Only checks when session is active
-- [ ] Logs remaining time (or overtime amount if past target)
-- [ ] Detects completion (4h + buffer reached)
-- [ ] Continues running after completion to track total office time
+- [x] Runs every 60 seconds
+- [x] Only checks when session is active
+- [x] Logs remaining time (or overtime amount if past target)
+- [x] Detects completion (4h + buffer reached)
+- [x] Continues running after completion to track total office time
 
 **File:** `app/timer_engine.py`
 
@@ -500,6 +513,19 @@ BUFFER_MINUTES=10  # Added to .env / config.py
 - Log every minute for debugging
 - Trigger notification when completed
 - Keep loop alive after completion — elapsed time keeps growing for reporting
+
+> **Implementation Note:** Added `timer_polling_loop()` to `app/timer_engine.py`:
+> - Async background loop with configurable interval (`TIMER_CHECK_INTERVAL_SECONDS`)
+> - Fetches shared `SessionManager` and skips checks when no active session exists
+> - Computes elapsed/remaining with existing Task 3.1 helpers
+> - Logs remaining time before completion and overtime after completion
+> - Detects completion and triggers notification through `send_notification(...)`
+> - Prevents repeat notifications within the same active session runtime
+> - Continues checking/logging after completion until session ends or task is cancelled
+>
+> **Tests:** `tests/test_phase_3_2.py` (9 tests) — interval behavior, active-session gating,
+> remaining/overtime logging, completion notification trigger, post-completion continuity,
+> malformed session handling, exception resilience, and duplicate-notification prevention — all passing.
 
 ---
 
@@ -577,11 +603,11 @@ TEST_DURATION_MINUTES=2
 
 ### ✅ Phase 3 Definition of Done
 
-- [ ] Timer calculates remaining time correctly (including buffer)
+- [x] Timer calculates remaining time correctly (including buffer)
 - [ ] Notification appears when (4 hours + buffer) completes
 - [ ] Only one notification per session
 - [ ] Session marked as completed in log file
-- [ ] Elapsed time continues tracking after completion (for weekly reports)
+- [x] Elapsed time continues tracking after completion (for weekly reports)
 - [ ] Test mode works with 2-minute duration
 - [ ] Timer survives app restart (resumes correctly)
 
@@ -1184,6 +1210,6 @@ Before considering MVP complete:
 
 ---
 
-**Current State:** Phase 2 tasks 2.1-2.6 DONE (88 tests passing, 0 warnings). Next: Phase 3, Task 3.1.
+**Current State:** Phase 3 Tasks 3.1-3.2 DONE (111 tests passing, 0 warnings). Next: Task 3.3.
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!
