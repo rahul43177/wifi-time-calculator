@@ -396,13 +396,13 @@ IN_OFFICE_SESSION + 4h_complete → COMPLETED (update file)
 
 ---
 
-### Task 2.6: Add Data Validation
+### Task 2.6: Add Data Validation ✅ DONE
 **Description:** Validate session data before saving  
 **Dependencies:** Task 2.1  
 **Acceptance Criteria:**
-- [ ] Uses Pydantic models for validation
-- [ ] Rejects invalid data
-- [ ] Clear error messages
+- [x] Uses Pydantic models for validation
+- [x] Rejects invalid data
+- [x] Clear error messages
 
 **File:** `app/session_manager.py`
 
@@ -417,17 +417,32 @@ class SessionLog(BaseModel):
     completed_4h: bool = False
 ```
 
+> **Implementation Note:** Added `SessionLog` as a validated persistence model and
+> enforced validation in `SessionManager._persist_state()` before every save.
+> Added field validators for:
+> - `date` format (`DD-MM-YYYY`)
+> - `start_time` / `end_time` format (`HH:MM:SS`)
+> - non-empty `ssid`
+> - non-negative `duration_minutes`
+>
+> Invalid payloads are rejected before file writes, with concise field-level
+> error messages logged via `Session validation failed: ...`.
+>
+> **Tests:** Added dedicated validation coverage in `tests/test_phase_2_6.py`
+> (6 tests) for valid persistence, rejection of malformed date/time/SSID/duration,
+> corrupted in-memory state handling, and malformed recovery-entry handling — all passing.
+
 ---
 
 ### ✅ Phase 2 Definition of Done
 
-- [ ] Sessions saved to daily log files in JSON Lines format
-- [ ] New file created each day automatically
-- [ ] Connect/disconnect cycles logged correctly
-- [ ] Files rotate when > 5MB
-- [ ] Session resumes after app restart
-- [ ] Can read today's sessions programmatically
-- [ ] No data loss during crashes
+- [x] Sessions saved to daily log files in JSON Lines format
+- [x] New file created each day automatically
+- [x] Connect/disconnect cycles logged correctly
+- [x] Files rotate when > 5MB
+- [x] Session resumes after app restart
+- [x] Can read today's sessions programmatically
+- [x] No data loss during crashes
 
 ---
 
@@ -1169,6 +1184,6 @@ Before considering MVP complete:
 
 ---
 
-**Current State:** Phase 2 tasks 2.1-2.5 DONE (82 tests). Next: Task 2.6 → Phase 3.
+**Current State:** Phase 2 tasks 2.1-2.6 DONE (88 tests passing, 0 warnings). Next: Phase 3, Task 3.1.
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!

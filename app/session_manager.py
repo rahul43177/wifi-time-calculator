@@ -10,7 +10,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError, field_validator
 
 from app.file_store import append_session, read_sessions
 
@@ -24,8 +24,57 @@ class SessionState(Enum):
     COMPLETED = "completed"
 
 
+class SessionLog(BaseModel):
+    """Validated payload model used for persistence."""
+
+    date: str
+    ssid: str
+    start_time: str
+    end_time: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    completed_4h: bool = False
+
+    @field_validator("date")
+    @classmethod
+    def _validate_date_format(cls, value: str) -> str:
+        """Validate that date follows DD-MM-YYYY format."""
+        try:
+            datetime.strptime(value, "%d-%m-%Y")
+        except ValueError as exc:
+            raise ValueError("date must be in DD-MM-YYYY format") from exc
+        return value
+
+    @field_validator("start_time", "end_time")
+    @classmethod
+    def _validate_time_format(cls, value: Optional[str], info: Any) -> Optional[str]:
+        """Validate that time fields use HH:MM:SS format."""
+        if value is None:
+            return value
+        try:
+            datetime.strptime(value, "%H:%M:%S")
+        except ValueError as exc:
+            raise ValueError(f"{info.field_name} must be in HH:MM:SS format") from exc
+        return value
+
+    @field_validator("ssid")
+    @classmethod
+    def _validate_ssid(cls, value: str) -> str:
+        """Ensure SSID is non-empty after whitespace trimming."""
+        if not value.strip():
+            raise ValueError("ssid must not be empty")
+        return value
+
+    @field_validator("duration_minutes")
+    @classmethod
+    def _validate_duration(cls, value: Optional[int]) -> Optional[int]:
+        """Ensure duration is non-negative when present."""
+        if value is not None and value < 0:
+            raise ValueError("duration_minutes must be greater than or equal to 0")
+        return value
+
+
 class Session(BaseModel):
-    """Session data model."""
+    """Backward-compatible in-memory session model."""
 
     date: str
     ssid: str
@@ -207,15 +256,25 @@ class SessionManager:
 
             # Try to reconstruct the Session object
             try:
+                validated_entry = SessionLog.model_validate(
+                    {
+                        "date": last_incomplete["date"],
+                        "ssid": last_incomplete["ssid"],
+                        "start_time": last_incomplete["start_time"],
+                        "end_time": last_incomplete.get("end_time"),
+                        "duration_minutes": last_incomplete.get("duration_minutes"),
+                        "completed_4h": last_incomplete.get("completed_4h", False),
+                    }
+                ).model_dump()
                 incomplete_session = Session(
-                    date=last_incomplete["date"],
-                    ssid=last_incomplete["ssid"],
-                    start_time=last_incomplete["start_time"],
-                    end_time=last_incomplete.get("end_time"),
-                    duration_minutes=last_incomplete.get("duration_minutes"),
-                    completed_4h=last_incomplete.get("completed_4h", False),
+                    date=validated_entry["date"],
+                    ssid=validated_entry["ssid"],
+                    start_time=validated_entry["start_time"],
+                    end_time=validated_entry.get("end_time"),
+                    duration_minutes=validated_entry.get("duration_minutes"),
+                    completed_4h=validated_entry.get("completed_4h", False),
                 )
-            except (KeyError, ValueError) as e:
+            except (KeyError, ValueError, ValidationError) as e:
                 logger.warning("recover_session: malformed session entry, skipping: %s", e)
                 return False
 
@@ -265,10 +324,22 @@ class SessionManager:
             True when persistence succeeds, False otherwise.
         """
         try:
-            return self._persist_func(session.model_dump())
+            validated_payload = SessionLog.model_validate(session.model_dump()).model_dump()
+            return self._persist_func(validated_payload)
+        except ValidationError as exc:
+            logger.error("Session validation failed: %s", self._format_validation_error(exc))
+            return False
         except Exception:
             logger.exception("Unexpected error while persisting session state")
             return False
+
+    @staticmethod
+    def _format_validation_error(error: ValidationError) -> str:
+        """Build concise field-level validation errors for logging."""
+        return "; ".join(
+            f"{'.'.join(str(part) for part in issue['loc'])}: {issue['msg']}"
+            for issue in error.errors()
+        )
 
     @staticmethod
     def _calculate_duration_minutes(session: Session, now: datetime) -> Optional[int]:

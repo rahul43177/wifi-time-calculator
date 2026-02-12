@@ -19,13 +19,14 @@ You must:
 2. Never jump to future phases.
 3. Never refactor unrelated modules.
 4. Preserve full backward compatibility with all completed phases.
-5. Write comprehensive tests for everything you implement.
+5. Write comprehensive tests for everything you implement and try to cover all the edge cases.
 6. Mentally run the FULL test suite after changes.
 7. Ensure:
    - 0 failing tests
    - 0 warnings
    - 0 regressions
 8. Modify ONLY files relevant to this task.
+9. Update the action plan and documentation for this phase.
 
 If any rule is violated, the implementation is INVALID.
 
@@ -37,25 +38,26 @@ Phase:
 
 ---
 
-### Task 2.5: Add Session Recovery on Restart
-**Description:** Restore active session if app restarts during office hours  
-**Dependencies:** Task 2.3  
+### Task 2.6: Add Data Validation
+**Description:** Validate session data before saving  
+**Dependencies:** Task 2.1  
 **Acceptance Criteria:**
-- [ ] On startup, checks if currently connected to office Wi-Fi
-- [ ] Reads today's log for incomplete session
-- [ ] Resumes session if still in office
-- [ ] Creates new session if previous was completed
+- [ ] Uses Pydantic models for validation
+- [ ] Rejects invalid data
+- [ ] Clear error messages
 
 **File:** `app/session_manager.py`
 
-**Key Implementation Points:**
-- On startup: check current SSID
-- Read today's log file
-- Look for session without end_time
-- If found and still connected: resume
-- If found but disconnected: close previous session
-
-**Test:** Start session, restart app while connected, verify session continues
+**Pydantic Model:**
+```python
+class SessionLog(BaseModel):
+    date: str
+    ssid: str
+    start_time: str
+    end_time: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    completed_4h: bool = False
+```
 
 ---
 
@@ -94,7 +96,9 @@ TESTING REQUIREMENTS (MANDATORY)
 
 Create a new test file:
 
-tests/test_phase_2_5.py
+tests/test_phase_<test_phase_number>_<test_task_number>.py 
+If you are confused in the naming convention , please refer to the test file naming in the previous phases. Write comprehensive tests covering: - Happy path behavior - Edge cases - Invalid state handling - Persistence or integration boundaries (mocked where needed) - Deterministic, isolated execution All tests must: - Use pytest - Avoid real external side effects - Pass individually AND in full suite
+
 
 Tests MUST include:
 
@@ -132,10 +136,9 @@ Respond in this exact order:
 
 1. Phase Understanding (brief)
 2. Design Summary
-3. Full Implementation Code
-4. Full Test Suite
-5. Validation Against Acceptance Criteria
-6. Regression Safety Confirmation
+3. Full Test Suite
+4. Validation Against Acceptance Criteria
+5. Regression Safety Confirmation
 
 Do NOT include unrelated explanations.
 Do NOT proceed to next task.

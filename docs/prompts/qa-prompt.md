@@ -24,6 +24,7 @@ You must:
 - Audit correctness and production safety.
 - Validate acceptance criteria and DONE definition.
 - Detect regressions, weak tests, and edge-case failures.
+- Please check for all the edge cases and ensure comprehensive test coverage.
 - Reject approval if ANY requirement is unmet.
 
 You must NOT:
@@ -40,25 +41,26 @@ Phase:
 
 ---
 
-### Task 2.5: Add Session Recovery on Restart
-**Description:** Restore active session if app restarts during office hours  
-**Dependencies:** Task 2.3  
+### Task 2.6: Add Data Validation
+**Description:** Validate session data before saving  
+**Dependencies:** Task 2.1  
 **Acceptance Criteria:**
-- [ ] On startup, checks if currently connected to office Wi-Fi
-- [ ] Reads today's log for incomplete session
-- [ ] Resumes session if still in office
-- [ ] Creates new session if previous was completed
+- [ ] Uses Pydantic models for validation
+- [ ] Rejects invalid data
+- [ ] Clear error messages
 
 **File:** `app/session_manager.py`
 
-**Key Implementation Points:**
-- On startup: check current SSID
-- Read today's log file
-- Look for session without end_time
-- If found and still connected: resume
-- If found but disconnected: close previous session
-
-**Test:** Start session, restart app while connected, verify session continues
+**Pydantic Model:**
+```python
+class SessionLog(BaseModel):
+    date: str
+    ssid: str
+    start_time: str
+    end_time: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    completed_4h: bool = False
+```
 
 ---
 
