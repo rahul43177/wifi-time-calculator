@@ -203,25 +203,35 @@ print(get_current_ssid())  # Returned: 'iPhone'
 
 ---
 
-### Task 1.4: Add Logging Configuration
+### Task 1.4: Add Logging Configuration ✅ DONE
 **Description:** Set up proper logging for debugging
 **Dependencies:** Task 0.3
 **Acceptance Criteria:**
-- [ ] Logs show timestamps
-- [ ] Different log levels work
-- [ ] Logs go to console and optionally to file
+- [x] Logs show timestamps
+- [x] Different log levels work
+- [x] Logs go to console and optionally to file
 
-**File:** `app/main.py` and `app/config.py`
+**Files:** `app/main.py`, `app/config.py`, `.env`, `.env.example`
+
+> **Implementation Note:** Created `setup_logging()` function with:
+> - Console handler (always on) with timestamp format
+> - Optional `RotatingFileHandler` (5MB rotation, 3 backups) enabled via `LOG_TO_FILE=true`
+> - Duplicate-handler guard via `_logging_configured` flag
+> - Added `LOG_TO_FILE` and `LOG_FILE_PATH` to config/env files
+>
+> **Tests:** `tests/test_phase_1_4.py` (10 tests) — all passing.
 
 ---
 
 ### ✅ Phase 1 Definition of Done
 
-- [ ] Can detect current SSID on macOS
-- [ ] Background loop checks every 30 seconds
-- [ ] SSID changes logged to console
-- [ ] No crashes or errors during Wi-Fi changes
-- [ ] Code is modular and documented
+- [x] Can detect current SSID on macOS
+- [x] Background loop checks every 30 seconds
+- [x] SSID changes logged to console
+- [x] No crashes or errors during Wi-Fi changes
+- [x] Code is modular and documented
+
+> **Phase 1 complete — 29 tests across 4 test files, all passing.**
 
 ---
 

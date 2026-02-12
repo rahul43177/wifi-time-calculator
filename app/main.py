@@ -4,7 +4,9 @@ Main FastAPI application for Office Wi-Fi Tracker.
 
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
+from logging.handlers import RotatingFileHandler
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
@@ -12,11 +14,43 @@ from fastapi.responses import HTMLResponse
 from app.config import settings
 from app.wifi_detector import wifi_polling_loop
 
-# Configure logging
-logging.basicConfig(
-    level=getattr(logging, settings.log_level),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+_logging_configured = False
+
+
+def setup_logging() -> None:
+    """Configure root logger with console output and optional file output."""
+    global _logging_configured
+    if _logging_configured:
+        return
+    _logging_configured = True
+
+    root_logger = logging.getLogger()
+    level = getattr(logging, settings.log_level.upper(), logging.INFO)
+    root_logger.setLevel(level)
+
+    # Console handler (always on)
+    console = logging.StreamHandler()
+    console.setLevel(level)
+    console.setFormatter(logging.Formatter(LOG_FORMAT))
+    root_logger.addHandler(console)
+
+    # File handler (opt-in via LOG_TO_FILE=true)
+    if settings.log_to_file:
+        log_dir = os.path.dirname(settings.log_file_path)
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+        file_handler = RotatingFileHandler(
+            settings.log_file_path,
+            maxBytes=5 * 1024 * 1024,  # 5 MB
+            backupCount=3,
+        )
+        file_handler.setLevel(level)
+        file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+        root_logger.addHandler(file_handler)
+
+
+setup_logging()
 logger = logging.getLogger(__name__)
 
 # Holds references to background tasks so they can be cancelled on shutdown

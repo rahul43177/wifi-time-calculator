@@ -4,7 +4,7 @@ Loads settings from environment variables.
 """
 
 from pydantic_settings import BaseSettings
-from typing import Optional
+from pydantic import ConfigDict
 
 
 class Settings(BaseSettings):
@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     
     # Logging configuration
     log_level: str = "INFO"
+    log_to_file: bool = False
+    log_file_path: str = "logs/app.log"
     
     # Work duration settings
     work_duration_hours: int = 4
@@ -35,10 +37,11 @@ class Settings(BaseSettings):
     data_dir: str = "data"
     archive_dir: str = "data/archive"
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
 
 
 # Global settings instance
