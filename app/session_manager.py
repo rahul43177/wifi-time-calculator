@@ -12,7 +12,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel
 
-from app.file_store import append_session
+from app.file_store import append_session, read_sessions
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,7 @@ class SessionManager:
         self,
         persist_func: Optional[Callable[[dict[str, Any]], bool]] = None,
         now_provider: Optional[Callable[[], datetime]] = None,
+        read_sessions_func: Optional[Callable[[], list[dict[str, Any]]]] = None,
     ) -> None:
         """
         Initialize a new session manager.
@@ -51,11 +52,13 @@ class SessionManager:
         Args:
             persist_func: Optional persistence function. Defaults to file_store.append_session.
             now_provider: Optional current-time provider for deterministic testing.
+            read_sessions_func: Optional function to read today's sessions. Defaults to file_store.read_sessions.
         """
         self.state = SessionState.IDLE
         self.active_session: Optional[Session] = None
         self._persist_func = persist_func or append_session
         self._now_provider = now_provider or datetime.now
+        self._read_sessions_func = read_sessions_func or read_sessions
         self._lock = threading.Lock()
         logger.info("SessionManager initialized")
 
@@ -160,6 +163,96 @@ class SessionManager:
             self.state = SessionState.COMPLETED
             logger.info("Session marked as completed")
             return True
+
+    def recover_session(self, current_ssid: str | None) -> bool:
+        """
+        Recover an incomplete session from today's log after app restart.
+
+        Reads today's log file, looks for the last session entry without an
+        end_time (incomplete). If found and the laptop is still connected to
+        the same office Wi-Fi, the session is resumed in-memory. If found but
+        disconnected, the incomplete session is closed with an end record.
+
+        Args:
+            current_ssid: The Wi-Fi SSID currently connected, or None.
+
+        Returns:
+            True if a session was recovered (resumed), False otherwise.
+        """
+        with self._lock:
+            if self.state != SessionState.IDLE or self.active_session is not None:
+                logger.debug("recover_session skipped: session already active")
+                return False
+
+            try:
+                sessions = self._read_sessions_func()
+            except Exception:
+                logger.exception("recover_session: failed to read today's sessions")
+                return False
+
+            if not sessions:
+                logger.debug("recover_session: no sessions found for today")
+                return False
+
+            # Find the last incomplete session (no end_time)
+            last_incomplete: dict[str, Any] | None = None
+            for entry in reversed(sessions):
+                if entry.get("end_time") is None:
+                    last_incomplete = entry
+                    break
+
+            if last_incomplete is None:
+                logger.debug("recover_session: no incomplete session found")
+                return False
+
+            # Try to reconstruct the Session object
+            try:
+                incomplete_session = Session(
+                    date=last_incomplete["date"],
+                    ssid=last_incomplete["ssid"],
+                    start_time=last_incomplete["start_time"],
+                    end_time=last_incomplete.get("end_time"),
+                    duration_minutes=last_incomplete.get("duration_minutes"),
+                    completed_4h=last_incomplete.get("completed_4h", False),
+                )
+            except (KeyError, ValueError) as e:
+                logger.warning("recover_session: malformed session entry, skipping: %s", e)
+                return False
+
+            # Decision: resume or close
+            if current_ssid == incomplete_session.ssid:
+                # Still connected to the same office Wi-Fi → resume
+                self.active_session = incomplete_session
+                self.state = SessionState.IN_OFFICE_SESSION
+                logger.info(
+                    "Session recovered: resumed %s session started at %s",
+                    incomplete_session.ssid,
+                    incomplete_session.start_time,
+                )
+                return True
+            else:
+                # Disconnected → close the stale session
+                now = self._now_provider()
+                closed_session = incomplete_session.model_copy(
+                    update={
+                        "end_time": now.strftime("%H:%M:%S"),
+                        "duration_minutes": self._calculate_duration_minutes(
+                            incomplete_session, now
+                        ),
+                    }
+                )
+                if not self._persist_state(closed_session):
+                    logger.warning(
+                        "recover_session: failed to persist stale session close"
+                    )
+                logger.info(
+                    "Session recovered: closed stale %s session (started %s, "
+                    "current SSID: %s)",
+                    incomplete_session.ssid,
+                    incomplete_session.start_time,
+                    current_ssid,
+                )
+                return False
 
     def _persist_state(self, session: Session) -> bool:
         """

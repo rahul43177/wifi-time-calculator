@@ -12,7 +12,8 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 from app.config import settings
-from app.wifi_detector import wifi_polling_loop
+from app.session_manager import SessionState
+from app.wifi_detector import get_current_ssid, get_session_manager, wifi_polling_loop
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 _logging_configured = False
@@ -66,6 +67,17 @@ async def lifespan(app: FastAPI):
     logger.info("Office Wi-Fi Tracker starting up...")
     logger.info("Monitoring Wi-Fi: %s", settings.office_wifi_name)
     logger.info("Work duration: %d hours", settings.work_duration_hours)
+
+    # Recover any incomplete session from today's log before polling starts
+    current_ssid = get_current_ssid()
+    manager = get_session_manager()
+    recovered = manager.recover_session(current_ssid)
+    if recovered:
+        logger.info("Resumed incomplete session from today's log")
+    elif current_ssid == settings.office_wifi_name and manager.state == SessionState.IDLE:
+        # No session to recover but already on office Wi-Fi → start fresh
+        manager.start_session(current_ssid)
+        logger.info("Started new session — already connected to office Wi-Fi on startup")
 
     # Start Wi-Fi polling background task
     wifi_task = asyncio.create_task(wifi_polling_loop())

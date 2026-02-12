@@ -6,17 +6,18 @@
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 1. [Pre-Development Setup](#pre-development-setup)
 2. [Phase 1: Wi-Fi Detection System](#phase-1-wifi-detection-system)
 3. [Phase 2: File-Based Session Storage](#phase-2-file-based-session-storage)
 4. [Phase 3: Timer Engine & Notifications](#phase-3-timer-engine--notifications)
-5. [Phase 4: Local Web UI Dashboard](#phase-4-local-web-ui-dashboard)
-6. [Phase 5: Auto-Start on Boot](#phase-5-auto-start-on-boot)
-7. [Testing & Validation](#testing--validation)
-8. [Timeline & Milestones](#timeline--milestones)
-9. [Troubleshooting Guide](#troubleshooting-guide)
+5. [Phase 4: Live Dashboard UI](#phase-4-live-dashboard-ui)
+6. [Phase 5: Analytics & Charts](#phase-5-analytics--charts)
+7. [Phase 6: Auto-Start on Boot](#phase-6-auto-start-on-boot)
+8. [Testing & Validation](#testing--validation)
+9. [Timeline & Milestones](#timeline--milestones)
+10. [Troubleshooting Guide](#troubleshooting-guide)
 
 ---
 
@@ -129,6 +130,7 @@ SERVER_HOST=127.0.0.1
 SERVER_PORT=8787
 LOG_LEVEL=INFO
 WORK_DURATION_HOURS=4
+BUFFER_MINUTES=10
 WIFI_CHECK_INTERVAL_SECONDS=30
 TIMER_CHECK_INTERVAL_SECONDS=60
 ```
@@ -359,16 +361,16 @@ IN_OFFICE_SESSION + 4h_complete → COMPLETED (update file)
 
 ---
 
-### Task 2.5: Add Session Recovery on Restart
-**Description:** Restore active session if app restarts during office hours  
-**Dependencies:** Task 2.3  
+### Task 2.5: Add Session Recovery on Restart ✅ DONE
+**Description:** Restore active session if app restarts during office hours
+**Dependencies:** Task 2.3
 **Acceptance Criteria:**
-- [ ] On startup, checks if currently connected to office Wi-Fi
-- [ ] Reads today's log for incomplete session
-- [ ] Resumes session if still in office
-- [ ] Creates new session if previous was completed
+- [x] On startup, checks if currently connected to office Wi-Fi
+- [x] Reads today's log for incomplete session
+- [x] Resumes session if still in office
+- [x] Creates new session if previous was completed
 
-**File:** `app/session_manager.py`
+**Files:** `app/session_manager.py`, `app/main.py`
 
 **Key Implementation Points:**
 - On startup: check current SSID
@@ -377,7 +379,20 @@ IN_OFFICE_SESSION + 4h_complete → COMPLETED (update file)
 - If found and still connected: resume
 - If found but disconnected: close previous session
 
-**Test:** Start session, restart app while connected, verify session continues
+> **Implementation Note:** Added `recover_session(current_ssid)` method to `SessionManager`:
+> - Reads today's sessions via injectable `read_sessions_func` (testable)
+> - Scans backwards for last entry without `end_time` (incomplete session)
+> - If still connected to same office Wi-Fi → restores in-memory state (no extra persist)
+> - If disconnected or different SSID → persists a close record and stays IDLE
+> - Handles malformed entries and reader exceptions gracefully
+> - Thread-safe via existing `_lock`
+> - Integrated into `main.py` lifespan — runs before polling loop starts
+> - Lifespan also starts a fresh session if already on office Wi-Fi but nothing to recover
+>
+> **Tests:** `tests/test_phase_2_5.py` (13 tests) — resume connected, close stale (different SSID),
+> close stale (no Wi-Fi), no sessions, all completed, already active, multiple incompletes,
+> malformed entry, read exception, persist failure warning, lifespan integration,
+> new session on office Wi-Fi, no session when not on office Wi-Fi — all passing.
 
 ---
 
@@ -424,65 +439,71 @@ class SessionLog(BaseModel):
 ---
 
 ### Task 3.1: Implement Timer Calculation Logic
-**Description:** Calculate elapsed and remaining time for active session  
-**Dependencies:** Phase 2 complete  
+**Description:** Calculate elapsed and remaining time for active session
+**Dependencies:** Phase 2 complete
 **Acceptance Criteria:**
 - [ ] Calculates elapsed time: now - start_time
-- [ ] Calculates remaining time: 4h - elapsed
+- [ ] Calculates remaining time: (4h + buffer) - elapsed
+- [ ] Includes configurable `BUFFER_MINUTES` (default 10) in target
 - [ ] Returns formatted strings (HH:MM:SS)
 - [ ] Handles timezone correctly
+- [ ] Elapsed time keeps increasing after target is reached (no cap)
 
-**File:** `app/timer_engine.py`
+**File:** `app/timer_engine.py`, `app/config.py`
 
 **Key Functions:**
 - `get_elapsed_time(start_time: datetime) → timedelta`
-- `get_remaining_time(start_time: datetime, target_hours: int) → timedelta`
+- `get_remaining_time(start_time: datetime, target_hours: int, buffer_minutes: int) → timedelta`
 - `format_time_display(td: timedelta) → str`
-- `is_completed(start_time: datetime, target_hours: int) → bool`
+- `is_completed(start_time: datetime, target_hours: int, buffer_minutes: int) → bool`
+
+**Config Addition:**
+```
+BUFFER_MINUTES=10  # Added to .env / config.py
+```
+
+**Important:** `remaining` can go negative. Negative remaining means overtime — the timer keeps tracking total elapsed time even after completion for weekly reporting purposes.
 
 ---
 
 ### Task 3.2: Create Background Timer Loop
-**Description:** Check timer every 60 seconds  
-**Dependencies:** Task 3.1  
+**Description:** Check timer every 60 seconds
+**Dependencies:** Task 3.1
 **Acceptance Criteria:**
 - [ ] Runs every 60 seconds
 - [ ] Only checks when session is active
-- [ ] Logs remaining time
-- [ ] Detects completion
+- [ ] Logs remaining time (or overtime amount if past target)
+- [ ] Detects completion (4h + buffer reached)
+- [ ] Continues running after completion to track total office time
 
 **File:** `app/timer_engine.py`
 
 **Key Implementation Points:**
 - Use asyncio for background task
 - Get active session from session manager
-- Calculate remaining time
+- Calculate remaining time including buffer
 - Log every minute for debugging
 - Trigger notification when completed
+- Keep loop alive after completion — elapsed time keeps growing for reporting
 
 ---
 
 ### Task 3.3: Implement Notification System
-**Description:** Send browser/OS notification at 4-hour completion  
-**Dependencies:** Task 3.2  
+**Description:** Send macOS notification when 4h + buffer completed
+**Dependencies:** Task 3.2
 **Acceptance Criteria:**
-- [ ] Sends notification when timer completes
+- [ ] Sends notification when (4h + buffer) completes
 - [ ] Only sends once per session
-- [ ] Clear, actionable message
+- [ ] Message includes buffer info: "4 hours + 10 min buffer completed. You may leave."
 - [ ] Doesn't crash if notification fails
 
 **File:** `app/notifier.py`
 
-**Implementation Options:**
-1. **Browser Notification API** (via WebSocket to UI)
-2. **macOS Notification Center** (using osascript)
-3. **Python plyer library** (cross-platform)
-
-**Recommended for MVP:** macOS osascript
+**Implementation:** macOS osascript (Notification Center)
 
 **macOS Command:**
 ```bash
-osascript -e 'display notification "4 hours completed. You may leave the office." with title "Office Tracker"'
+osascript -e 'display notification "4 hours + 10 min buffer completed. You may leave the office." with title "Office Wi-Fi Tracker"'
 ```
 
 **Key Functions:**
@@ -541,30 +562,32 @@ TEST_DURATION_MINUTES=2
 
 ### ✅ Phase 3 Definition of Done
 
-- [ ] Timer calculates remaining time correctly
-- [ ] Notification appears when 4 hours complete
+- [ ] Timer calculates remaining time correctly (including buffer)
+- [ ] Notification appears when (4 hours + buffer) completes
 - [ ] Only one notification per session
 - [ ] Session marked as completed in log file
+- [ ] Elapsed time continues tracking after completion (for weekly reports)
 - [ ] Test mode works with 2-minute duration
 - [ ] Timer survives app restart (resumes correctly)
 
 ---
 
-## 🖥️ Phase 4: Local Web UI Dashboard
+## 🖥️ Phase 4: Live Dashboard UI
 
-**Goal:** Simple web interface showing live status and today's history  
-**Estimated Time:** 3-4 hours
+**Goal:** Single-page dashboard with live timer, today's sessions, and connection status
+**Estimated Time:** 4-5 hours
+**Tech:** HTML + Vanilla JS + Jinja2 (no React, no build tools)
 
 ---
 
-### Task 4.1: Create FastAPI Routes
-**Description:** Set up API endpoints for status and data  
-**Dependencies:** Phase 3 complete  
+### Task 4.1: Create API Endpoints for Status & Today's Data
+**Description:** Backend endpoints that power the dashboard
+**Dependencies:** Phase 3 complete
 **Acceptance Criteria:**
-- [ ] GET / → HTML dashboard
-- [ ] GET /api/status → Current session info
-- [ ] GET /api/today → Today's completed sessions
-- [ ] All endpoints return proper JSON/HTML
+- [ ] `GET /api/status` returns current session state + timer info
+- [ ] `GET /api/today` returns today's sessions + total time
+- [ ] Both return proper JSON with correct types
+- [ ] Handle edge cases (no session, no data)
 
 **File:** `app/main.py`
 
@@ -576,18 +599,21 @@ TEST_DURATION_MINUTES=2
   "connected": true,
   "ssid": "OfficeWifi",
   "session_active": true,
-  "start_time": "2026-02-12T09:42:10",
-  "elapsed": "02:15:30",
-  "remaining": "01:44:30",
-  "completed": false,
-  "progress_percent": 56.4
+  "start_time": "09:42:10",
+  "elapsed_seconds": 8130,
+  "elapsed_display": "02:15:30",
+  "remaining_seconds": 6270,
+  "remaining_display": "01:44:30",
+  "completed_4h": false,
+  "progress_percent": 56.4,
+  "target_display": "4h 10m"
 }
 ```
 
 `GET /api/today`:
 ```json
 {
-  "date": "2026-02-12",
+  "date": "12-02-2026",
   "sessions": [
     {
       "start_time": "09:42:10",
@@ -596,143 +622,204 @@ TEST_DURATION_MINUTES=2
       "completed_4h": true
     }
   ],
-  "total_minutes": 246
+  "total_minutes": 246,
+  "total_display": "4h 06m"
 }
 ```
 
 ---
 
 ### Task 4.2: Create HTML Dashboard Template
-**Description:** Simple, clean HTML interface  
-**Dependencies:** Task 4.1  
+**Description:** Single-page Jinja2 template with live timer, status, and session table
+**Dependencies:** Task 4.1
 **Acceptance Criteria:**
-- [ ] Shows current connection status
-- [ ] Displays countdown timer
-- [ ] Shows progress bar
-- [ ] Lists today's sessions in table
-- [ ] Responsive design (looks good on laptop)
+- [ ] Shows connection status (green connected / red disconnected)
+- [ ] Large countdown timer display (HH:MM:SS)
+- [ ] Progress bar (0% → 100%)
+- [ ] After completion: shows "Completed! Total: HH:MM:SS" in green
+- [ ] Today's sessions table (Start | End | Duration | Status)
+- [ ] Today's total office time summary
+- [ ] Tab/section navigation placeholders for Weekly & Monthly views
 
 **File:** `templates/index.html`
 
-**UI Components:**
-1. **Status Card:**
-   - Connection status (✓ Connected / ✗ Disconnected)
-   - Current SSID
-   - Session start time
-
-2. **Timer Card:**
-   - Large countdown display (01:44:30 remaining)
-   - Progress bar (0-100%)
-   - Elapsed time
-
-3. **Today's Sessions Table:**
-   - Start time | End time | Duration | Status
-   - Sortable columns
-
-4. **Summary Stats:**
-   - Total time today
-   - Sessions completed
-   - Next action (e.g., "Stay 1h 44m more")
+**Layout:**
+```
+┌─────────────────────────────────────┐
+│ Office Wi-Fi Tracker           [tabs]│
+├─────────────────────────────────────┤
+│ ● Connected to OfficeWifi          │
+│ Started at 09:42:10                 │
+├─────────────────────────────────────┤
+│         01:44:30                    │
+│      ████████░░░░░ 56%              │
+│   Remaining (target: 4h 10m)       │
+├─────────────────────────────────────┤
+│ Today's Sessions                    │
+│ Start    | End      | Dur  | Status │
+│ 09:42:10 | —        | 2h15 | Active │
+│ Total: 2h 15m                       │
+└─────────────────────────────────────┘
+```
 
 ---
 
 ### Task 4.3: Add CSS Styling
-**Description:** Make UI visually appealing  
-**Dependencies:** Task 4.2  
+**Description:** Clean, modern CSS for the dashboard
+**Dependencies:** Task 4.2
 **Acceptance Criteria:**
-- [ ] Clean, modern design
-- [ ] Good color scheme (green for connected, red for disconnected)
-- [ ] Readable fonts and spacing
-- [ ] Mobile-friendly (bonus)
+- [ ] Minimalist design with clear hierarchy
+- [ ] Color coding: green (connected/completed), yellow (>75%), red (disconnected)
+- [ ] Large, readable timer font
+- [ ] Responsive layout (works on laptop screen)
 
 **File:** `static/style.css`
 
-**Design Principles:**
-- Minimalist design
-- High contrast for readability
-- Large, clear timer display
-- Color coding: green (on track), yellow (almost done), red (disconnected)
-
 ---
 
-### Task 4.4: Implement Auto-Refresh JavaScript
-**Description:** Update UI every 30 seconds automatically  
-**Dependencies:** Task 4.2  
+### Task 4.4: Implement Live Timer JavaScript
+**Description:** Client-side countdown + auto-refresh from backend
+**Dependencies:** Task 4.2
 **Acceptance Criteria:**
-- [ ] Fetches /api/status every 30 seconds
-- [ ] Updates countdown in real-time
-- [ ] Updates progress bar
-- [ ] Refreshes session table
-- [ ] Shows loading indicators
+- [ ] Countdown updates every 1 second (client-side calculation from start_time)
+- [ ] Syncs with backend every 30 seconds via `fetch('/api/status')`
+- [ ] Updates progress bar smoothly
+- [ ] Refreshes session table on sync
+- [ ] After completion: switches display to total elapsed (keeps counting)
+- [ ] Error handling for fetch failures (shows last-known state)
 
 **File:** `static/app.js`
-
-**Key Features:**
-- `setInterval()` for 30-second polling
-- Fetch API for AJAX calls
-- DOM manipulation to update values
-- Error handling for network failures
-- Visual feedback during updates
 
 ---
 
 ### Task 4.5: Add Browser Notification Support
-**Description:** Request notification permission and show alerts  
-**Dependencies:** Task 4.4  
+**Description:** Browser notification when 4h + buffer completes
+**Dependencies:** Task 4.4
 **Acceptance Criteria:**
-- [ ] Requests notification permission on page load
-- [ ] Receives completion events from backend
-- [ ] Shows browser notification
+- [ ] Requests Notification API permission on page load
+- [ ] Detects completion via `/api/status` polling
+- [ ] Shows browser notification once when `completed_4h` flips to true
 - [ ] Works even if tab not focused
 
 **File:** `static/app.js`
-
-**Implementation Options:**
-1. **WebSocket** for real-time push
-2. **Polling** /api/status for completion flag
-
-**Recommended for MVP:** Polling approach (simpler)
-
----
-
-### Task 4.6: Add Manual Controls (Optional)
-**Description:** Buttons to manually start/stop sessions for testing  
-**Dependencies:** Task 4.1  
-**Acceptance Criteria:**
-- [ ] "Start Session" button
-- [ ] "End Session" button
-- [ ] Only visible in TEST_MODE
-
-**File:** `templates/index.html`, `app/main.py`
 
 ---
 
 ### ✅ Phase 4 Definition of Done
 
-- [ ] Dashboard accessible at http://localhost:8000
-- [ ] Shows real-time countdown
-- [ ] Progress bar updates automatically
-- [ ] Today's sessions displayed in table
-- [ ] Auto-refreshes every 30 seconds
-- [ ] Browser notification works
-- [ ] UI is clean and usable
-- [ ] No console errors
+- [ ] Dashboard accessible at http://localhost:8787/
+- [ ] Live countdown timer updates every second
+- [ ] Progress bar reflects current progress
+- [ ] After 4h + buffer: shows total elapsed time (keeps counting)
+- [ ] Today's sessions displayed in table with total
+- [ ] Syncs with backend every 30 seconds
+- [ ] Browser notification on completion
+- [ ] Clean, usable UI with no console errors
 
 ---
 
-## 🚀 Phase 5: Auto-Start on Boot
+## 📊 Phase 5: Analytics & Charts
 
-**Goal:** App starts automatically when Mac boots up  
+**Goal:** Weekly and monthly analytics views with graphical charts
+**Estimated Time:** 4-5 hours
+**Tech:** Chart.js (CDN), additional API endpoints
+
+---
+
+### Task 5.1: Weekly Data Aggregation API
+**Description:** Backend endpoint that aggregates daily data into weekly view
+**Dependencies:** Phase 4 complete
+**Acceptance Criteria:**
+- [ ] `GET /api/weekly?week=2026-W07` returns day-by-day breakdown
+- [ ] Defaults to current week if no query param
+- [ ] Each day: total_minutes, session_count, target_met (bool)
+- [ ] Includes week totals and averages
+
+**File:** `app/main.py` (or new `app/analytics.py` if complex)
+
+**Response Example:**
+```json
+{
+  "week": "2026-W07",
+  "days": [
+    {"date": "09-02-2026", "day": "Mon", "total_minutes": 380, "sessions": 2, "target_met": true},
+    {"date": "10-02-2026", "day": "Tue", "total_minutes": 250, "sessions": 1, "target_met": true},
+    {"date": "11-02-2026", "day": "Wed", "total_minutes": 0, "sessions": 0, "target_met": false}
+  ],
+  "total_minutes": 630,
+  "avg_minutes_per_day": 210,
+  "days_target_met": 2
+}
+```
+
+---
+
+### Task 5.2: Monthly Data Aggregation API
+**Description:** Backend endpoint that aggregates weekly data into monthly view
+**Dependencies:** Task 5.1
+**Acceptance Criteria:**
+- [ ] `GET /api/monthly?month=2026-02` returns week-by-week breakdown
+- [ ] Defaults to current month if no query param
+- [ ] Each week: total_minutes, days_present, avg_daily_minutes
+- [ ] Includes month totals
+
+**File:** `app/main.py` (or `app/analytics.py`)
+
+---
+
+### Task 5.3: Weekly Analytics UI View
+**Description:** Weekly tab/section with day-by-day table and bar chart
+**Dependencies:** Task 5.1, Phase 4 UI
+**Acceptance Criteria:**
+- [ ] Tab navigation: "Today" | "Weekly" | "Monthly"
+- [ ] Day-by-day table: Date | Day | Hours | Sessions | Target Met
+- [ ] Bar chart (Chart.js): days on X-axis, hours on Y-axis
+- [ ] 4h target line drawn as horizontal reference
+- [ ] Green bars for days >= target, red for < target
+- [ ] Week selector (prev/next arrows)
+
+**Files:** `templates/index.html`, `static/app.js`
+
+---
+
+### Task 5.4: Monthly Analytics UI View
+**Description:** Monthly tab/section with week-by-week table and chart
+**Dependencies:** Task 5.2, Task 5.3
+**Acceptance Criteria:**
+- [ ] Week-by-week table: Week | Total Hours | Days Present | Avg Daily
+- [ ] Bar/line chart showing weekly totals across the month
+- [ ] Month selector (prev/next arrows)
+- [ ] Monthly summary stats (total hours, days present, overall average)
+
+**Files:** `templates/index.html`, `static/app.js`
+
+---
+
+### ✅ Phase 5 Definition of Done
+
+- [ ] Weekly view shows day-by-day breakdown with bar chart
+- [ ] Monthly view shows week-by-week breakdown with chart
+- [ ] Charts render via Chart.js (no build tools)
+- [ ] Navigation between Today / Weekly / Monthly works
+- [ ] Week and month selectors allow browsing history
+- [ ] All data comes from JSON Lines files (no database)
+
+---
+
+## 🚀 Phase 6: Auto-Start on Boot
+
+**Goal:** App starts automatically when Mac boots up
 **Estimated Time:** 1-2 hours
 
 ---
 
-### Task 5.1: Create launchd Plist File
-**Description:** macOS launchd configuration for auto-start  
-**Dependencies:** Phases 1-4 complete  
+### Task 6.1: Create launchd Plist File
+**Description:** macOS launchd configuration for auto-start
+**Dependencies:** Phases 1-5 complete
 **Acceptance Criteria:**
 - [ ] Plist file created with correct syntax
 - [ ] Points to Python script in venv
+- [ ] Uses port 8787
 - [ ] Runs on system boot
 - [ ] Logs to file for debugging
 
@@ -746,7 +833,7 @@ TEST_DURATION_MINUTES=2
 <dict>
     <key>Label</key>
     <string>com.officetracker</string>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking/venv/bin/python</string>
@@ -756,21 +843,21 @@ TEST_DURATION_MINUTES=2
         <string>--host</string>
         <string>127.0.0.1</string>
         <string>--port</string>
-        <string>8000</string>
+        <string>8787</string>
     </array>
-    
+
     <key>WorkingDirectory</key>
     <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking</string>
-    
+
     <key>RunAtLoad</key>
     <true/>
-    
+
     <key>KeepAlive</key>
     <true/>
-    
+
     <key>StandardOutPath</key>
     <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking/logs/stdout.log</string>
-    
+
     <key>StandardErrorPath</key>
     <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking/logs/stderr.log</string>
 </dict>
@@ -779,34 +866,19 @@ TEST_DURATION_MINUTES=2
 
 ---
 
-### Task 5.2: Install Launch Agent
-**Description:** Copy plist to LaunchAgents and load it  
-**Dependencies:** Task 5.1  
+### Task 6.2: Install Launch Agent
+**Description:** Copy plist to LaunchAgents and load it
+**Dependencies:** Task 6.1
 **Acceptance Criteria:**
 - [ ] Plist copied to ~/Library/LaunchAgents/
 - [ ] Launch agent loaded successfully
 - [ ] App starts automatically
 
-**Commands:**
-```bash
-# Create logs directory
-mkdir -p logs
-
-# Copy plist file
-cp com.officetracker.plist ~/Library/LaunchAgents/
-
-# Load launch agent
-launchctl load ~/Library/LaunchAgents/com.officetracker.plist
-
-# Check status
-launchctl list | grep officetracker
-```
-
 ---
 
-### Task 5.3: Add Graceful Shutdown Handler
-**Description:** Handle system shutdown/restart cleanly  
-**Dependencies:** Phase 2  
+### Task 6.3: Add Graceful Shutdown Handler
+**Description:** Handle system shutdown/restart cleanly
+**Dependencies:** Phase 2
 **Acceptance Criteria:**
 - [ ] Saves active session on shutdown
 - [ ] Closes files properly
@@ -814,65 +886,30 @@ launchctl list | grep officetracker
 
 **File:** `app/main.py`
 
-**Key Implementation Points:**
-- Use FastAPI lifespan shutdown event
-- Call session_manager.save_state()
-- Close all file handles
-- Log shutdown event
-
 ---
 
-### Task 5.4: Test Boot Auto-Start
-**Description:** Verify app starts on system boot  
-**Dependencies:** Task 5.2  
+### Task 6.4: Test Boot Auto-Start
+**Description:** Verify app starts on system boot
+**Dependencies:** Task 6.2
 **Acceptance Criteria:**
 - [ ] App runs after restart
-- [ ] Dashboard accessible without manual start
+- [ ] Dashboard accessible at http://localhost:8787 without manual start
 - [ ] Sessions resume correctly
 - [ ] Logs show successful startup
 
-**Test Steps:**
-1. Load launch agent
-2. Restart Mac
-3. Wait 30 seconds
-4. Open http://localhost:8000
-5. Check logs in `logs/stdout.log`
-
 ---
 
-### Task 5.5: Create Uninstall Script
-**Description:** Easy way to remove auto-start  
-**Dependencies:** Task 5.2  
+### Task 6.5: Create Install/Uninstall Scripts + Documentation
+**Description:** Easy install, uninstall, and README
+**Dependencies:** All previous tasks
 **Acceptance Criteria:**
-- [ ] Script unloads launch agent
-- [ ] Removes plist file
-- [ ] Stops running instance
-
-**File:** `scripts/uninstall.sh`
-
-```bash
-#!/bin/bash
-launchctl unload ~/Library/LaunchAgents/com.officetracker.plist
-rm ~/Library/LaunchAgents/com.officetracker.plist
-echo "Office tracker uninstalled"
-```
+- [ ] `scripts/install.sh` — copies plist, loads agent
+- [ ] `scripts/uninstall.sh` — unloads agent, removes plist
+- [ ] README.md with setup, config, troubleshooting, uninstall
 
 ---
 
-### Task 5.6: Document Installation Steps
-**Description:** Clear README with setup instructions  
-**Dependencies:** All previous tasks  
-**Acceptance Criteria:**
-- [ ] Step-by-step installation guide
-- [ ] Configuration instructions
-- [ ] Troubleshooting section
-- [ ] Uninstall instructions
-
-**File:** `README.md`
-
----
-
-### ✅ Phase 5 Definition of Done
+### ✅ Phase 6 Definition of Done
 
 - [ ] App starts automatically on Mac boot
 - [ ] No manual intervention needed
@@ -920,55 +957,30 @@ echo "Office tracker uninstalled"
 
 ---
 
-## 📅 Timeline & Milestones
+## Timeline & Milestones
 
-### Day 1: Foundation (6-7 hours)
-- **Morning (3-4h):** Phase 0 + Phase 1
-  - Setup environment
-  - Implement Wi-Fi detection
-  - Test SSID detection working
-  
-- **Afternoon (3h):** Phase 2 (partial)
-  - File storage module
-  - Session manager
-  - Basic logging working
+### Day 1: Foundation (COMPLETED)
+- Phase 0: Environment setup
+- Phase 1: Wi-Fi detection system (29 tests)
+- Phase 2: File-based session storage (53 tests)
 
-**Milestone:** Can detect Wi-Fi and log sessions to files
+**Milestone:** Wi-Fi detection + session logging + recovery working (82 tests)
 
 ---
 
-### Day 2: Core Logic (6-7 hours)
-- **Morning (2-3h):** Phase 2 (complete)
-  - File rotation
-  - Session recovery
-  - Testing
-  
-- **Afternoon (3-4h):** Phase 3
-  - Timer engine
-  - Notifications
-  - 4-hour completion logic
+### Day 2: Timer + Dashboard Core
+- Phase 3: Timer engine + notifications (3.1-3.6)
+- Phase 4: Live dashboard UI (4.1-4.5)
 
-**Milestone:** Timer works and notifications appear
+**Milestone:** Live timer dashboard at http://localhost:8787
 
 ---
 
-### Day 3: UI & Polish (6-7 hours)
-- **Morning (3-4h):** Phase 4
-  - Dashboard UI
-  - API endpoints
-  - Auto-refresh
-  
-- **Afternoon (2-3h):** Phase 5
-  - Auto-start setup
-  - Testing
-  - Documentation
+### Day 3: Analytics + Auto-Start
+- Phase 5: Weekly + monthly analytics with Chart.js (5.1-5.4)
+- Phase 6: Auto-start on boot via launchd (6.1-6.5)
 
-**Milestone:** Fully automatic MVP complete ✅
-
----
-
-### Total Estimated Time: 18-21 hours
-**Recommendation:** Spread over 2-3 days with breaks
+**Milestone:** Fully automatic MVP with analytics complete
 
 ---
 
@@ -1062,61 +1074,49 @@ echo "Office tracker uninstalled"
 
 ---
 
-## 📦 Quick Start Commands
+## Quick Start Commands
 
 ```bash
 # Setup
-git clone <repo>
-cd wifi-tracking
-python3 -m venv venv
+cd /Users/rahulmishra/Desktop/Personal/wifi-tracking
 source venv/bin/activate
-pip install -r requirements.txt
-
-# Configure
-cp .env.example .env
-# Edit .env with your office Wi-Fi name
 
 # Run development server
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8787 --reload
 
 # Open dashboard
-open http://localhost:8000
+open http://localhost:8787
 
-# View logs
-tail -f logs/stdout.log
+# Run all tests
+pytest tests/ -v
 
-# Test mode (2-minute duration)
-# Set TEST_MODE=true in .env
-
-# Install auto-start
-cp com.officetracker.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.officetracker.plist
-
-# Uninstall
-launchctl unload ~/Library/LaunchAgents/com.officetracker.plist
-rm ~/Library/LaunchAgents/com.officetracker.plist
+# Run tests for a specific phase
+pytest tests/test_phase_3_1.py -v
 ```
 
 ---
 
-## 🎯 Success Criteria Checklist
+## Success Criteria Checklist
 
 ### Feature Completeness
-- [ ] Automatically detects office Wi-Fi connection
+- [x] Automatically detects office Wi-Fi connection
 - [ ] Starts 4-hour timer automatically
 - [ ] Shows live countdown in web UI
-- [ ] Sends notification at completion
-- [ ] Stores sessions in local files (no database)
-- [ ] Works offline
-- [ ] Survives restarts
+- [ ] After completion, shows total elapsed time (keeps counting)
+- [ ] Sends notification at (4h + buffer) completion
+- [x] Stores sessions in local files (no database)
+- [x] Works offline
+- [x] Survives restarts (session recovery)
+- [ ] Weekly analytics with day-by-day chart
+- [ ] Monthly analytics with week-by-week chart
 - [ ] Auto-starts on boot
 
 ### Quality Gates
-- [ ] No data loss during crashes
-- [ ] Files rotate properly
+- [x] No data loss during crashes
+- [x] Files rotate properly (>5MB)
 - [ ] Memory usage < 50MB
 - [ ] CPU usage < 5% (when idle)
-- [ ] All edge cases handled
+- [x] All edge cases handled
 - [ ] Code is documented
 - [ ] README has complete instructions
 
@@ -1125,11 +1125,11 @@ rm ~/Library/LaunchAgents/com.officetracker.plist
 - [ ] Can uninstall cleanly
 - [ ] Logs are readable
 - [ ] HR can access log files
-- [ ] Works without internet
+- [x] Works without internet
 
 ---
 
-## 📝 Notes & Considerations
+## Notes & Considerations
 
 ### Edge Cases to Handle
 1. **Wi-Fi drops briefly (< 5 min):** Don't end session
@@ -1139,27 +1139,24 @@ rm ~/Library/LaunchAgents/com.officetracker.plist
 5. **Concurrent access:** Use file locking if multiple instances
 
 ### Future Enhancements (Post-MVP)
-- Weekly summary email to HR
-- Export to PDF
+- HR report export (PDF)
 - Mobile app (PWA)
 - Geo-location fallback
 - Cloud sync (optional)
-- Analytics dashboard
 - Team aggregate view
 
 ### Security Considerations
 - No sensitive data in logs
 - Local files only (no external calls)
 - No authentication needed (localhost only)
-- Consider encryption for HR compliance
 
 ---
 
-## 🚢 Delivery Checklist
+## Delivery Checklist
 
 Before considering MVP complete:
 
-- [ ] All 5 phases completed
+- [ ] All 6 phases completed
 - [ ] All Definition of Done items checked
 - [ ] End-to-end tests pass
 - [ ] Documentation complete
@@ -1169,10 +1166,9 @@ Before considering MVP complete:
   - [ ] README with setup instructions
   - [ ] Sample .env file
   - [ ] Troubleshooting guide
-  - [ ] Quick reference card
 
 ---
 
-**Next Step:** Start with [Pre-Development Setup](#pre-development-setup) → Task 0.1
+**Current State:** Phase 2 tasks 2.1-2.5 DONE (82 tests). Next: Task 2.6 → Phase 3.
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!

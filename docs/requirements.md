@@ -31,20 +31,38 @@ This is a **personal productivity + audit trail tool**.
 4. Continuously compute:
 
 ```
-remaining_time = 4 hours − (now − start_time)
+remaining_time = (4 hours + buffer) − (now − start_time)
 ```
 
 5. When remaining_time ≤ 0:
 
    * Trigger **notification**.
    * Mark session as **completed**.
-6. Provide **simple local UI** showing:
+6. **Continue tracking elapsed time** after 4-hour completion:
+   * Session remains active until Wi-Fi disconnect.
+   * `duration_minutes` keeps increasing beyond 4 hours.
+   * This enables **weekly reporting** (e.g., "Monday: 6h 20m, Tuesday: 4h 10m").
+   * The session log stores the **actual total office time**, not just the 4-hour target.
+7. Provide **simple local UI** showing:
 
    * Connected status
    * Start time
    * Elapsed time
    * Remaining time countdown
-   * Today’s history
+   * Today's total time (keeps going after 4h)
+   * Today's history
+
+---
+
+### Buffer Time
+
+A configurable **buffer period** (default: **10 minutes**) is added to the 4-hour target.
+
+* Actual target = `WORK_DURATION_HOURS` + `BUFFER_MINUTES`
+* Example: 4h + 10min = **4 hours 10 minutes** before "you may leave" notification
+* Reason: accounts for breaks, movement between meetings, transition time
+* The notification message says: "4 hours + 10 min buffer completed. You may leave."
+* Configurable via `.env`: `BUFFER_MINUTES=10`
 
 ---
 
@@ -78,8 +96,9 @@ remaining_time = 4 hours − (now − start_time)
 
 ### Frontend
 
-* Simple **HTML + Vanilla JS**
-* No React required.
+* **HTML + Vanilla JS** (Jinja2 templates, no React, no build tools)
+* **Chart.js** (CDN) for weekly/monthly bar charts
+* Single-page layout with tabbed sections
 
 ### Notifications
 
@@ -201,10 +220,12 @@ AND current_ssid != OFFICE_WIFI_NAME
 Connect Wi-Fi →
 Create active session →
 Run timer →
-4 hours reached →
+(4 hours + buffer) reached →
 Send notification →
 Mark completed →
-Wait for disconnect
+Continue tracking elapsed time →
+Wait for disconnect →
+Record total duration
 ```
 
 ---
@@ -217,7 +238,8 @@ Runs every **60 seconds**.
 
 ```
 elapsed = now − start_time
-remaining = 4h − elapsed
+target = WORK_DURATION_HOURS + BUFFER_MINUTES
+remaining = target − elapsed
 ```
 
 ### Conditions
@@ -234,19 +256,74 @@ remaining = 4h − elapsed
 ### Route
 
 ```
-http://localhost:8000/
+http://localhost:8787/
 ```
 
-### Show
+### Technology
 
-* Current SSID
-* Session start time
-* Live countdown timer
-* Progress bar (0 → 4 hours)
-* Today’s completed duration
-* Table of today’s sessions
+* **HTML + Vanilla JS + Chart.js** (no React, no build tools)
+* Jinja2 server-side templates
+* Chart.js via CDN `<script>` tag for graphical charts
+* Single-page layout with tab/section navigation
 
-UI must **auto-refresh every 30 seconds**.
+### 10.1 Live Timer View (Default)
+
+The primary view when the page loads:
+
+* **Connection status** — green "Connected to OfficeWifi" or red "Disconnected"
+* **Session start time** — e.g., "Started at 09:42:10"
+* **Live countdown timer** — large display showing `HH:MM:SS` remaining until (4h + buffer)
+  * Updates every second via JavaScript `setInterval()`
+  * When target reached: switches to showing **total elapsed time** in green
+  * Format after completion: "Completed! Total: 05:23:10"
+* **Progress bar** — 0% → 100% (100% = 4h + buffer reached)
+* **Today's total office time** — sum of all sessions today, keeps growing
+* **Today's sessions table** — Start | End | Duration | Status (Active/Completed/Ended)
+
+Auto-refresh from backend: every **30 seconds** via `fetch('/api/status')`.
+Client-side countdown: every **1 second** (derived from last-known start_time).
+
+### 10.2 Weekly Analytics View
+
+Accessible via tab/link on the dashboard:
+
+* **Day-by-day breakdown** for the current week (Mon–Sun):
+  * Each day shows: total office time, number of sessions, whether 4h target met
+  * Example: "Monday: 6h 20m (2 sessions) ✓" / "Tuesday: 3h 45m (1 session) ✗"
+* **Bar chart** (Chart.js) — X-axis: days, Y-axis: hours
+  * 4h target line drawn as horizontal reference
+  * Green bars for days >= 4h, red bars for days < 4h
+* **Week selector** — navigate to previous weeks
+* **Weekly summary** — total hours, average per day, days with 4h+ completed
+
+### 10.3 Monthly Analytics View
+
+Accessible via tab/link on the dashboard:
+
+* **Week-by-week breakdown** for the current month:
+  * Each week shows: total hours, days present, average daily hours
+  * Example: "Week 1 (Feb 1-7): 22h 15m, 5 days, avg 4h 27m"
+* **Bar/line chart** (Chart.js) — X-axis: weeks, Y-axis: total hours
+* **Month selector** — navigate to previous months
+* **Monthly summary** — total hours, total days present, overall average
+
+### 10.4 API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | HTML dashboard (Jinja2 template) |
+| `/api/status` | GET | Current session status + timer info |
+| `/api/today` | GET | Today's sessions + total time |
+| `/api/weekly` | GET | Weekly day-by-day data (query: `?week=2026-W07`) |
+| `/api/monthly` | GET | Monthly week-by-week data (query: `?month=2026-02`) |
+| `/health` | GET | Health check |
+
+### 10.5 Backend Independence
+
+* The backend **continues tracking** regardless of whether the browser is open
+* The UI is a **read-only view** into the backend state
+* Closing the browser tab does NOT stop tracking
+* All timer logic runs server-side; the JS countdown is purely cosmetic (syncs every 30s)
 
 ---
 
@@ -254,15 +331,18 @@ UI must **auto-refresh every 30 seconds**.
 
 ### Minimum Requirement
 
-Browser popup:
+OS notification (macOS):
 
 ```
-"4 hours completed. You may leave the office."
+"4 hours + 10 min buffer completed. You may leave the office."
 ```
+
+The notification fires **once** when `elapsed >= (4h + buffer)`.
+After notification, the timer **keeps running** to log total office time.
 
 ### Optional Enhancement
 
-OS notification support later.
+Browser notification support later.
 
 ---
 
@@ -331,20 +411,25 @@ Project is complete when:
 
 * Laptop connects to office Wi-Fi
 * Timer starts **automatically**
-* 4-hour alert appears
+* 4-hour + buffer alert appears
 * Session stored in **daily log file**
-* UI shows **correct remaining time**
+* UI shows **live countdown timer** with remaining time
+* After completion, UI shows **total elapsed time** (keeps counting)
+* **Weekly analytics** show day-by-day breakdown with bar chart
+* **Monthly analytics** show week-by-week breakdown with chart
 * Works after **restart without manual action**
+* Auto-starts on macOS boot via launchd
 
 ---
 
 ## 16. Future Enhancements (Not MVP)
 
-* Weekly HR report export (PDF)
+* HR report export (PDF)
 * Mobile PWA version
 * Multiple office Wi-Fi names
 * Geo-location fallback
 * Cloud backup (optional)
+* Team aggregate view
 
 ---
 

@@ -35,23 +35,27 @@ CURRENT TASK
 
 Phase: 
 
-### Task 2.3: Integrate Session Manager with Wi-Fi Detector
-**Description:** Connect Wi-Fi change events to session manager  
-**Dependencies:** Task 2.2, Phase 1  
+---
+
+### Task 2.5: Add Session Recovery on Restart
+**Description:** Restore active session if app restarts during office hours  
+**Dependencies:** Task 2.3  
 **Acceptance Criteria:**
-- [ ] Wi-Fi connect to office → starts session
-- [ ] Wi-Fi disconnect from office → ends session
-- [ ] Sessions written to daily log file
-- [ ] Works across multiple connect/disconnect cycles
+- [ ] On startup, checks if currently connected to office Wi-Fi
+- [ ] Reads today's log for incomplete session
+- [ ] Resumes session if still in office
+- [ ] Creates new session if previous was completed
 
-**Files:** `app/wifi_detector.py`, `app/session_manager.py`
+**File:** `app/session_manager.py`
 
-**Key Integration Points:**
-- Pass SSID changes to session manager
-- Check if SSID matches OFFICE_WIFI_NAME
-- Call session_manager.start_session() or end_session()
+**Key Implementation Points:**
+- On startup: check current SSID
+- Read today's log file
+- Look for session without end_time
+- If found and still connected: resume
+- If found but disconnected: close previous session
 
-**Test:** Connect/disconnect Wi-Fi and verify sessions appear in `data/sessions_2026-02-12.log`
+**Test:** Start session, restart app while connected, verify session continues
 
 ---
 
@@ -90,7 +94,7 @@ TESTING REQUIREMENTS (MANDATORY)
 
 Create a new test file:
 
-tests/test_phase_<PHASE>_<TASK>.py
+tests/test_phase_2_5.py
 
 Tests MUST include:
 

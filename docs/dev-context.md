@@ -109,18 +109,19 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 | 2 | 2.2 | Session state machine (IDLE/IN_OFFICE_SESSION/COMPLETED) | 12 tests | DONE |
 | 2 | 2.3 | Integrate session manager with Wi-Fi detector | 7 tests | DONE |
 | 2 | 2.4 | File rotation logic (>5MB → archive) | 8 tests | DONE |
+| 2 | 2.5 | Session recovery on restart | 13 tests | DONE |
 
-**Total: 69 tests, all passing, 0 warnings**
+**Total: 82 tests, all passing, 0 warnings**
 
 ### Next Up
 
 | Phase | Task | Description | Status |
 |-------|------|-------------|--------|
-| 2 | 2.5 | Session recovery on restart | NOT STARTED |
 | 2 | 2.6 | Data validation with Pydantic models | NOT STARTED |
 | 3 | 3.1-3.6 | Timer engine, notifications, completion logic | NOT STARTED |
-| 4 | 4.1-4.6 | Local web UI dashboard | NOT STARTED |
-| 5 | 5.1-5.6 | Auto-start on boot (launchd) | NOT STARTED |
+| 4 | 4.1-4.5 | Live dashboard UI (HTML + Vanilla JS + Jinja2) | NOT STARTED |
+| 5 | 5.1-5.4 | Analytics & Charts (weekly/monthly + Chart.js) | NOT STARTED |
+| 6 | 6.1-6.5 | Auto-start on boot (launchd) | NOT STARTED |
 
 ---
 
@@ -152,7 +153,8 @@ tests/
 ├── test_phase_2_1.py    — 13 tests: File storage (naming, append, read, unicode, concurrency)
 ├── test_phase_2_2.py    — 12 tests: Session state machine transitions + edge cases
 ├── test_phase_2_3.py    — 7 tests: Wi-Fi/session integration + persistence flow + exception resilience
-└── test_phase_2_4.py    — 8 tests: File rotation + archive integrity + collision/error handling
+├── test_phase_2_4.py    — 8 tests: File rotation + archive integrity + collision/error handling
+└── test_phase_2_5.py    — 13 tests: Session recovery (resume/close/edge cases/persist warning/lifespan/fresh session)
 ```
 
 ### Configuration & Docs
@@ -234,14 +236,16 @@ settings = Settings()
 
 ### 5.5 session_manager.py — Current State
 
-Implements Task 2.2 state machine:
+Implements Task 2.2 state machine + Task 2.5 recovery:
 - `SessionState` enum: IDLE, IN_OFFICE_SESSION, COMPLETED
 - `Session` Pydantic model: date, ssid, start_time, end_time, duration_minutes, completed_4h
 - `SessionManager` class with:
   - `start_session(ssid)` for IDLE → IN_OFFICE_SESSION
   - `mark_session_completed()` for IN_OFFICE_SESSION → COMPLETED
   - `end_session()` for IN_OFFICE_SESSION/COMPLETED → IDLE
+  - `recover_session(current_ssid)` — reads today's log, resumes or closes incomplete sessions
   - persistence hooks via `file_store.append_session`
+  - Injectable `read_sessions_func` for deterministic testing of recovery
 
 ---
 
