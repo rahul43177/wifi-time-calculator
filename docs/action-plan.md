@@ -242,27 +242,26 @@ print(get_current_ssid())  # Returned: 'iPhone'
 
 ---
 
-### Task 2.1: Design File Storage Module
-**Description:** Create file_store.py with core file operations  
-**Dependencies:** Phase 1 complete  
+### Task 2.1: Design File Storage Module ✅ DONE
+**Description:** Create file_store.py with core file operations
+**Dependencies:** Phase 1 complete
 **Acceptance Criteria:**
-- [ ] Can create daily log files with naming: `sessions_YYYY-MM-DD.log`
-- [ ] Can append JSON lines to files
-- [ ] Can read today's sessions
-- [ ] Thread-safe file operations
+- [x] Can create daily log files with naming: `sessions_DD-MM-YYYY.log`
+- [x] Can append JSON lines to files
+- [x] Can read today's sessions
+- [x] Thread-safe file operations
 
 **File:** `app/file_store.py`
 
-**Key Functions:**
-- `get_today_log_path()` → Returns path to today's file
-- `append_session(session_dict)` → Appends JSON line
-- `read_today_sessions()` → Returns list of session dicts
-- `read_all_sessions(date)` → Read specific date
-
-**JSON Line Format:**
-```json
-{"date": "2026-02-12", "ssid": "OfficeWifi", "start_time": "09:42:10", "end_time": "13:48:55", "duration_minutes": 246, "completed_4h": true}
-```
+> **Implementation Note:** Three public functions:
+> - `get_log_path(date=None)` → Returns path using DD-MM-YYYY format
+> - `append_session(session_dict)` → Thread-safe append via `threading.Lock`
+> - `read_sessions(date=None)` → Reads sessions, skips corrupted lines gracefully
+>
+> Date format changed from YYYY-MM-DD to **DD-MM-YYYY** (Indian standard).
+>
+> **Tests:** `tests/test_phase_2_1.py` (13 tests) — DD-MM-YYYY naming, append, read,
+> unicode, missing/empty/corrupted files, concurrent writes — all passing.
 
 ---
 

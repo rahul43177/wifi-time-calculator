@@ -1,65 +1,100 @@
 """
-File-based storage module.
-Handles JSON Lines file operations for session logging (no database).
+File-based session storage using JSON Lines (no database).
+
+Each day gets its own log file: sessions_DD-MM-YYYY.log
+Each session is appended as one JSON object per line.
+All file writes use a threading lock to ensure safe concurrent access.
 """
 
+import json
 import logging
-from pathlib import Path
+import threading
 from datetime import datetime
-from typing import List, Dict, Optional
+from pathlib import Path
+from typing import Any
+
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-
-def get_today_log_path() -> Path:
-    """
-    Get the path to today's session log file.
-    
-    Returns:
-        Path to today's log file (sessions_YYYY-MM-DD.log)
-    
-    TODO: Implement in Phase 2, Task 2.1
-    """
-    pass
+# Module-level lock for thread-safe file writes
+_write_lock = threading.Lock()
 
 
-def append_session(session_dict: Dict) -> bool:
+def get_log_path(date: datetime | None = None) -> Path:
     """
-    Append a session entry to today's log file.
-    
+    Get the path to a session log file for a given date.
+
     Args:
-        session_dict: Session data as dictionary
-    
+        date: The date for the log file. Defaults to today.
+
     Returns:
-        True if successful, False otherwise.
-    
-    TODO: Implement in Phase 2, Task 2.1
+        Path like data/sessions_12-02-2026.log
     """
-    pass
+    if date is None:
+        date = datetime.now()
+    filename = f"sessions_{date.strftime('%d-%m-%Y')}.log"
+    return Path(settings.data_dir) / filename
 
 
-def read_today_sessions() -> List[Dict]:
+def append_session(session_dict: dict[str, Any]) -> bool:
     """
-    Read all sessions from today's log file.
-    
-    Returns:
-        List of session dictionaries
-    
-    TODO: Implement in Phase 2, Task 2.1
-    """
-    return []
+    Append a session entry as a JSON line to today's log file.
 
+    Thread-safe via module-level lock. Creates the data directory
+    and file if they don't exist.
 
-def read_all_sessions(date: str) -> List[Dict]:
-    """
-    Read all sessions for a specific date.
-    
     Args:
-        date: Date string in YYYY-MM-DD format
-    
+        session_dict: Session data to write.
+
     Returns:
-        List of session dictionaries
-    
-    TODO: Implement in Phase 2, Task 2.1
+        True if write succeeded, False otherwise.
     """
-    return []
+    log_path = get_log_path()
+    try:
+        with _write_lock:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(session_dict, ensure_ascii=False) + "\n")
+        logger.info("Session appended to %s", log_path.name)
+        return True
+    except OSError as e:
+        logger.error("Failed to append session to %s: %s", log_path, e)
+        return False
+
+
+def read_sessions(date: datetime | None = None) -> list[dict[str, Any]]:
+    """
+    Read all sessions from a log file for a given date.
+
+    Skips corrupted/malformed lines without crashing.
+
+    Args:
+        date: The date to read sessions for. Defaults to today.
+
+    Returns:
+        List of session dictionaries. Empty list if file missing or empty.
+    """
+    log_path = get_log_path(date)
+
+    if not log_path.exists():
+        logger.debug("No log file found: %s", log_path)
+        return []
+
+    sessions: list[dict[str, Any]] = []
+    try:
+        with open(log_path, "r", encoding="utf-8") as f:
+            for line_num, line in enumerate(f, start=1):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    sessions.append(json.loads(stripped))
+                except json.JSONDecodeError:
+                    logger.warning(
+                        "Skipping corrupted line %d in %s", line_num, log_path.name
+                    )
+    except OSError as e:
+        logger.error("Failed to read %s: %s", log_path, e)
+
+    return sessions
