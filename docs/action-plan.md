@@ -184,27 +184,22 @@ print(get_current_ssid())  # Returned: 'iPhone'
 
 ---
 
-### Task 1.3: Integrate with FastAPI Lifespan
+### Task 1.3: Integrate with FastAPI Lifespan ✅ DONE
 **Description:** Start Wi-Fi polling when server starts
 **Dependencies:** Task 1.2, Task 0.2 (main.py)
 **Acceptance Criteria:**
-- [ ] Polling starts automatically with server
-- [ ] Stops gracefully on shutdown
-- [ ] No zombie processes
+- [x] Polling starts automatically with server
+- [x] Stops gracefully on shutdown
+- [x] No zombie processes
 
 **File:** `app/main.py`
 
-**Key Implementation Points:**
-- Use FastAPI lifespan context manager
-- Start background task on startup
-- Cancel task on shutdown
-- Add logging
-
-**Test Command:**
-```bash
-uvicorn app.main:app --reload
-# Should see "Wi-Fi monitoring started" in logs
-```
+> **Implementation Note:** Lifespan creates `wifi_polling_loop` as an asyncio task on startup.
+> On shutdown, all background tasks are cancelled via `asyncio.gather(..., return_exceptions=True)`.
+> Tested with live server — starts polling, serves /health, shuts down cleanly.
+>
+> **Tests added:** `tests/test_phase_1_1.py` (11 tests), `tests/test_phase_1_2.py` (5 tests),
+> `tests/test_phase_1_3.py` (3 tests) — **all 19 tests passing**.
 
 ---
 

@@ -2,13 +2,15 @@
 Main FastAPI application for Office Wi-Fi Tracker.
 """
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
+from app.wifi_detector import wifi_polling_loop
 
 # Configure logging
 logging.basicConfig(
@@ -17,6 +19,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Holds references to background tasks so they can be cancelled on shutdown
+_background_tasks: list[asyncio.Task] = []
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -24,19 +29,27 @@ async def lifespan(app: FastAPI):
     Application lifespan manager for startup and shutdown events.
     """
     # Startup
-    logger.info("🚀 Office Wi-Fi Tracker starting up...")
-    logger.info(f"📡 Monitoring Wi-Fi: {settings.office_wifi_name}")
-    logger.info(f"⏱️  Work duration: {settings.work_duration_hours} hours")
-    
-    # TODO: Start Wi-Fi detector background task (Phase 1)
+    logger.info("Office Wi-Fi Tracker starting up...")
+    logger.info("Monitoring Wi-Fi: %s", settings.office_wifi_name)
+    logger.info("Work duration: %d hours", settings.work_duration_hours)
+
+    # Start Wi-Fi polling background task
+    wifi_task = asyncio.create_task(wifi_polling_loop())
+    _background_tasks.append(wifi_task)
+    logger.info("Wi-Fi monitoring started")
+
     # TODO: Start timer engine background task (Phase 3)
-    
+
     yield
-    
-    # Shutdown
-    logger.info("🛑 Office Wi-Fi Tracker shutting down...")
-    # TODO: Save active session state
-    # TODO: Cancel background tasks
+
+    # Shutdown — cancel all background tasks
+    logger.info("Office Wi-Fi Tracker shutting down...")
+    for task in _background_tasks:
+        task.cancel()
+    await asyncio.gather(*_background_tasks, return_exceptions=True)
+    _background_tasks.clear()
+    # TODO: Save active session state (Phase 2)
+    logger.info("All background tasks stopped")
 
 
 # Create FastAPI app
