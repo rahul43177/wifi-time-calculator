@@ -363,14 +363,14 @@ async def test_css_tab_active_uses_primary_color() -> None:
 
     css = response.text
 
-    # Active tab
+    # Active tab (Phase 10: Updated to solid primary background with white text)
     assert re.search(
-        r"\.tab\.active\s*\{[^}]*color:\s*var\(--primary\)",
+        r"\.tab\.active\s*\{[^}]*color:\s*#ffffff",
         css,
         re.DOTALL
     )
     assert re.search(
-        r"\.tab\.active\s*\{[^}]*background:\s*var\(--primary-light\)",
+        r"\.tab\.active\s*\{[^}]*background:\s*var\(--primary\)",
         css,
         re.DOTALL
     )

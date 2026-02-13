@@ -343,6 +343,10 @@
     function getCurrentTheme() {
         return document.documentElement.getAttribute("data-theme") || "light";
     }
+    
+    function isDarkMode() {
+        return getCurrentTheme() === "dark";
+    }
 
     function setTheme(theme) {
         document.documentElement.setAttribute("data-theme", theme);
@@ -515,11 +519,11 @@
                             usePointStyle: true,
                             pointStyle: "circle",
                             font: {
-                                family: getComputedStyle(document.documentElement).getPropertyValue('--font-sans').trim() || '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                                family: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
                                 size: 14,
                                 weight: 500
                             },
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim(),
+                            color: isDarkMode() ? '#f1f5f9' : '#0f172a',
                             padding: 8
                         }
                     },
@@ -529,9 +533,9 @@
                         backgroundColor: isDarkMode() 
                             ? 'rgba(30, 41, 59, 0.95)' 
                             : 'rgba(255, 255, 255, 0.95)',
-                        titleColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim(),
-                        bodyColor: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim(),
-                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--border').trim(),
+                        titleColor: isDarkMode() ? '#f1f5f9' : '#0f172a',
+                        bodyColor: isDarkMode() ? '#cbd5e1' : '#475569',
+                        borderColor: isDarkMode() ? '#334155' : '#e2e8f0',
                         borderWidth: 1,
                         padding: 12,
                         cornerRadius: 8,
@@ -686,9 +690,9 @@
                         backgroundColor: isDarkMode() 
                             ? 'rgba(30, 41, 59, 0.95)' 
                             : 'rgba(255, 255, 255, 0.95)',
-                        titleColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim(),
-                        bodyColor: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim(),
-                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--border').trim(),
+                        titleColor: isDarkMode() ? '#f1f5f9' : '#0f172a',
+                        bodyColor: isDarkMode() ? '#cbd5e1' : '#475569',
+                        borderColor: isDarkMode() ? '#334155' : '#e2e8f0',
                         borderWidth: 1,
                         padding: 12,
                         cornerRadius: 8,

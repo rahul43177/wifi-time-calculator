@@ -3,8 +3,8 @@
   "longest_streak": 1,
   "last_streak_date": "2026-02-12",
   "achievements": [
-    "early_bird",
-    "dedicated"
+    "dedicated",
+    "early_bird"
   ],
   "total_days_met_target": 10
 }
