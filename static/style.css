@@ -71,6 +71,36 @@ body {
     flex-wrap: wrap;
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.badge-success {
+    background: var(--green-light);
+    color: var(--green);
+}
+
+.badge-warning {
+    background: var(--yellow-light);
+    color: var(--yellow);
+}
+
+.badge-danger {
+    background: var(--red-light);
+    color: var(--red);
+}
+
 .title {
     margin: 0;
     font-size: 1.35rem;

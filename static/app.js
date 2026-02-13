@@ -26,6 +26,7 @@
         completedTotal: null,
         todaySessionsBody: null,
         todayTotalDisplay: null,
+        notificationBadge: null,
     };
 
     const state = {
@@ -36,6 +37,7 @@
         baseElapsedSeconds: 0,
         baseRemainingSeconds: 0,
         targetSeconds: null,
+        lastCompleted4h: null,
     };
 
     function cacheElements() {
@@ -53,6 +55,7 @@
         dom.completedTotal = document.getElementById("completed-total");
         dom.todaySessionsBody = document.getElementById("today-sessions-body");
         dom.todayTotalDisplay = document.getElementById("today-total-display");
+        dom.notificationBadge = document.getElementById("notification-status-badge");
     }
 
     function hasRequiredDom() {
@@ -144,6 +147,14 @@
     }
 
     function applyStatus(statusPayload) {
+        const newCompleted4h = Boolean(statusPayload.completed_4h);
+
+        // Notify if it just flipped to true
+        if (state.lastCompleted4h === false && newCompleted4h === true) {
+            notifyCompletion();
+        }
+
+        state.lastCompleted4h = newCompleted4h;
         state.status = statusPayload;
         state.syncAtMs = Date.now();
         state.baseElapsedSeconds = toInt(statusPayload.elapsed_seconds, 0);
@@ -161,6 +172,71 @@
 
     function applyToday(todayPayload) {
         state.today = todayPayload;
+    }
+
+    function updateNotificationBadge() {
+        if (!dom.notificationBadge) {
+            return;
+        }
+
+        if (!("Notification" in window)) {
+            dom.notificationBadge.textContent = "Unsupported";
+            dom.notificationBadge.className = "badge badge-danger";
+            dom.notificationBadge.classList.remove("hidden");
+            return;
+        }
+
+        const permission = Notification.permission;
+        dom.notificationBadge.classList.remove("hidden");
+
+        if (permission === "granted") {
+            dom.notificationBadge.textContent = "Alerts On";
+            dom.notificationBadge.className = "badge badge-success";
+            dom.notificationBadge.title = "Notifications enabled";
+        } else if (permission === "denied") {
+            dom.notificationBadge.textContent = "Alerts Blocked";
+            dom.notificationBadge.className = "badge badge-danger";
+            dom.notificationBadge.title = "Blocked in browser settings";
+        } else {
+            dom.notificationBadge.textContent = "Alerts Off";
+            dom.notificationBadge.className = "badge badge-warning";
+            dom.notificationBadge.style.cursor = "pointer";
+            dom.notificationBadge.title = "Click to enable alerts";
+            if (!dom.notificationBadge._hasListener) {
+                dom.notificationBadge.addEventListener("click", () => {
+                    requestNotificationPermission();
+                });
+                dom.notificationBadge._hasListener = true;
+            }
+        }
+    }
+
+    function requestNotificationPermission() {
+        if (!("Notification" in window)) {
+            console.warn("This browser does not support desktop notifications.");
+            updateNotificationBadge();
+            return;
+        }
+        if (Notification.permission === "default") {
+            Notification.requestPermission().then(() => {
+                updateNotificationBadge();
+            });
+        } else {
+            updateNotificationBadge();
+        }
+    }
+
+    function notifyCompletion() {
+        if (!("Notification" in window) || Notification.permission !== "granted") {
+            return;
+        }
+        try {
+            new Notification("Office Wi-Fi Tracker", {
+                body: "4-hour target reached (including buffer). You're all set!",
+            });
+        } catch (err) {
+            console.error("Failed to show notification:", err);
+        }
     }
 
     function getLiveElapsedSeconds() {
@@ -388,6 +464,8 @@
             return;
         }
 
+        requestNotificationPermission();
+        updateNotificationBadge();
         void syncFromBackend();
         setInterval(renderTimer, TICK_INTERVAL_MS);
         setInterval(() => {

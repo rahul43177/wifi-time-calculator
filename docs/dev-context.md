@@ -121,14 +121,14 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 | 4 | 4.2 | Jinja2 dashboard template scaffold | 6 tests | DONE |
 | 4 | 4.3 | CSS styling (external stylesheet + static mount) | 10 tests | DONE |
 | 4 | 4.4 | Live timer JavaScript + backend sync loop | 9 tests | DONE |
+| 4 | 4.5 | Browser notification support (Notification API) | 4 tests | DONE |
 
-**Total: 195 tests, all passing, 0 warnings**
+**Total: 199 tests, all passing, 0 warnings**
 
 ### Next Up
 
 | Phase | Task | Description | Status |
 |-------|------|-------------|--------|
-| 4 | 4.5 | Browser notifications | IN PROGRESS |
 | 5 | 5.1-5.4 | Analytics & Charts (weekly/monthly + Chart.js) | NOT STARTED |
 | 6 | 6.1-6.5 | Auto-start on boot (launchd) | NOT STARTED |
 
@@ -181,7 +181,8 @@ tests/
 ├── test_phase_4_1.py    — 10 tests: Dashboard API status/today schema + edge-case handling
 ├── test_phase_4_2.py    — 6 tests: Dashboard template rendering + placeholders/context wiring + default hidden completion banner
 ├── test_phase_4_3.py    — 10 tests: CSS extraction/static serving/tokens/responsive/utility validation
-└── test_phase_4_4.py    — 9 tests: app.js polling/tick/completion/table-refresh/failure-fallback hooks
+├── test_phase_4_4.py    — 9 tests: app.js polling/tick/completion/table-refresh/failure-fallback hooks
+└── test_phase_4_5.py    — 4 tests: Browser Notification API integration + flip detection
 ```
 
 ### Configuration & Docs

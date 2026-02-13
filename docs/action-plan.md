@@ -869,14 +869,14 @@ TEST_DURATION_MINUTES=2
 
 ---
 
-### Task 4.5: Add Browser Notification Support
+### Task 4.5: Add Browser Notification Support ✅ DONE
 **Description:** Browser notification when 4h + buffer completes
 **Dependencies:** Task 4.4
 **Acceptance Criteria:**
-- [ ] Requests Notification API permission on page load
-- [ ] Detects completion via `/api/status` polling
-- [ ] Shows browser notification once when `completed_4h` flips to true
-- [ ] Works even if tab not focused
+- [x] Requests Notification API permission on page load
+- [x] Detects completion via `/api/status` polling
+- [x] Shows browser notification once when `completed_4h` flips to true
+- [x] Works even if tab not focused
 
 **File:** `static/app.js`
 
@@ -890,8 +890,8 @@ TEST_DURATION_MINUTES=2
 - [x] After 4h + buffer: shows total elapsed time (keeps counting)
 - [x] Today's sessions displayed in table with total
 - [x] Syncs with backend every 30 seconds
-- [ ] Browser notification on completion
-- [ ] Clean, usable UI with no console errors
+- [x] Browser notification on completion
+- [x] Clean, usable UI with no console errors
 
 ---
 
@@ -1346,6 +1346,6 @@ Before considering MVP complete:
 
 ---
 
-**Current State:** ✅ **Phase 4 Tasks 4.1-4.4 COMPLETE** — Dashboard APIs, template, CSS, and live timer JavaScript implemented. 195 tests passing, 0 warnings. Next: Task 4.5.
+**Current State:** ✅ **Phase 4 COMPLETE** — Dashboard APIs, template, CSS, and live timer JavaScript with notifications implemented. 199 tests passing, 0 warnings. Next: Phase 5.
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!
