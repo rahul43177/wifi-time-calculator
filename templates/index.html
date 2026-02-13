@@ -21,9 +21,13 @@
     <section class="card">
         <div id="connection-status" class="status-line connected">
             <span class="status-dot" aria-hidden="true"></span>
-            <span>Connected to <strong id="current-ssid">{{ office_wifi_name }}</strong></span>
+            <span>
+                <span id="connection-label">Connected to</span>
+                <strong id="current-ssid">{{ office_wifi_name }}</strong>
+            </span>
         </div>
         <p class="muted" id="session-started-at">Started at <span id="start-time">09:42:10</span></p>
+        <p id="sync-status" class="muted sync-status hidden" aria-live="polite"></p>
     </section>
 
     <section class="card">
@@ -64,5 +68,6 @@
         <p class="total">Total: <span id="today-total-display">2h 15m</span></p>
     </section>
 </main>
+<script src="/static/app.js" defer></script>
 </body>
 </html>

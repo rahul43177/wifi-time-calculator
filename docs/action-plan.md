@@ -837,14 +837,35 @@ TEST_DURATION_MINUTES=2
 **Description:** Client-side countdown + auto-refresh from backend
 **Dependencies:** Task 4.2
 **Acceptance Criteria:**
-- [ ] Countdown updates every 1 second (client-side calculation from start_time)
-- [ ] Syncs with backend every 30 seconds via `fetch('/api/status')`
-- [ ] Updates progress bar smoothly
-- [ ] Refreshes session table on sync
-- [ ] After completion: switches display to total elapsed (keeps counting)
-- [ ] Error handling for fetch failures (shows last-known state)
+- [x] Countdown updates every 1 second (client-side calculation from start_time)
+- [x] Syncs with backend every 30 seconds via `fetch('/api/status')`
+- [x] Updates progress bar smoothly
+- [x] Refreshes session table on sync
+- [x] After completion: switches display to total elapsed (keeps counting)
+- [x] Error handling for fetch failures (shows last-known state)
 
 **File:** `static/app.js`
+
+> **Implementation Note:** Added `static/app.js` live dashboard controller:
+> - Polls backend every 30s using `fetch('/api/status')` + `fetch('/api/today')`
+> - Runs a 1s tick loop for client-side timer updates between backend syncs
+> - Derives elapsed progression from parsed `start_time` (with safe fallback to
+>   backend elapsed baseline when start parsing is unavailable)
+> - Updates progress bar width/percent and warning/completed visual classes
+> - Switches timer display to total elapsed after completion/overtime while
+>   keeping elapsed growth visible
+> - Rebuilds today's sessions table + total summary on each sync
+> - Handles sync failures gracefully: shows "Live sync delayed..." and keeps
+>   rendering last-known state instead of crashing
+>
+> Updated `templates/index.html` with:
+> - sync-status placeholder (`#sync-status`) for degraded-state messaging
+> - `<script src="/static/app.js" defer></script>` at page end
+>
+> **Tests:** `tests/test_phase_4_4.py` (9 tests) — static JS serving, script
+> wiring, interval config, endpoint sync paths, start-time elapsed derivation,
+> completion-mode switch, session-table refresh hooks, and fetch-failure
+> fallback messaging — all passing.
 
 ---
 
@@ -863,12 +884,12 @@ TEST_DURATION_MINUTES=2
 
 ### ✅ Phase 4 Definition of Done
 
-- [ ] Dashboard accessible at http://localhost:8787/
-- [ ] Live countdown timer updates every second
-- [ ] Progress bar reflects current progress
-- [ ] After 4h + buffer: shows total elapsed time (keeps counting)
-- [ ] Today's sessions displayed in table with total
-- [ ] Syncs with backend every 30 seconds
+- [x] Dashboard accessible at http://localhost:8787/
+- [x] Live countdown timer updates every second
+- [x] Progress bar reflects current progress
+- [x] After 4h + buffer: shows total elapsed time (keeps counting)
+- [x] Today's sessions displayed in table with total
+- [x] Syncs with backend every 30 seconds
 - [ ] Browser notification on completion
 - [ ] Clean, usable UI with no console errors
 
@@ -1325,6 +1346,6 @@ Before considering MVP complete:
 
 ---
 
-**Current State:** ✅ **Phase 4 Tasks 4.1-4.3 COMPLETE** — Dashboard APIs, Jinja template, and CSS styling implemented. 186 tests passing, 0 warnings. Next: Task 4.4.
+**Current State:** ✅ **Phase 4 Tasks 4.1-4.4 COMPLETE** — Dashboard APIs, template, CSS, and live timer JavaScript implemented. 195 tests passing, 0 warnings. Next: Task 4.5.
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!

@@ -148,6 +148,14 @@ body {
     font-size: 0.92rem;
 }
 
+.sync-status {
+    margin-top: 8px;
+}
+
+.sync-status.error {
+    color: var(--red);
+}
+
 /* --- Timer display --- */
 .timer {
     font-family: "SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace;

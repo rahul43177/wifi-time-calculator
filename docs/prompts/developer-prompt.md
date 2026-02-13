@@ -37,16 +37,16 @@ Phase:
 
 ---
 
-### Task 4.3: Add CSS Styling
-**Description:** Clean, modern CSS for the dashboard
-**Dependencies:** Task 4.2
+### Task 4.5: Add Browser Notification Support
+**Description:** Browser notification when 4h + buffer completes
+**Dependencies:** Task 4.4
 **Acceptance Criteria:**
-- [ ] Minimalist design with clear hierarchy
-- [ ] Color coding: green (connected/completed), yellow (>75%), red (disconnected)
-- [ ] Large, readable timer font
-- [ ] Responsive layout (works on laptop screen)
+- [ ] Requests Notification API permission on page load
+- [ ] Detects completion via `/api/status` polling
+- [ ] Shows browser notification once when `completed_4h` flips to true
+- [ ] Works even if tab not focused
 
-**File:** `static/style.css`
+**File:** `static/app.js`
 
 ---
 

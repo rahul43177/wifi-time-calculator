@@ -120,14 +120,15 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 | 4 | 4.1 | Dashboard status/today API endpoints | 10 tests | DONE |
 | 4 | 4.2 | Jinja2 dashboard template scaffold | 6 tests | DONE |
 | 4 | 4.3 | CSS styling (external stylesheet + static mount) | 10 tests | DONE |
+| 4 | 4.4 | Live timer JavaScript + backend sync loop | 9 tests | DONE |
 
-**Total: 186 tests, all passing, 0 warnings**
+**Total: 195 tests, all passing, 0 warnings**
 
 ### Next Up
 
 | Phase | Task | Description | Status |
 |-------|------|-------------|--------|
-| 4 | 4.4-4.5 | Live timer JS + browser notifications | IN PROGRESS |
+| 4 | 4.5 | Browser notifications | IN PROGRESS |
 | 5 | 5.1-5.4 | Analytics & Charts (weekly/monthly + Chart.js) | NOT STARTED |
 | 6 | 6.1-6.5 | Auto-start on boot (launchd) | NOT STARTED |
 
@@ -147,6 +148,13 @@ app/
 ├── session_manager.py   — Session state machine + persistence hooks
 ├── timer_engine.py      — Timer helpers + background polling loop for active sessions
 └── notifier.py          — macOS notification system (osascript integration)
+
+templates/
+└── index.html           — Dashboard shell template with status/timer/table placeholders
+
+static/
+├── style.css            — Dashboard stylesheet (externalized in Task 4.3)
+└── app.js               — Live timer updates + backend sync loop (Task 4.4)
 ```
 
 ### Test Files
@@ -171,7 +179,9 @@ tests/
 ├── test_phase_3_5.py    — 7 tests: Timer integration with FastAPI (lifespan, concurrency, shutdown)
 ├── test_phase_3_6.py    — 7 tests: Testing mode target override (toggle + integration checks)
 ├── test_phase_4_1.py    — 10 tests: Dashboard API status/today schema + edge-case handling
-└── test_phase_4_2.py    — 6 tests: Dashboard template rendering + placeholders/context wiring + default hidden completion banner
+├── test_phase_4_2.py    — 6 tests: Dashboard template rendering + placeholders/context wiring + default hidden completion banner
+├── test_phase_4_3.py    — 10 tests: CSS extraction/static serving/tokens/responsive/utility validation
+└── test_phase_4_4.py    — 9 tests: app.js polling/tick/completion/table-refresh/failure-fallback hooks
 ```
 
 ### Configuration & Docs
@@ -283,6 +293,18 @@ Implements Task 3.1 + Task 3.2 + Task 3.4 + Task 3.5 + Task 3.6 timer logic:
 - Completion detection now persists `completed_4h=True` immediately via `file_store.update_session(...)`
 - Timer loop now also runs via FastAPI lifespan startup/shutdown integration (`app.main`)
 - Test mode support: when `TEST_MODE=true`, effective target is `TEST_DURATION_MINUTES`
+
+### 5.7 Frontend Dashboard (Phase 4.4)
+
+- `templates/index.html` now loads:
+  - `/static/style.css`
+  - `/static/app.js` (deferred)
+- `static/app.js` behavior:
+  - 30-second backend sync via `/api/status` and `/api/today`
+  - 1-second client tick between syncs for timer/progress updates
+  - Completion/overtime mode switches timer display to total elapsed
+  - Rebuilds today's sessions table from latest backend payload
+  - Handles fetch failures gracefully with "last known data" indicator
 
 ---
 
