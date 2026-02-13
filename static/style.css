@@ -269,9 +269,11 @@ body {
     color: var(--green-dark);
 }
 
+/* Task 7.4: Pulse animation for connected status dot */
 .connected .status-dot {
     background: var(--green-dark);
     box-shadow: 0 0 0 3px var(--green-light);
+    animation: pulse 2s cubic-bezier(0.4, 0.0, 0.6, 1) infinite;
 }
 
 .disconnected {
@@ -415,7 +417,8 @@ body {
     height: 100%;
     background: var(--progress);
     border-radius: 999px;
-    transition: width 0.5s ease, background-color 0.3s;
+    /* Task 7.4: Smooth animation using cubic-bezier for natural feel */
+    transition: width 0.8s cubic-bezier(0.4, 0.0, 0.2, 1), background-color 0.3s ease;
 }
 
 /* Task 7.1 threshold model: <50% blue, 50-80% yellow, >80% green */
@@ -572,6 +575,111 @@ tbody tr:last-child td {
 
 .mt-16 {
     margin-top: 16px;
+}
+
+/* --- Animations (Task 7.4) --- */
+
+/* Fade-in animation for status cards on load */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Pulse animation for connection status dot */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+/* Celebration animation for target completion */
+@keyframes celebrate {
+    0% {
+        transform: scale(1);
+    }
+    15% {
+        transform: scale(1.1);
+    }
+    30% {
+        transform: scale(0.95);
+    }
+    45% {
+        transform: scale(1.05);
+    }
+    60% {
+        transform: scale(0.98);
+    }
+    75% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Celebration glow effect */
+@keyframes celebrateGlow {
+    0%, 100% {
+        box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+    }
+}
+
+/* Apply animations */
+.status-card {
+    animation: fadeInUp 0.4s cubic-bezier(0.4, 0.0, 0.2, 1) backwards;
+}
+
+/* Stagger status card animations */
+.status-card:nth-child(1) { animation-delay: 0ms; }
+.status-card:nth-child(2) { animation-delay: 100ms; }
+.status-card:nth-child(3) { animation-delay: 200ms; }
+.status-card:nth-child(4) { animation-delay: 300ms; }
+
+/* Celebration animation for completed target */
+.timer-section.celebrating {
+    animation: celebrate 1.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.timer-section.celebrating .elapsed-display {
+    animation: celebrateGlow 1.2s ease-in-out;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .status-card {
+        animation: none;
+    }
+
+    .connected .status-dot {
+        animation: none;
+    }
+
+    .timer-section.celebrating,
+    .timer-section.celebrating .elapsed-display {
+        animation: none;
+    }
 }
 
 /* --- Utility --- */

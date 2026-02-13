@@ -4,17 +4,17 @@ Audit ONLY Phase mentioned below  :
 
 ---
 
-### Task 7.3: Improved Color Scheme & Gradients
-**Description:** Modern color palette with subtle gradients
-**Dependencies:** Task 7.1
+### Task 7.4: Micro-Animations & Transitions
+**Description:** Smooth animations for better user feedback
+**Dependencies:** Task 7.2, 7.3
 **Acceptance Criteria:**
-- [ ] Blue primary (#4F46E5) for brand elements
-- [ ] Green (#22C55E) for success states
-- [ ] Yellow (#EAB308) for warnings
-- [ ] Subtle gradients on hero sections
-- [ ] Better contrast ratios (WCAG AA)
+- [ ] Progress bar animates smoothly (not instant jumps)
+- [ ] Status cards fade in on load
+- [ ] Connection status dot pulses
+- [ ] Celebration animation when target reached
+- [ ] All animations run at 60fps
 
-**File:** `static/style.css`
+**Files:** `static/style.css`, `static/app.js`
 
 ---
 

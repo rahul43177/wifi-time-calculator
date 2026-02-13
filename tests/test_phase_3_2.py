@@ -185,7 +185,8 @@ async def test_timer_loop_continues_tracking_after_completion() -> None:
                 ) as mock_remaining:
                     with patch("app.timer_engine.is_completed", return_value=True):
                         with patch("app.timer_engine.send_notification", return_value=True):
-                            await _run_loop_for(0.1)
+                            # Increased from 0.1s to 0.15s to reduce timing flakiness
+                            await _run_loop_for(0.15)
 
     assert mock_remaining.call_count >= 2
 

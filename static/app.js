@@ -63,6 +63,8 @@
         cardTarget: null,
         cardTargetValue: null,
         cardTargetDetail: null,
+        // Task 7.4: Timer section for celebration animation
+        timerSection: null,
     };
 
     const state = {
@@ -75,6 +77,8 @@
         baseElapsedSeconds: 0,
         baseRemainingSeconds: 0,
         targetSeconds: null,
+        // Task 7.4: Track completion state for celebration animation
+        wasCompleted: false,
         lastCompleted4h: null,
         activeTab: "live",
         selectedWeek: null, // YYYY-Www
@@ -141,6 +145,9 @@
         dom.cardTarget = document.getElementById("card-target");
         dom.cardTargetValue = document.getElementById("card-target-value");
         dom.cardTargetDetail = document.getElementById("card-target-detail");
+
+        // Task 7.4: Timer section for celebration animation
+        dom.timerSection = document.querySelector(".timer-section");
     }
 
     function hasRequiredDom() {
@@ -827,6 +834,15 @@
         const completed = Boolean(state.status.completed_4h) || remainingSeconds <= 0;
         const progressValue = getLiveProgressPercent(elapsedSeconds, completed);
         const targetDisplay = state.status.target_display || "4h 10m";
+
+        // Task 7.4: Celebration animation when target first reached
+        if (completed && !state.wasCompleted && dom.timerSection) {
+            dom.timerSection.classList.add("celebrating");
+            setTimeout(() => dom.timerSection?.classList.remove("celebrating"), 1200);
+            state.wasCompleted = true;
+        } else if (!completed) {
+            state.wasCompleted = false;
+        }
 
         // Update elapsed display (Task 7.1)
         if (dom.elapsedTime) {

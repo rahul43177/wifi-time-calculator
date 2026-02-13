@@ -371,7 +371,8 @@ async def test_render_status_cards_called_from_render_timer() -> None:
     render_timer_start = js.find("function renderTimer() {")
     # Find the closing brace of renderTimer (it's a large function)
     # We'll look for the renderStatusCards call within it
-    render_timer_section = js[render_timer_start:render_timer_start + 3000]
+    # Task 7.4: Increased range to accommodate celebration animation logic
+    render_timer_section = js[render_timer_start:render_timer_start + 3500]
     assert "renderStatusCards();" in render_timer_section
 
 
