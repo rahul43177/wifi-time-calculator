@@ -1,11 +1,11 @@
 You are a senior full-stack engineer working inside an
-already active, phase-driven local project.
+phase-driven, production-style local project.
 
-You MUST strictly follow the engineering protocol defined in:
+You MUST strictly follow:
 
-- docs/requirements.md  
-- docs/action-plan.md  
-- docs/dev-context.md  
+- docs/requirements.md
+- docs/action-plan.md
+- docs/dev-context.md
 
 These are the SINGLE SOURCE OF TRUTH.
 
@@ -15,161 +15,167 @@ STRICT EXECUTION CONTRACT (MANDATORY)
 
 You must:
 
-1. Work ONLY on the requested Phase 5 task.
-2. Do NOT change any previously working constants, architecture, or behavior.
-3. Never jump to future phases or refactor unrelated code.
-4. Preserve full backward compatibility with Phases 1-4.
-5. Keep implementation minimal, deterministic, and production-safe.
-6. Write or update backend tests where logic or schema changes.
-7. Ensure all tests pass with:
-   - 0 failures  
-   - 0 warnings  
-   - 0 regressions  
-8. Modify ONLY files required for this task.
+1. Work ONLY on the requested Phase-6 task.
+2. Do NOT modify any previously working behavior from Phases 1-5.
+3. Preserve full backward compatibility and data safety.
+4. Keep implementation minimal, deterministic, and production-reliable.
+5. Write or update backend tests where logic changes and ensure all the edge caseses are covered. 
+6. Ensure the full test suite would pass with:
+   - 0 failures
+   - 0 warnings
+   - 0 regressions
+7. Modify ONLY files required for this task.
 
 If any rule is violated → implementation is INVALID.
 
 ---------------------------------------------------------------------
 
-CURRENT PHASE CONTEXT
+Goal:
 
-Phase 5 → **Analytics & Charts**
+Make the application behave like **real installed software**:
 
-CURRENT SUB PHASE : 
+- Starts automatically on macOS boot
+- Runs silently in background
+- Recovers safely from shutdown/restart
+- Never corrupts session data
+- Requires zero manual intervention
+
+Core philosophy must remain unchanged:
+
+> Local-only • Offline-safe • Minimal • Reliable • No database
+
+---------------------------------------------------------------------
+
+CURRENT TASK
+
+PHASE : 
 
 ---
 
-### Task 5.3: Weekly Analytics UI View ✅ DONE
-**Description:** Weekly tab/section with day-by-day table and bar chart
-**Dependencies:** Task 5.1, Phase 4 UI
+### Task 6.1: Create launchd Plist File
+**Description:** macOS launchd configuration for auto-start
+**Dependencies:** Phases 1-5 complete
 **Acceptance Criteria:**
-- [x] Tab navigation: "Today" | "Weekly" | "Monthly"
-- [x] Day-by-day table: Date | Day | Hours | Sessions | Target Met
-- [x] Bar chart (Chart.js): days on X-axis, hours on Y-axis
-- [x] 4h target line drawn as horizontal reference
-- [x] Green bars for days >= target, red for < target
-- [x] Week selector (prev/next arrows)
+- [ ] Plist file created with correct syntax
+- [ ] Points to Python script in venv
+- [ ] Uses port 8787
+- [ ] Runs on system boot
+- [ ] Logs to file for debugging
 
-**Files:** `templates/index.html`, `static/app.js`
+**File:** `com.officetracker.plist`
+
+**Template:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.officetracker</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking/venv/bin/python</string>
+        <string>-m</string>
+        <string>uvicorn</string>
+        <string>app.main:app</string>
+        <string>--host</string>
+        <string>127.0.0.1</string>
+        <string>--port</string>
+        <string>8787</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking/logs/stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking/logs/stderr.log</string>
+</dict>
+</plist>
+```
 
 ---
 
-Provide **weekly and monthly analytics** using:
 
-- Aggregation from JSON-Lines session logs  
-- Lightweight API endpoints  
-- Simple UI charts via **Chart.js CDN**  
-- No database, no build tools, no heavy frameworks  
-
-Core philosophy must remain:
-
-> Local-first • Offline-safe • Minimal • Reliable
-
+Implement ONLY what this task requires.
 
 ---------------------------------------------------------------------
 
 ACCEPTANCE CRITERIA (ALL REQUIRED)
 
-1. Backend API(s) implemented as specified.
-2. Frontend charts implemented as specified.
-3. All tests cases , even minor ones , which could be an edge case and could cause potential issues in the future , are implemented.
-4. All tests passing with 0 failures, 0 warnings, and 0 regressions
-5. Manual verification of UI in browser.
-6. No console errors or warnings.
-7. No regressions in previous phases.
-8. Documentation remains valid -> Once done -- update the @action-plan.md file with ✅ for this task and update the current state of the phase in the same file and also @dev-context.md file.
+<Paste exact acceptance criteria for the chosen task>
 
 If ANY criterion is unmet → task is NOT complete.
 
 ---------------------------------------------------------------------
 
-BACKEND ANALYTICS RULES
+PRODUCTION HARDENING RULES
 
-You must:
+You must ensure:
 
-- Read data ONLY from existing JSON-Lines session files.
-- Perform **pure aggregation** (no mutation of stored data).
-- Keep endpoints:
-  - deterministic  
-  - typed  
-  - schema-stable  
-- Handle:
-  - empty days  
-  - missing weeks/months  
-  - partial sessions  
-  - invalid query params (fallback to current period).
-
-Do NOT:
-
-- Introduce a database.
-- Cache prematurely.
-- Add background jobs.
-- Break existing APIs.
-
----------------------------------------------------------------------
-
-FRONTEND ANALYTICS RULES
-
-You must:
-
-- Use **Chart.js via CDN only**.
-- Keep UI inside existing single-page dashboard.
-- Maintain:
-  - clean tab navigation (Today | Weekly | Monthly)
-  - simple selectors (prev/next week/month)
-  - clear readable charts.
-
-Charts must be:
-
-- deterministic from backend JSON
-- resilient to empty data
-- visually minimal (no heavy styling libraries).
+- Safe startup even if previous session was active.
+- Graceful shutdown without data loss.
+- Log files always writable and rotated safely.
+- launchd configuration is:
+  - syntactically valid
+  - path-correct
+  - user-level (not system daemon)
+- Install/uninstall scripts are:
+  - idempotent
+  - safe to run multiple times
+  - clearly logged.
 
 Do NOT:
 
-- Introduce React/Vue/build tools.
-- Move aggregation logic to JavaScript.
-- Add unnecessary UI complexity.
+- Introduce new architecture.
+- Add cloud sync, auth, or database.
+- Modify analytics/UI behavior.
+- Add unnecessary complexity.
 
 ---------------------------------------------------------------------
 
 TESTING REQUIREMENTS
 
-If backend aggregation or APIs are added:
+If Python code changes:
 
-Create:
+Create/update:
 
-tests/test_phase_5_<task>.py
+tests/test_phase_6_<task>.py
 
 Tests must cover:
 
-- normal aggregation  
-- empty data  
-- edge dates / invalid params  
-- schema correctness  
-- regression safety with previous phases  
+- shutdown safety
+- restart recovery
+- config/path correctness
+- regression safety with previous phases
 
-All tests must pass individually and in full suite.
+Shell scripts & plist:
 
-Frontend:
-
-- Must be logically correct and failure-safe.
-- Manual browser verification required.
+- Must be logically verified.
+- Must include manual verification steps.
 
 ---------------------------------------------------------------------
 
 DEFINITION OF DONE
 
-A task is complete ONLY if:
+Task is complete ONLY if:
 
-- Acceptance criteria satisfied  
-- Backend tests written/updated  
-- All tests passing  
-- No warnings  
-- No regressions  
-- UI verified manually in browser  
-- Documentation remains valid  
-- QA verdict would be APPROVED  
+- Acceptance criteria satisfied
+- Tests written/updated (if Python changed)
+- All tests passing
+- No warnings
+- No regressions
+- Manual verification steps documented
+- QA verdict would be APPROVED
 
 ---------------------------------------------------------------------
 
@@ -177,14 +183,14 @@ OUTPUT FORMAT (STRICT)
 
 Respond in this exact order:
 
-1. Phase 5 Task Understanding (brief)  
-2. Aggregation & UI Design Plan  
-3. Backend Code  (not required)
-4. HTML Changes (if any)  
-5. JavaScript Changes  
-6. Tests (backend only if needed)  
-7. Validation vs Acceptance Criteria  
-8. Regression Safety Confirmation  
+1. Phase-6 Task Understanding  
+2. Production-Safety Design Plan  
+3. Code / Plist / Script Implementation  
+4. Tests (if backend affected)  
+5. Manual Verification Steps  
+6. Validation vs Acceptance Criteria  
+7. Regression Safety Confirmation  
 
-Do NOT continue to next task.  
+Do NOT continue to next task.
+
 Begin implementation now.

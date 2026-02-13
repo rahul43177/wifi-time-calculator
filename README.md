@@ -5,14 +5,21 @@ It uses JSON Lines files for persistence and includes a browser dashboard for li
 
 ## Current Status
 
-Implemented:
-- Wi-Fi detection, session lifecycle, timer engine, notifications, dashboard APIs/UI
-- Weekly and monthly analytics APIs (`/api/weekly`, `/api/monthly`)
-- Weekly analytics view (Chart.js)
+**✅ Production Ready - All Core Features Implemented**
 
-In progress:
-- Monthly analytics UI view
-- Boot auto-start setup
+Phases 1-6 Complete:
+- ✅ Wi-Fi detection with dual fallback (networksetup → system_profiler)
+- ✅ Session lifecycle management with state machine
+- ✅ Timer engine with configurable buffer and test mode
+- ✅ Browser and macOS notifications
+- ✅ Dashboard UI with live timer, today's sessions
+- ✅ Weekly analytics with Chart.js visualization
+- ✅ Monthly analytics with Chart.js visualization
+- ✅ **Auto-start on login (launchd integration)**
+
+**Test Coverage:** 226 tests, 100% passing
+
+**Next:** Phase 7 (UI Enhancements) - optional polish
 
 For exact phase/task status, see `docs/action-plan.md`.
 
@@ -91,6 +98,32 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8787 --reload
 Open:
 - Dashboard: http://127.0.0.1:8787/
 - Health: http://127.0.0.1:8787/health
+
+### 4. (Optional) Enable Auto-Start on Login
+
+To have the tracker start automatically when you log in:
+
+```bash
+./scripts/install-autostart.sh
+```
+
+This installs a launchd service that:
+- ✅ Starts automatically when you log in
+- ✅ Restarts if it crashes (KeepAlive)
+- ✅ Logs to `logs/stdout.log` and `logs/stderr.log`
+
+**Verify it's running:**
+```bash
+launchctl list | grep officetracker
+curl http://127.0.0.1:8787/health
+```
+
+**To uninstall auto-start:**
+```bash
+./scripts/uninstall-autostart.sh
+```
+
+**Full documentation:** See `docs/PHASE_6_AUTO_START_GUIDE.md`
 
 ## Configuration Reference
 

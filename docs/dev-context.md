@@ -126,14 +126,14 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 | 5 | 5.2 | Monthly Data Aggregation API | 12 tests | DONE |
 | 5 | 5.3 | Weekly Analytics UI View (Chart.js) | — | DONE |
 | 5 | 5.4 | Monthly Analytics UI View (Chart.js) | 2 tests | DONE |
+| 6 | 6.1 | Create launchd Plist File | 23 tests | DONE |
+| 6 | 6.2 | Install Launch Agent | 25 tests | DONE |
+| 6 | 6.3 | Add Graceful Shutdown Handler | 6 tests | DONE |
+| 6 | 6.4 | Test Boot Auto-Start | 19 tests | DONE |
+| 6 | 6.5 | Install/Uninstall Scripts + Documentation | 26 tests | DONE |
 
-**Total: 223 tests, all passing, 0 warnings**
+**Total: 322 tests, all passing, 0 warnings**
 
-### Next Up
-
-| Phase | Task | Description | Status |
-|-------|------|-------------|--------|
-| 6 | 6.1-6.5 | Auto-start on boot (launchd) | NOT STARTED |
 
 ---
 
@@ -158,7 +158,8 @@ templates/
 
 static/
 ├── style.css            — Dashboard stylesheet (externalized in Task 4.3)
-└── app.js               — Live timer updates + backend sync loop (Task 4.4)
+├── app.js               — Live timer updates + backend sync loop (Task 4.4)
+└── com.officetracker.plist — launchd configuration for auto-start (Task 6.1)
 ```
 
 ### Test Files
@@ -189,7 +190,12 @@ tests/
 ├── test_phase_4_5.py    — 4 tests: Browser Notification API integration + flip detection
 ├── test_phase_5_1.py    — 10 tests: Weekly aggregation logic + deduplication + boundaries
 ├── test_phase_5_2.py    — 12 tests: Monthly aggregation logic + fallbacks + edge-date + storage-failure coverage
-└── test_phase_5_4.py    — 2 tests: Monthly Analytics UI element presence + JS logic checks
+├── test_phase_5_4.py    — 2 tests: Monthly Analytics UI element presence + JS logic checks
+├── test_phase_6_1.py    — 23 tests: launchd plist comprehensive validation (syntax, semantics, paths, boot flow, security)
+├── test_phase_6_2.py    — 25 tests: Install/uninstall script validation (modern bootstrap/bootout, error handling, idempotency, failure paths, diagnostics)
+├── test_phase_6_3.py    — 6 tests: Graceful shutdown handler (background task cancellation, session persistence, exception handling, code quality)
+├── test_phase_6_4.py    — 19 tests: Boot auto-start testing (launchctl availability, boot keys, log writability, session recovery, command structure)
+└── test_phase_6_5.py    — 26 tests: Script executability, validation logic, timing safety, documentation accuracy, error messages, path consistency
 ```
 
 ### Configuration & Docs

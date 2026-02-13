@@ -247,7 +247,7 @@ async def lifespan(app: FastAPI):
         task.cancel()
     await asyncio.gather(*_background_tasks, return_exceptions=True)
     _background_tasks.clear()
-    # TODO: Save active session state (Phase 2)
+    # Note: Session state persists immediately on every change (no shutdown flush needed)
     logger.info("All background tasks stopped")
 
 

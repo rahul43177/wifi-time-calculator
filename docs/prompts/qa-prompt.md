@@ -1,10 +1,9 @@
-You are acting as a **Senior QA Engineer and Full-Stack Analytics Auditor**
-for a phase-driven local project.
+You are acting as a **Senior Production QA Engineer**
+auditing Phase-6 of a local macOS application.
 
-Audit ONLY the specified **Phase 5 task**.  
+Audit ONLY the specified Phase-6 task.
 Do NOT implement new features.
 
-Think sequentially.  
 If the audit is large → break into smaller verification steps.
 
 ---------------------------------------------------------------------
@@ -13,41 +12,39 @@ MANDATORY CONTEXT
 
 You MUST align with:
 
-- docs/requirements.md  
-- docs/action-plan.md  
-- docs/dev-context.md  
+- docs/requirements.md
+- docs/action-plan.md
+- docs/dev-context.md
 
 These are the single source of truth.
 
 ---------------------------------------------------------------------
 
-PHASE UNDER AUDIT
-
-Phase 5 → Analytics & Charts  
-Task: 
+PHASE UNDER AUDIT : Just the phase below and then once this is done -- please test all the previous test cases which are already done implementing. 
+Don't test the forward phases until we reach them in the audit.
 
 ---
 
-### Task 5.3: Weekly Analytics UI View ✅ DONE
-**Description:** Weekly tab/section with day-by-day table and bar chart
-**Dependencies:** Task 5.1, Phase 4 UI
+### Task 6.5: Create Install/Uninstall Scripts + Documentation ✅ DONE
+**Description:** Easy install, uninstall, and README
+**Dependencies:** All previous tasks
 **Acceptance Criteria:**
-- [x] Tab navigation: "Today" | "Weekly" | "Monthly"
-- [x] Day-by-day table: Date | Day | Hours | Sessions | Target Met
-- [x] Bar chart (Chart.js): days on X-axis, hours on Y-axis
-- [x] 4h target line drawn as horizontal reference
-- [x] Green bars for days >= target, red for < target
-- [x] Week selector (prev/next arrows)
+- [x] `scripts/install-autostart.sh` — copies plist, loads agent
+- [x] `scripts/uninstall-autostart.sh` — unloads agent, removes plist
+- [x] Documentation with setup, config, troubleshooting, uninstall
 
-**Files:** `templates/index.html`, `static/app.js`
+**Files:** `scripts/install-autostart.sh`, `scripts/uninstall-autostart.sh`, `docs/PHASE_6_AUTO_START_GUIDE.md`
+
+> **Implementation Note:** Created comprehensive auto-start management:
+> - **Install script:** validates environment, copies plist, loads service
+> - **Uninstall script:** stops service, removes plist, verifies removal
+> - **Documentation:** 400+ line guide covering installation, troubleshooting, FAQ
+> - Both scripts tested: install → service runs → uninstall → service removed
+
+> **Tests:** `tests/test_phase_6_1.py` (3 tests) — plist file existence, semantic
+> validation with plistlib, and macOS plutil syntax check — all passing.
 
 ---
-
-Files possibly changed:
-
-- Backend → analytics endpoints  
-- Frontend → Chart.js UI  
-- Tests → phase-specific test file  
 
 ---------------------------------------------------------------------
 
@@ -55,40 +52,26 @@ QA RESPONSIBILITIES
 
 You must verify:
 
-1. Aggregation correctness from JSON-Lines logs.
-2. Deterministic API schemas and safe defaults.
-3. Proper frontend rendering of analytics.
-4. Acceptance criteria completeness.
-5. No regression in Phases 1-4.
-6. No scope violations (DB, React, cloud, etc.).
-7. Test coverage is sufficient for edge cases , please be very detailed in this and do not miss any edge case. 
+1. Auto-start reliability on macOS boot.
+2. No corruption of session data during shutdown/restart.
+3. launchd plist correctness and safety.
+4. Install/uninstall scripts behave safely and idempotently.
+5. Acceptance criteria completeness.
+6. No regression in Phases 1-5.
+7. Adequate test coverage for backend changes.
 
 ---------------------------------------------------------------------
 
-BACKEND ANALYTICS CHECKS
+PRODUCTION RELIABILITY CHECKS
 
 Confirm:
 
-- Correct weekly/monthly calculations.
-- Empty or missing data handled safely.
-- Invalid query params fallback correctly.
-- No mutation of stored session data.
-- Previous APIs unaffected.
-
----------------------------------------------------------------------
-
-FRONTEND ANALYTICS CHECKS
-
-Confirm:
-
-- Chart.js loads via CDN only.
-- Charts match backend JSON exactly.
-- Handles:
-  - empty datasets  
-  - partial weeks/months  
-  - navigation between periods.
-- No console errors.
-- UI remains minimal and readable.
+- App starts automatically after reboot.
+- Dashboard reachable at http://localhost:8787.
+- Active session resumes safely.
+- Logs confirm clean startup/shutdown.
+- Missing paths or permissions handled safely.
+- Multiple installs/uninstalls do not break system.
 
 ---------------------------------------------------------------------
 
@@ -100,8 +83,8 @@ pytest tests/ -v
 
 Ensure:
 
-- All prior tests pass.
-- New tests cover aggregation logic.
+- All previous tests pass.
+- Phase-6 tests cover shutdown/restart logic.
 - No warnings.
 - No regressions.
 
@@ -111,30 +94,30 @@ DEFINITION OF DONE VALIDATION
 
 Task is DONE only if:
 
-- Acceptance criteria satisfied  
-- Tests written and passing  
-- No warnings  
-- No regressions  
-- UI verified working  
-- QA verdict = APPROVED  
+- Acceptance criteria satisfied. 
+- Tests written and passing (if applicable)
+- No warnings
+- No regressions
+- Manual boot test successful
+- QA verdict = APPROVED
 
 ---------------------------------------------------------------------
 
 FINAL OUTPUT FORMAT
 
 1. Requirements Compliance  
-2. Backend Aggregation Audit  
-3. Frontend Chart/UI Audit  
+2. Startup/Shutdown Reliability Audit  
+3. Script & Plist Safety Review  
 4. Code Quality Findings  
 5. Test Coverage Evaluation  
 6. Regression Result  
-7. Scope Violation Check  
+7. Definition of Done Validation  
 8. FINAL VERDICT  
    - ✅ APPROVED  
    - ⚠️ MINOR ISSUES  
    - ❌ REJECTED  
 
-Be strict, concise, and engineering-focused.  
+Be strict, concise, and production-focused.  
 Do NOT move to next task.
 
 Begin QA audit now.
