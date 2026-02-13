@@ -36,6 +36,7 @@
     const SYNC_INTERVAL_MS = 30000;
     const STATUS_ENDPOINT = "/api/status";
     const TODAY_ENDPOINT = "/api/today";
+    const GAMIFICATION_ENDPOINT = "/api/gamification"; // Task 7.7
 
     const dom = {
         connectionStatus: null,
@@ -101,6 +102,7 @@
         today: null,
         weekly: null,
         monthly: null,
+        gamification: null, // Task 7.7: Gamification data
         syncAtMs: null,
         sessionStartMs: null,
         baseElapsedSeconds: 0,
@@ -187,6 +189,12 @@
 
         // Task 7.9: Screen reader announcements
         dom.timerAnnouncements = document.getElementById("timer-announcements");
+
+        // Task 7.7: Gamification elements
+        dom.currentStreak = document.getElementById("current-streak");
+        dom.longestStreak = document.getElementById("longest-streak");
+        dom.totalDaysMet = document.getElementById("total-days-met");
+        dom.achievementsGrid = document.querySelector(".achievements-grid");
     }
 
     function hasRequiredDom() {
@@ -823,6 +831,11 @@
         state.today = todayPayload;
     }
 
+    // Task 7.7: Apply gamification data to state
+    function applyGamification(gamificationPayload) {
+        state.gamification = gamificationPayload;
+    }
+
     function updateNotificationBadge() {
         if (!dom.notificationBadge) {
             return;
@@ -1222,6 +1235,46 @@
         }
     }
 
+    // Task 7.7: Render gamification data (streaks and achievements)
+    function renderGamification() {
+        if (!state.gamification) return;
+        if (!dom.currentStreak || !dom.longestStreak || !dom.totalDaysMet) return;
+
+        // Update streak counters
+        dom.currentStreak.textContent = state.gamification.current_streak || 0;
+        dom.longestStreak.textContent = state.gamification.longest_streak || 0;
+        dom.totalDaysMet.textContent = state.gamification.total_days_met_target || 0;
+
+        // Update achievements
+        if (!dom.achievementsGrid || !state.gamification.achievements) return;
+
+        state.gamification.achievements.forEach(achievement => {
+            const achievementEl = dom.achievementsGrid.querySelector(`[data-achievement-id="${achievement.id}"]`);
+            if (!achievementEl) return;
+
+            const iconEl = achievementEl.querySelector('.achievement-icon');
+            const statusEl = achievementEl.querySelector('.achievement-status');
+
+            if (achievement.earned) {
+                achievementEl.classList.add('earned');
+                if (iconEl) iconEl.classList.remove('locked');
+                if (statusEl) {
+                    statusEl.classList.remove('locked');
+                    statusEl.textContent = '✓';
+                    statusEl.setAttribute('aria-label', 'Earned');
+                }
+            } else {
+                achievementEl.classList.remove('earned');
+                if (iconEl) iconEl.classList.add('locked');
+                if (statusEl) {
+                    statusEl.classList.add('locked');
+                    statusEl.textContent = '🔒';
+                    statusEl.setAttribute('aria-label', 'Locked');
+                }
+            }
+        });
+    }
+
     function getSessionStatusText(session) {
         if (!session) {
             return "Unknown";
@@ -1303,16 +1356,19 @@
         renderTodaySessions();
         renderStatusCards(); // Task 7.2
         renderContextualMessage(); // Task 7.5
+        renderGamification(); // Task 7.7
     }
 
     async function syncFromBackend() {
         try {
-            const [statusPayload, todayPayload] = await Promise.all([
+            const [statusPayload, todayPayload, gamificationPayload] = await Promise.all([
                 fetchJson(STATUS_ENDPOINT),
                 fetchJson(TODAY_ENDPOINT),
+                fetchJson(GAMIFICATION_ENDPOINT), // Task 7.7
             ]);
             applyToday(todayPayload);
             applyStatus(statusPayload);
+            applyGamification(gamificationPayload); // Task 7.7
             clearSyncError();
             renderAll();
         } catch (error) {

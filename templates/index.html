@@ -17,15 +17,15 @@
                 <span id="theme-icon" aria-hidden="true">🌙</span>
             </button>
             <nav class="tabs" aria-label="Dashboard sections">
-                <button class="tab active" data-tab="live" role="tab" aria-selected="true" aria-controls="tab-live" tabindex="0">Live</button>
-                <button class="tab" data-tab="today" role="tab" aria-selected="false" aria-controls="tab-today" tabindex="-1">Today</button>
-                <button class="tab" data-tab="weekly" role="tab" aria-selected="false" aria-controls="tab-weekly" tabindex="-1">Weekly</button>
-                <button class="tab" data-tab="monthly" role="tab" aria-selected="false" aria-controls="tab-monthly" tabindex="-1">Monthly</button>
+                <button id="live-tab" class="tab active" data-tab="live" role="tab" aria-selected="true" aria-controls="tab-live" tabindex="0">Live</button>
+                <button id="today-tab" class="tab" data-tab="today" role="tab" aria-selected="false" aria-controls="tab-today" tabindex="-1">Today</button>
+                <button id="weekly-tab" class="tab" data-tab="weekly" role="tab" aria-selected="false" aria-controls="tab-weekly" tabindex="-1">Weekly</button>
+                <button id="monthly-tab" class="tab" data-tab="monthly" role="tab" aria-selected="false" aria-controls="tab-monthly" tabindex="-1">Monthly</button>
             </nav>
         </div>
     </section>
 
-    <div id="tab-live" class="tab-content" role="tabpanel" aria-labelledby="tab-live">
+    <div id="tab-live" class="tab-content" role="tabpanel" aria-labelledby="live-tab">
         <!-- Legacy connection status (hidden, kept for backward compatibility with tests) -->
         <section class="card legacy-status hidden">
             <div id="connection-status" class="status-line connected">
@@ -114,9 +114,78 @@
             <p id="contextual-message" class="contextual-message"></p>
             <p id="completion-banner" class="completion hidden">Completed! Total: <span id="completed-total">00:00:00</span></p>
         </section>
+
+        <!-- Task 7.7: Gamification Section -->
+        <section class="card gamification-section">
+            <h2>Progress & Achievements</h2>
+
+            <!-- Streak Counter -->
+            <div class="streak-display">
+                <div class="streak-item">
+                    <span class="streak-icon" aria-hidden="true">🔥</span>
+                    <div class="streak-content">
+                        <div class="streak-label">Current Streak</div>
+                        <div id="current-streak" class="streak-value">0</div>
+                        <div class="streak-sublabel">days</div>
+                    </div>
+                </div>
+                <div class="streak-item">
+                    <span class="streak-icon" aria-hidden="true">🏆</span>
+                    <div class="streak-content">
+                        <div class="streak-label">Longest Streak</div>
+                        <div id="longest-streak" class="streak-value">0</div>
+                        <div class="streak-sublabel">days</div>
+                    </div>
+                </div>
+                <div class="streak-item">
+                    <span class="streak-icon" aria-hidden="true">⭐</span>
+                    <div class="streak-content">
+                        <div class="streak-label">Total Days</div>
+                        <div id="total-days-met" class="streak-value">0</div>
+                        <div class="streak-sublabel">target met</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Achievements Grid -->
+            <div class="achievements-grid" role="list" aria-label="Achievements">
+                <div class="achievement" data-achievement-id="early_bird" role="listitem">
+                    <div class="achievement-icon locked" aria-hidden="true">🌅</div>
+                    <div class="achievement-content">
+                        <div class="achievement-name">Early Bird</div>
+                        <div class="achievement-description">Started work before 9 AM</div>
+                    </div>
+                    <div class="achievement-status locked" aria-label="Locked">🔒</div>
+                </div>
+                <div class="achievement" data-achievement-id="marathon_runner" role="listitem">
+                    <div class="achievement-icon locked" aria-hidden="true">🏃</div>
+                    <div class="achievement-content">
+                        <div class="achievement-name">Marathon Runner</div>
+                        <div class="achievement-description">Worked 5+ hours in one session</div>
+                    </div>
+                    <div class="achievement-status locked" aria-label="Locked">🔒</div>
+                </div>
+                <div class="achievement" data-achievement-id="consistent" role="listitem">
+                    <div class="achievement-icon locked" aria-hidden="true">🔥</div>
+                    <div class="achievement-content">
+                        <div class="achievement-name">Consistent</div>
+                        <div class="achievement-description">Met target 5 days in a row</div>
+                    </div>
+                    <div class="achievement-status locked" aria-label="Locked">🔒</div>
+                </div>
+                <div class="achievement" data-achievement-id="dedicated" role="listitem">
+                    <div class="achievement-icon locked" aria-hidden="true">⭐</div>
+                    <div class="achievement-content">
+                        <div class="achievement-name">Dedicated</div>
+                        <div class="achievement-description">Met target on 10+ different days</div>
+                    </div>
+                    <div class="achievement-status locked" aria-label="Locked">🔒</div>
+                </div>
+            </div>
+        </section>
     </div>
 
-    <div id="tab-today" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-today">
+    <div id="tab-today" class="tab-content hidden" role="tabpanel" aria-labelledby="today-tab">
         <section class="card">
             <h2>Today's Sessions</h2>
             <table id="today-sessions-table" aria-label="Today's sessions">
@@ -138,7 +207,7 @@
         </section>
     </div>
 
-    <div id="tab-weekly" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-weekly">
+    <div id="tab-weekly" class="tab-content hidden" role="tabpanel" aria-labelledby="weekly-tab">
         <section class="card">
             <div class="section-header">
                 <h2>Weekly Analytics</h2>
@@ -184,7 +253,7 @@
         </section>
     </div>
 
-    <div id="tab-monthly" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-monthly">
+    <div id="tab-monthly" class="tab-content hidden" role="tabpanel" aria-labelledby="monthly-tab">
         <section class="card">
             <div class="section-header">
                 <h2>Monthly Analytics</h2>

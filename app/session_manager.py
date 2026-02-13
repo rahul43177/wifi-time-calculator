@@ -13,6 +13,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, ValidationError, field_validator
 
 from app.file_store import append_session, read_sessions
+from app.gamification import gamification_service
 
 logger = logging.getLogger(__name__)
 
@@ -211,6 +212,17 @@ class SessionManager:
             self.active_session = updated_session
             self.state = SessionState.COMPLETED
             logger.info("Session marked as completed")
+
+            # Task 7.7: Update gamification streak when target is met
+            try:
+                # Convert date from DD-MM-YYYY to YYYY-MM-DD for gamification service
+                date_parts = updated_session.date.split("-")
+                iso_date = f"{date_parts[2]}-{date_parts[1]}-{date_parts[0]}"
+                gamification_service.update_streak(iso_date, target_met=True)
+                logger.info("Gamification streak updated for %s", iso_date)
+            except Exception as e:
+                logger.warning("Failed to update gamification streak: %s", e)
+
             return True
 
     def recover_session(self, current_ssid: str | None) -> bool:

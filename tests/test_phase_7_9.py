@@ -105,13 +105,34 @@ def test_tab_panels_have_role(html_content):
         "Tab content should have role='tabpanel'"
 
 
+def test_tab_buttons_have_ids(html_content):
+    """Test that tab buttons have proper IDs for ARIA relationships."""
+    assert 'id="live-tab"' in html_content, \
+        "Live tab button should have id='live-tab'"
+
+    assert 'id="today-tab"' in html_content, \
+        "Today tab button should have id='today-tab'"
+
+    assert 'id="weekly-tab"' in html_content, \
+        "Weekly tab button should have id='weekly-tab'"
+
+    assert 'id="monthly-tab"' in html_content, \
+        "Monthly tab button should have id='monthly-tab'"
+
+
 def test_tab_panels_have_aria_labelledby(html_content):
     """Test that tab panels are labeled by their tabs."""
-    assert 'aria-labelledby="tab-live"' in html_content, \
-        "Live panel should be labeled by tab"
+    assert 'aria-labelledby="live-tab"' in html_content, \
+        "Live panel should be labeled by live-tab"
 
-    assert 'aria-labelledby="tab-today"' in html_content, \
-        "Today panel should be labeled by tab"
+    assert 'aria-labelledby="today-tab"' in html_content, \
+        "Today panel should be labeled by today-tab"
+
+    assert 'aria-labelledby="weekly-tab"' in html_content, \
+        "Weekly panel should be labeled by weekly-tab"
+
+    assert 'aria-labelledby="monthly-tab"' in html_content, \
+        "Monthly panel should be labeled by monthly-tab"
 
 
 def test_keyboard_navigation_handler_exists(js_content):

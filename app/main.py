@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from app.config import settings
 from app.file_store import read_sessions
 from app.analytics import get_monthly_aggregation, get_weekly_aggregation
+from app.gamification import gamification_service  # Task 7.7
 from app.session_manager import SessionState
 from app.timer_engine import (
     _resolve_target_components,
@@ -138,6 +139,26 @@ class MonthlyResponse(BaseModel):
     total_minutes: int
     total_days_present: int
     avg_daily_minutes: float
+
+
+# Task 7.7: Gamification response models
+class AchievementResponse(BaseModel):
+    """Achievement information."""
+
+    id: str
+    name: str
+    description: str
+    icon: str
+    earned: bool
+
+
+class GamificationResponse(BaseModel):
+    """Gamification data including streaks and achievements."""
+
+    current_streak: int
+    longest_streak: int
+    total_days_met_target: int
+    achievements: list[AchievementResponse]
 
 
 def _get_now(tz: Optional[tzinfo] = None) -> datetime:
@@ -441,6 +462,31 @@ async def get_monthly_data(month: Optional[str] = None) -> MonthlyResponse:
     Return monthly week-by-week session aggregation.
     """
     return MonthlyResponse(**get_monthly_aggregation(month))
+
+
+# Task 7.7: Gamification endpoint
+@app.get("/api/gamification", response_model=GamificationResponse)
+async def get_gamification_data() -> GamificationResponse:
+    """
+    Return gamification data including streaks and achievements.
+    """
+    # Get streak info
+    streak_info = gamification_service.get_streak_info()
+
+    # Get today's sessions for achievement checking
+    sessions = read_sessions()
+    today_str = datetime.now().strftime("%d-%m-%Y")
+    today_sessions = [s for s in sessions if s.get("date") == today_str]
+
+    # Get achievements
+    achievements = gamification_service.get_achievements(today_sessions)
+
+    return GamificationResponse(
+        current_streak=streak_info["current_streak"],
+        longest_streak=streak_info["longest_streak"],
+        total_days_met_target=streak_info["total_days_met_target"],
+        achievements=[AchievementResponse(**a) for a in achievements]
+    )
 
 
 if __name__ == "__main__":

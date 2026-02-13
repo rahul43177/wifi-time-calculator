@@ -14,10 +14,14 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from app.config import DATA_DIR
+from app.config import settings
 
 
-GAMIFICATION_FILE = DATA_DIR / "gamification.json"
+def _get_gamification_file() -> Path:
+    """Get path to gamification data file."""
+    data_dir = Path(settings.data_dir)
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return data_dir / "gamification.json"
 
 
 class Achievement:
@@ -42,7 +46,7 @@ class GamificationService:
     """Service for managing streaks and achievements."""
 
     def __init__(self):
-        self.data_file = GAMIFICATION_FILE
+        self.data_file = _get_gamification_file()
         self._ensure_file_exists()
 
     def _ensure_file_exists(self) -> None:
@@ -86,31 +90,31 @@ class GamificationService:
             # Target not met, don't update streak
             return
 
-        # Increment total days met target
-        data["total_days_met_target"] = data.get("total_days_met_target", 0) + 1
-
         last_streak_date = data.get("last_streak_date")
 
         if last_streak_date is None:
             # First streak day
             data["current_streak"] = 1
             data["last_streak_date"] = date_str
+            data["total_days_met_target"] = data.get("total_days_met_target", 0) + 1
         else:
             # Check if this is consecutive
             last_date = datetime.strptime(last_streak_date, "%Y-%m-%d").date()
             current_date = datetime.strptime(date_str, "%Y-%m-%d").date()
 
             if (current_date - last_date).days == 1:
-                # Consecutive day
+                # Consecutive day - new day
                 data["current_streak"] += 1
                 data["last_streak_date"] = date_str
+                data["total_days_met_target"] = data.get("total_days_met_target", 0) + 1
             elif current_date == last_date:
-                # Same day, no change
+                # Same day, no change to counts
                 pass
             else:
-                # Streak broken, restart
+                # Streak broken, restart - new day
                 data["current_streak"] = 1
                 data["last_streak_date"] = date_str
+                data["total_days_met_target"] = data.get("total_days_met_target", 0) + 1
 
         # Update longest streak
         if data["current_streak"] > data.get("longest_streak", 0):
@@ -159,8 +163,8 @@ class GamificationService:
         marathon_earned = "marathon_runner" in earned_ids
         for session in sessions:
             if not marathon_earned:
-                duration_min = session.get("duration_minutes", 0)
-                if duration_min >= 300:  # 5 hours = 300 minutes
+                duration_min = session.get("duration_minutes")
+                if duration_min is not None and duration_min >= 300:  # 5 hours = 300 minutes
                     marathon_earned = True
                     earned_ids.add("marathon_runner")
                     break
