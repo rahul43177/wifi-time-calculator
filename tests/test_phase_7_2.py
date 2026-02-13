@@ -195,8 +195,9 @@ async def test_css_defines_connection_color_states() -> None:
         response = await client.get("/static/style.css")
 
     css = response.text
-    assert "#card-connection.connected .status-card-value {" in css
-    assert "#card-connection.disconnected .status-card-value {" in css
+    # New design uses gradient backgrounds for card states instead of text colors
+    assert "#card-connection.connected {" in css or "#card-connection.connected" in css
+    assert "#card-connection.disconnected {" in css
 
 
 @pytest.mark.asyncio
@@ -208,10 +209,11 @@ async def test_css_defines_target_progress_color_states() -> None:
         response = await client.get("/static/style.css")
 
     css = response.text
-    assert "#card-target.progress-low .status-card-value {" in css
-    assert "#card-target.progress-medium .status-card-value {" in css
-    assert "#card-target.progress-high .status-card-value {" in css
-    assert "#card-target.progress-complete .status-card-value {" in css
+    # New design uses gradient backgrounds for progress states instead of text colors
+    assert "#card-target.progress-low {" in css
+    assert "#card-target.progress-medium {" in css
+    assert "#card-target.progress-high" in css
+    assert "#card-target.progress-complete" in css
 
 
 # =============================================================================

@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 # Tracks the last known SSID across polling cycles
 _previous_ssid: Optional[str] = None
 _session_manager: Optional[SessionManager] = None
+_cached_ssid: Optional[str] = None  # Cached SSID to avoid blocking subprocess calls
 
 
 def get_session_manager() -> SessionManager:
@@ -56,21 +57,33 @@ def process_ssid_change(old_ssid: Optional[str], new_ssid: Optional[str]) -> Non
         logger.exception("Failed to process session transition for SSID change")
 
 
-def get_current_ssid() -> Optional[str]:
+def get_current_ssid(use_cache: bool = False) -> Optional[str]:
     """
     Get the currently connected Wi-Fi SSID on macOS.
 
     Uses `networksetup -getairportnetwork en0` as primary method,
     falls back to parsing `system_profiler SPAirPortDataType`.
 
+    Args:
+        use_cache: If True, return cached SSID (fast, no subprocess). If False, query system (slow, accurate).
+
     Returns:
         SSID string if connected, None otherwise.
     """
+    global _cached_ssid
+    
+    # Fast path: return cached SSID if available
+    if use_cache and _cached_ssid is not None:
+        return _cached_ssid
+    
     ssid = _get_ssid_via_networksetup()
     if ssid is not None:
+        _cached_ssid = ssid
         return ssid
 
-    return _get_ssid_via_system_profiler()
+    ssid = _get_ssid_via_system_profiler()
+    _cached_ssid = ssid
+    return ssid
 
 
 def _get_ssid_via_networksetup() -> Optional[str]:

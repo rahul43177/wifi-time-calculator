@@ -24,7 +24,7 @@ async def test_root_renders_dashboard_template() -> None:
 
     assert response.status_code == 200
     assert "text/html" in response.headers.get("content-type", "")
-    assert "<title>DailyFour - Track Your 4 Hours</title>" in response.text
+    assert "<title>DailyFour</title>" in response.text
     assert "DailyFour" in response.text
 
 

@@ -325,7 +325,7 @@ async def get_status() -> StatusResponse:
     """
     manager = get_session_manager()
     active_session = manager.active_session
-    current_ssid = get_current_ssid()
+    current_ssid = get_current_ssid(use_cache=True)  # Use cached SSID for fast API response
     connected = current_ssid == settings.office_wifi_name
 
     target_hours, target_minutes = _resolve_target_components(

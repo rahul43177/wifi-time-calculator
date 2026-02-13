@@ -38,12 +38,12 @@ def get_cached_sessions(date: datetime) -> Optional[list[dict[str, Any]]]:
     if key in _cache:
         data, expiry = _cache[key]
         if time.time() < expiry:
-            logger.debug("Cache hit for %s", key)
+            logger.info("✅ Cache HIT for %s", key)
             return data
         else:
             # Expired, remove it
             del _cache[key]
-            logger.debug("Cache expired for %s", key)
+            logger.info("⏰ Cache EXPIRED for %s", key)
     return None
 
 
@@ -103,8 +103,11 @@ def cache_sessions(ttl: int = DEFAULT_TTL_SECONDS) -> Callable:
                 return list(cached)
             
             # Cache miss, call original function
-            logger.debug("Cache miss, reading from disk for %s", date.strftime('%d-%m-%Y'))
+            logger.info("❌ Cache MISS for %s - reading from disk", date.strftime('%d-%m-%Y'))
+            start_time = time.time()
             result = func(date)
+            elapsed = time.time() - start_time
+            logger.info("📁 Disk read took %.3fs for %s (%d sessions)", elapsed, date.strftime('%d-%m-%Y'), len(result))
             
             # Cache a copy of the result to prevent external modifications
             set_cached_sessions(date, list(result), ttl=ttl)

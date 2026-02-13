@@ -481,10 +481,9 @@ body,
 }
 
 .status-card {
-    background: linear-gradient(135deg, var(--card-bg) 0%, var(--card-bg) 100%);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: var(--padding-lg);
+    border: none;
+    border-radius: 16px;
+    padding: 24px;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
@@ -494,26 +493,65 @@ body,
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
     right: 0;
-    height: 3px;
-    background: var(--gradient-primary);
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    transform: translate(40%, -40%);
+    z-index: 0;
 }
 
 .status-card:hover {
-    border-color: var(--primary);
-    box-shadow: 0 8px 16px rgba(79, 70, 229, 0.15);
-    transform: translateY(-2px);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
 }
 
-.status-card:hover::before {
-    opacity: 1;
+/* Color theory: Each card gets its own gradient */
+#card-connection {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); /* Blue - Connectivity */
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-[data-theme="dark"] .status-card:hover {
-    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.25);
+#card-connection:hover {
+    box-shadow: 0 12px 24px rgba(59, 130, 246, 0.4);
+}
+
+#card-session {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); /* Purple - Active session */
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+#card-session:hover {
+    box-shadow: 0 12px 24px rgba(139, 92, 246, 0.4);
+}
+
+#card-today {
+    background: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%); /* Teal - Accumulation */
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+}
+
+#card-today:hover {
+    box-shadow: 0 12px 24px rgba(20, 184, 166, 0.4);
+}
+
+#card-target {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); /* Amber - Goals */
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+#card-target:hover {
+    box-shadow: 0 12px 24px rgba(245, 158, 11, 0.4);
+}
+
+/* When target is complete, change to green */
+#card-target.progress-complete {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+#card-target.progress-complete:hover {
+    box-shadow: 0 12px 24px rgba(5, 150, 105, 0.4);
 }
 
 .status-card-icon {
@@ -527,53 +565,81 @@ body,
     min-width: 0;
 }
 
+.status-card-content {
+    position: relative;
+    z-index: 1;
+}
+
 .status-card-label {
     font-size: var(--text-sm);
     font-weight: var(--font-medium);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.9);
     margin-bottom: var(--space-2);
 }
 
 .status-card-value {
     font-size: var(--text-2xl);
-    font-weight: var(--font-semibold);
-    color: var(--text);
+    font-weight: var(--font-bold);
+    color: #ffffff;
     margin-bottom: var(--space-1);
     line-height: var(--leading-tight);
 }
 
 .status-card-detail {
     font-size: var(--text-sm);
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.85);
     line-height: var(--leading-normal);
 }
 
-/* Connection card states (Task 7.3: WCAG AA compliant) */
-#card-connection.connected .status-card-value {
-    color: var(--green-dark);
+/* Connection card states - Now gradient changes instead of text color */
+#card-connection.connected {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
 }
 
-#card-connection.disconnected .status-card-value {
-    color: var(--red-dark);
+#card-connection.disconnected {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
-/* Target progress card color states (Task 7.1 thresholds with Task 7.3 WCAG AA colors) */
-#card-target.progress-low .status-card-value {
-    color: var(--progress); /* Blue: <50% (Blue 600 is WCAG AA compliant) */
+#card-connection.disconnected:hover {
+    box-shadow: 0 12px 24px rgba(220, 38, 38, 0.4);
 }
 
-#card-target.progress-medium .status-card-value {
-    color: var(--yellow-dark); /* Yellow: 50-80% (WCAG AA: 4.54:1) */
+/* Target progress card - Dynamic gradient based on progress */
+#card-target.progress-low {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
-#card-target.progress-high .status-card-value {
-    color: var(--green-dark); /* Green: >80% (WCAG AA: 4.66:1) */
+#card-target.progress-low:hover {
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4);
 }
 
-#card-target.progress-complete .status-card-value {
-    color: var(--green-dark);
+#card-target.progress-medium {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+#card-target.progress-medium:hover {
+    box-shadow: 0 12px 24px rgba(245, 158, 11, 0.4);
+}
+
+#card-target.progress-high,
+#card-target.progress-complete {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+#card-target.progress-high:hover,
+#card-target.progress-complete:hover {
+    box-shadow: 0 12px 24px rgba(5, 150, 105, 0.4);
+}
+
+/* All status card values are now white for contrast */
+.status-card-value {
+    color: #ffffff !important;
 }
 
 /* Legacy connection status (kept for backward compatibility, Task 7.3: WCAG AA) */
@@ -628,24 +694,45 @@ body,
 
 /* Task 7.3: Timer section gradient (hero element) */
 .timer-section {
-    background: var(--gradient-timer);
-    border: 2px solid var(--primary-light);
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border: none;
+    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.timer-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    z-index: 0;
+}
+
+.timer-section > * {
+    position: relative;
+    z-index: 1;
 }
 
 /* --- Elapsed/Target display (Task 7.1) --- */
 .elapsed-display {
     font-family: var(--font-sans);
-    font-size: var(--text-2xl);
-    font-weight: var(--font-semibold);
+    font-size: 2.5rem;
+    font-weight: var(--font-bold);
     text-align: center;
     margin: var(--space-4) 0;
-    color: var(--text);
+    color: #ffffff;
     display: flex;
     align-items: baseline;
     justify-content: center;
     gap: var(--space-2);
-    transition: color 0.3s ease;
+    transition: all 0.3s ease;
     line-height: var(--leading-tight);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .elapsed-time {
@@ -655,7 +742,7 @@ body,
 
 .elapsed-separator {
     margin: 0 var(--space-2);
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.8);
     font-weight: var(--font-normal);
 }
 
@@ -663,24 +750,18 @@ body,
     display: inline-block;
     margin-left: var(--space-2);
     font-size: 0.85em;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 12px;
+    border-radius: 999px;
 }
 
-/* Progress-based color coding (Task 7.1 thresholds with Task 7.3 WCAG AA colors) */
-.elapsed-display.progress-low {
-    color: var(--progress); /* Blue: <50% (Blue 600 is WCAG AA compliant) */
-}
-
-.elapsed-display.progress-medium {
-    color: var(--yellow-dark); /* Yellow: 50-80% (WCAG AA: 4.54:1) */
-}
-
-.elapsed-display.progress-high {
-    color: var(--green-dark); /* Green: >80% (WCAG AA: 4.66:1) */
-}
-
+/* Progress-based styling - all white text with gradient background */
+.elapsed-display.progress-low,
+.elapsed-display.progress-medium,
+.elapsed-display.progress-high,
 .elapsed-display.progress-complete {
-    color: var(--green-dark);
+    color: #ffffff;
 }
 
 /* --- Countdown display --- */
@@ -694,17 +775,20 @@ body,
 
 .countdown-label {
     font-size: var(--text-sm);
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.9);
     font-weight: var(--font-medium);
 }
 
 .timer-countdown {
     font-family: var(--font-mono);
     font-size: var(--text-xl);
-    font-weight: var(--font-medium);
+    font-weight: var(--font-semibold);
     letter-spacing: 0.04em;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.95);
     font-variant-numeric: tabular-nums;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 8px 16px;
+    border-radius: 8px;
 }
 
 /* Legacy timer class (keeping for backward compatibility, Task 7.3: WCAG AA) */
@@ -1317,12 +1401,14 @@ button:focus-visible,
 }
 
 .achievement.earned::before {
-    background: var(--green);
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    opacity: 0.8;
 }
 
 .achievement.earned {
-    border: 1px solid var(--green);
-    background: var(--green-light);
+    border: 1px solid rgba(79, 70, 229, 0.2);
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(124, 58, 237, 0.05) 100%);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
 }
 
 .achievement:hover {
@@ -1331,31 +1417,56 @@ button:focus-visible,
 }
 
 .achievement-badge {
-    width: 48px;
-    height: 48px;
-    border-radius: 8px;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 1rem;
-    background: var(--card-bg);
-    border: 2px solid var(--border);
+    font-size: 1.1rem;
+    background: rgba(148, 163, 184, 0.2);
+    border: none;
     color: var(--text-secondary);
     transition: all 0.3s ease;
     flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .achievement-badge.locked {
-    opacity: 0.5;
+    opacity: 0.4;
+    filter: grayscale(1);
+}
+
+/* Unique gradient for each achievement type */
+.achievement.earned .achievement-badge[data-badge="EB"] {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.achievement.earned .achievement-badge[data-badge="MR"] {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.achievement.earned .achievement-badge[data-badge="CS"] {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+}
+
+.achievement.earned .achievement-badge[data-badge="DD"] {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
 }
 
 .achievement.earned .achievement-badge {
-    background: var(--green-dark);
-    color: white;
-    border-color: var(--green-dark);
     opacity: 1;
-    transform: scale(1.05);
+    transform: scale(1.1);
+    filter: grayscale(0);
 }
 
 .achievement-content {

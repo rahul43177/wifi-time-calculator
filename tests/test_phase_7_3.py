@@ -98,8 +98,8 @@ async def test_css_applies_gradient_to_timer_section() -> None:
 
     css = response.text
 
-    # Timer section gradient
-    assert re.search(r"\.timer-section\s*\{[^}]*background:\s*var\(--gradient-timer\)", css, re.DOTALL)
+    # Timer section gradient - now uses direct linear-gradient instead of CSS variable
+    assert re.search(r"\.timer-section\s*\{[^}]*background:\s*linear-gradient", css, re.DOTALL)
 
 
 @pytest.mark.asyncio
