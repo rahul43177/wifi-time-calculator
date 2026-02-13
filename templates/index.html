@@ -13,16 +13,19 @@
         <h1 class="title">Office Wi-Fi Tracker</h1>
         <div class="header-right">
             <span id="notification-status-badge" class="badge hidden" title="Notification Status"></span>
+            <button id="theme-toggle" class="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+                <span id="theme-icon" aria-hidden="true">🌙</span>
+            </button>
             <nav class="tabs" aria-label="Dashboard sections">
-                <span class="tab active" data-tab="live">Live</span>
-                <span class="tab" data-tab="today">Today</span>
-                <span class="tab" data-tab="weekly">Weekly</span>
-                <span class="tab" data-tab="monthly">Monthly</span>
+                <button class="tab active" data-tab="live" role="tab" aria-selected="true" aria-controls="tab-live" tabindex="0">Live</button>
+                <button class="tab" data-tab="today" role="tab" aria-selected="false" aria-controls="tab-today" tabindex="-1">Today</button>
+                <button class="tab" data-tab="weekly" role="tab" aria-selected="false" aria-controls="tab-weekly" tabindex="-1">Weekly</button>
+                <button class="tab" data-tab="monthly" role="tab" aria-selected="false" aria-controls="tab-monthly" tabindex="-1">Monthly</button>
             </nav>
         </div>
     </section>
 
-    <div id="tab-live" class="tab-content">
+    <div id="tab-live" class="tab-content" role="tabpanel" aria-labelledby="tab-live">
         <!-- Legacy connection status (hidden, kept for backward compatibility with tests) -->
         <section class="card legacy-status hidden">
             <div id="connection-status" class="status-line connected">
@@ -104,15 +107,16 @@
             </div>
             <div class="countdown-section">
                 <span class="countdown-label">Countdown:</span>
-                <span id="timer-display" class="timer-countdown">00:00:00</span>
+                <span id="timer-display" class="timer-countdown" aria-live="polite" aria-atomic="true">00:00:00</span>
             </div>
+            <!-- Screen reader announcement for timer milestones --><div id="timer-announcements" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
             <!-- Task 7.5: Contextual Insights & Messaging -->
             <p id="contextual-message" class="contextual-message"></p>
             <p id="completion-banner" class="completion hidden">Completed! Total: <span id="completed-total">00:00:00</span></p>
         </section>
     </div>
 
-    <div id="tab-today" class="tab-content hidden">
+    <div id="tab-today" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-today">
         <section class="card">
             <h2>Today's Sessions</h2>
             <table id="today-sessions-table" aria-label="Today's sessions">
@@ -134,14 +138,14 @@
         </section>
     </div>
 
-    <div id="tab-weekly" class="tab-content hidden">
+    <div id="tab-weekly" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-weekly">
         <section class="card">
             <div class="section-header">
                 <h2>Weekly Analytics</h2>
                 <div class="selector">
-                    <button id="prev-week" class="btn-secondary">&larr;</button>
-                    <span id="current-week-label">YYYY-Www</span>
-                    <button id="next-week" class="btn-secondary">&rarr;</button>
+                    <button id="prev-week" class="btn-secondary" aria-label="Previous week">&larr;</button>
+                    <span id="current-week-label" aria-live="polite">YYYY-Www</span>
+                    <button id="next-week" class="btn-secondary" aria-label="Next week">&rarr;</button>
                 </div>
             </div>
             
@@ -180,14 +184,14 @@
         </section>
     </div>
 
-    <div id="tab-monthly" class="tab-content hidden">
+    <div id="tab-monthly" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-monthly">
         <section class="card">
             <div class="section-header">
                 <h2>Monthly Analytics</h2>
                 <div class="selector">
-                    <button id="prev-month" class="btn-secondary">&larr;</button>
-                    <span id="current-month-label">YYYY-MM</span>
-                    <button id="next-month" class="btn-secondary">&rarr;</button>
+                    <button id="prev-month" class="btn-secondary" aria-label="Previous month">&larr;</button>
+                    <span id="current-month-label" aria-live="polite">YYYY-MM</span>
+                    <button id="next-month" class="btn-secondary" aria-label="Next month">&rarr;</button>
                 </div>
             </div>
             

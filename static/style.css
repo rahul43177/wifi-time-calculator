@@ -44,6 +44,76 @@
     --radius-sm: 8px;
 }
 
+/* --- Task 7.6: Dark Mode Support --- */
+[data-theme="dark"] {
+    --surface: #1E293B;        /* Slate 800 - elevated surfaces */
+    --text: #F1F5F9;           /* Slate 100 - high contrast light text */
+    --muted: #94A3B8;          /* Slate 400 - subdued text */
+    --border: #334155;         /* Slate 700 - subtle borders */
+    --bg: #0F172A;             /* Slate 950 - deep background */
+
+    /* Brand colors adjusted for dark mode */
+    --primary: #6366F1;        /* Indigo 500 - brighter for dark bg */
+    --primary-light: #312e81;  /* Indigo 900 - dark variant */
+    --primary-dark: #818CF8;   /* Indigo 400 - lighter for dark */
+
+    /* Status colors for dark mode (maintain WCAG AA) */
+    --green: #22C55E;          /* Green 500 - visible on dark */
+    --green-light: #14532d;    /* Green 900 - dark variant */
+    --green-dark: #4ADE80;     /* Green 400 - bright for dark bg */
+    --yellow: #FCD34D;         /* Yellow 300 - brighter */
+    --yellow-light: #713f12;   /* Yellow 900 - dark variant */
+    --yellow-dark: #FDE047;    /* Yellow 300 - bright for text */
+    --red: #EF4444;            /* Red 500 */
+    --red-light: #7f1d1d;      /* Red 900 - dark variant */
+    --red-dark: #F87171;       /* Red 400 - bright for dark bg */
+
+    /* Progress colors for dark mode */
+    --progress: #3B82F6;       /* Blue 500 - brighter */
+    --progress-warning: #FCD34D; /* Yellow 300 */
+    --progress-complete: #4ADE80; /* Green 400 */
+    --progress-bg: #1e293b;    /* Darker track */
+
+    /* Gradients for dark mode */
+    --gradient-primary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    --gradient-header: linear-gradient(to bottom, #1E293B 0%, #0F172A 100%);
+    --gradient-timer: linear-gradient(135deg, #312e81 0%, #4c1d95 100%);
+}
+
+/* Auto-detect system dark mode preference (fallback if no localStorage) */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --surface: #1E293B;
+        --text: #F1F5F9;
+        --muted: #94A3B8;
+        --border: #334155;
+        --bg: #0F172A;
+
+        --primary: #6366F1;
+        --primary-light: #312e81;
+        --primary-dark: #818CF8;
+
+        --green: #22C55E;
+        --green-light: #14532d;
+        --green-dark: #4ADE80;
+        --yellow: #FCD34D;
+        --yellow-light: #713f12;
+        --yellow-dark: #FDE047;
+        --red: #EF4444;
+        --red-light: #7f1d1d;
+        --red-dark: #F87171;
+
+        --progress: #3B82F6;
+        --progress-warning: #FCD34D;
+        --progress-complete: #4ADE80;
+        --progress-bg: #1e293b;
+
+        --gradient-primary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+        --gradient-header: linear-gradient(to bottom, #1E293B 0%, #0F172A 100%);
+        --gradient-timer: linear-gradient(135deg, #312e81 0%, #4c1d95 100%);
+    }
+}
+
 /* --- Reset & base --- */
 *,
 *::before,
@@ -58,6 +128,25 @@ body {
     background: var(--bg);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+}
+
+/* Task 7.6: Apply smooth theme transitions to themed elements */
+/* Exclude elements with existing animations to prevent conflicts */
+body,
+.card,
+.badge,
+.tab,
+.status-card,
+.elapsed-display,
+.timer,
+.timer-countdown,
+.progress-fill,
+.completion,
+.contextual-message,
+.btn-primary,
+.btn-secondary,
+.theme-toggle {
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
 /* --- Layout --- */
@@ -101,6 +190,39 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+/* Task 7.6: Theme toggle button */
+.theme-toggle {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s, transform 0.2s;
+    line-height: 1;
+}
+
+.theme-toggle:hover {
+    background: var(--bg);
+    border-color: var(--muted);
+}
+
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+
+.theme-toggle #theme-icon {
+    display: block;
+    transition: transform 0.3s ease-in-out;
+}
+
+.theme-toggle:active #theme-icon {
+    transform: rotate(20deg);
 }
 
 .badge {
@@ -150,6 +272,9 @@ body {
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
     user-select: none;
+    /* Task 7.9: Reset button styles for tabs */
+    font-family: inherit;
+    line-height: inherit;
 }
 
 .tab:hover {
@@ -418,7 +543,8 @@ body {
     background: var(--progress);
     border-radius: 999px;
     /* Task 7.4: Smooth animation using cubic-bezier for natural feel */
-    transition: width 0.8s cubic-bezier(0.4, 0.0, 0.2, 1), background-color 0.3s ease;
+    /* Task 7.6: Added theme transition for background-color */
+    transition: width 0.8s cubic-bezier(0.4, 0.0, 0.2, 1), background-color 0.2s ease-in-out;
 }
 
 /* Task 7.1 threshold model: <50% blue, 50-80% yellow, >80% green */
@@ -724,6 +850,77 @@ tbody tr:last-child td {
 
 .legacy-status {
     display: none !important;
+}
+
+/* --- Task 7.9: Accessibility Improvements --- */
+
+/* Screen reader only content */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Enhanced focus indicators (WCAG 2.1 AA) */
+*:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
+*:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Tab navigation focus */
+.tab:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+    box-shadow: 0 0 0 4px var(--primary-light);
+}
+
+/* Button focus */
+button:focus-visible,
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--primary-light);
+}
+
+.theme-toggle:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support (Windows) */
+@media (prefers-contrast: high) {
+    :root {
+        --border: #000000;
+        --text: #000000;
+        --bg: #ffffff;
+    }
+
+    [data-theme="dark"] {
+        --border: #ffffff;
+        --text: #ffffff;
+        --bg: #000000;
+    }
+
+    *:focus-visible {
+        outline: 3px solid;
+        outline-offset: 3px;
+    }
 }
 
 /* --- Responsive --- */

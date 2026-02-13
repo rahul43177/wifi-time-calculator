@@ -1,5 +1,31 @@
 "use strict";
 
+// Task 7.6: Dark Mode Support - Initialize theme before DOM loads to prevent flash
+(function initializeTheme() {
+    const THEME_KEY = "office-tracker-theme";
+
+    function getSystemPreference() {
+        if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            return "dark";
+        }
+        return "light";
+    }
+
+    function getSavedTheme() {
+        try {
+            return localStorage.getItem(THEME_KEY);
+        } catch (e) {
+            console.warn("localStorage not available:", e);
+            return null;
+        }
+    }
+
+    // Apply theme immediately (before page renders)
+    const savedTheme = getSavedTheme();
+    const theme = savedTheme || getSystemPreference();
+    document.documentElement.setAttribute("data-theme", theme);
+})();
+
 (function initializeDashboardApp() {
     if (window.__officeDashboardAppInitialized) {
         return;
@@ -65,6 +91,9 @@
         cardTargetDetail: null,
         // Task 7.4: Timer section for celebration animation
         timerSection: null,
+        // Task 7.6: Dark mode toggle
+        themeToggle: null,
+        themeIcon: null,
     };
 
     const state = {
@@ -151,6 +180,13 @@
 
         // Task 7.4: Timer section for celebration animation
         dom.timerSection = document.querySelector(".timer-section");
+
+        // Task 7.6: Dark mode toggle
+        dom.themeToggle = document.getElementById("theme-toggle");
+        dom.themeIcon = document.getElementById("theme-icon");
+
+        // Task 7.9: Screen reader announcements
+        dom.timerAnnouncements = document.getElementById("timer-announcements");
     }
 
     function hasRequiredDom() {
@@ -210,22 +246,146 @@
         return `${newYear}-${newMonth}`;
     }
 
+    // --- Task 7.9: Accessibility - Keyboard Navigation for Tabs ---
+
+    function handleTabKeyboard(event) {
+        const tabs = Array.from(document.querySelectorAll(".tab"));
+        const currentIndex = tabs.findIndex(tab => tab === event.target);
+
+        if (currentIndex === -1) return;
+
+        let newIndex = currentIndex;
+
+        switch (event.key) {
+            case "ArrowLeft":
+                event.preventDefault();
+                newIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+                break;
+            case "ArrowRight":
+                event.preventDefault();
+                newIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+                break;
+            case "Home":
+                event.preventDefault();
+                newIndex = 0;
+                break;
+            case "End":
+                event.preventDefault();
+                newIndex = tabs.length - 1;
+                break;
+            default:
+                return;
+        }
+
+        tabs[newIndex].click();
+        tabs[newIndex].focus();
+    }
+
+    // --- Task 7.9: Accessibility - Screen Reader Announcements ---
+
+    function announceToScreenReader(message) {
+        if (!dom.timerAnnouncements) return;
+        dom.timerAnnouncements.textContent = message;
+        // Clear after announcement to allow repeat announcements
+        setTimeout(() => {
+            if (dom.timerAnnouncements) {
+                dom.timerAnnouncements.textContent = "";
+            }
+        }, 1000);
+    }
+
+    // Track announced milestones to avoid spam
+    const announcedMilestones = new Set();
+
+    function checkAndAnnounceTimerMilestones() {
+        if (!state.status || !state.status.session_active) {
+            announcedMilestones.clear();
+            return;
+        }
+
+        const elapsedSeconds = getLiveElapsedSeconds();
+        const remainingSeconds = getLiveRemainingSeconds(elapsedSeconds);
+        const completed = Boolean(state.status.completed_4h) || remainingSeconds <= 0;
+        const progressValue = getLiveProgressPercent(elapsedSeconds, completed);
+
+        // Announce completion
+        if (completed && !announcedMilestones.has("100")) {
+            announceToScreenReader("Target completed! Great work!");
+            announcedMilestones.add("100");
+            return;
+        }
+
+        // Announce major milestones (only once per session)
+        if (progressValue >= 75 && progressValue < 80 && !announcedMilestones.has("75")) {
+            announceToScreenReader("75% complete. Almost there!");
+            announcedMilestones.add("75");
+        } else if (progressValue >= 50 && progressValue < 55 && !announcedMilestones.has("50")) {
+            announceToScreenReader("Halfway there! 50% complete.");
+            announcedMilestones.add("50");
+        } else if (progressValue >= 25 && progressValue < 30 && !announcedMilestones.has("25")) {
+            announceToScreenReader("25% complete. Keep going!");
+            announcedMilestones.add("25");
+        }
+    }
+
+    // --- Task 7.6: Dark Mode Management ---
+
+    const THEME_KEY = "office-tracker-theme";
+
+    function getCurrentTheme() {
+        return document.documentElement.getAttribute("data-theme") || "light";
+    }
+
+    function setTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        try {
+            localStorage.setItem(THEME_KEY, theme);
+        } catch (e) {
+            console.warn("Could not save theme preference:", e);
+        }
+        updateThemeIcon(theme);
+    }
+
+    function updateThemeIcon(theme) {
+        if (!dom.themeIcon) return;
+        dom.themeIcon.textContent = theme === "dark" ? "☀️" : "🌙";
+    }
+
+    function toggleTheme() {
+        const currentTheme = getCurrentTheme();
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+        setTheme(newTheme);
+    }
+
+    function initializeThemeToggle() {
+        if (!dom.themeToggle) return;
+
+        // Set initial icon
+        updateThemeIcon(getCurrentTheme());
+
+        // Wire up toggle button
+        dom.themeToggle.addEventListener("click", toggleTheme);
+    }
+
     // --- Tab Management ---
 
     function switchTab(tabId) {
         state.activeTab = tabId;
-        
-        // Update tabs UI
+
+        // Update tabs UI with ARIA attributes (Task 7.9)
         document.querySelectorAll(".tab").forEach(tab => {
-            tab.classList.toggle("active", tab.dataset.tab === tabId);
+            const isActive = tab.dataset.tab === tabId;
+            tab.classList.toggle("active", isActive);
+            tab.setAttribute("aria-selected", isActive ? "true" : "false");
+            tab.setAttribute("tabindex", isActive ? "0" : "-1");
         });
-        
+
         // Update content visibility
         dom.tabLive.classList.toggle("hidden", tabId !== "live");
         dom.tabToday.classList.toggle("hidden", tabId !== "today");
         dom.tabWeekly.classList.toggle("hidden", tabId !== "weekly");
         dom.tabMonthly.classList.toggle("hidden", tabId !== "monthly");
-        
+
         if (tabId === "weekly") {
             if (!state.selectedWeek) {
                 state.selectedWeek = getISOWeek(new Date());
@@ -322,6 +482,11 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                // Task 7.8: Animations on load
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -342,7 +507,41 @@
                             usePointStyle: true,
                             pointStyle: "circle"
                         }
+                    },
+                    // Task 7.8: Enhanced tooltips with exact values
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y;
+                                const hours = Math.floor(value);
+                                const minutes = Math.round((value - hours) * 60);
+                                return `${label}: ${hours}h ${String(minutes).padStart(2, '0')}m`;
+                            },
+                            afterLabel: function(context) {
+                                // Show session count if available
+                                const dayIndex = context.dataIndex;
+                                if (state.weekly && state.weekly.days[dayIndex]) {
+                                    const sessionCount = state.weekly.days[dayIndex].session_count;
+                                    return `${sessionCount} session${sessionCount !== 1 ? 's' : ''}`;
+                                }
+                                return '';
+                            }
+                        }
                     }
+                },
+                // Task 7.8: Hover effects
+                interaction: {
+                    mode: 'index',
+                    intersect: false
                 }
             }
         });
@@ -426,12 +625,22 @@
                     fill: true,
                     tension: 0.3,
                     pointRadius: 5,
-                    pointBackgroundColor: "#4f46e5"
+                    pointBackgroundColor: "#4f46e5",
+                    // Task 7.8: Point hover effects
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: "#6366f1",
+                    pointHoverBorderColor: "#fff",
+                    pointHoverBorderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                // Task 7.8: Animations on load
+                animation: {
+                    duration: 1200,
+                    easing: 'easeInOutQuart'
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -444,7 +653,48 @@
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    // Task 7.8: Enhanced tooltips with exact values
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label || '';
+                            },
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                const hours = Math.floor(value);
+                                const minutes = Math.round((value - hours) * 60);
+                                return `Total: ${hours}h ${String(minutes).padStart(2, '0')}m`;
+                            },
+                            afterLabel: function(context) {
+                                // Show additional week details if available
+                                const weekIndex = context.dataIndex;
+                                if (state.monthly && state.monthly.weeks[weekIndex]) {
+                                    const week = state.monthly.weeks[weekIndex];
+                                    const avgHours = Math.floor(week.avg_daily_minutes / 60);
+                                    const avgMins = Math.round(week.avg_daily_minutes % 60);
+                                    return [
+                                        `Days present: ${week.days_present}`,
+                                        `Avg/day: ${avgHours}h ${String(avgMins).padStart(2, '0')}m`
+                                    ];
+                                }
+                                return '';
+                            }
+                        }
                     }
+                },
+                // Task 7.8: Hover effects
+                interaction: {
+                    mode: 'nearest',
+                    intersect: false
                 }
             }
         });
@@ -885,6 +1135,9 @@
 
         // Task 7.5: Update contextual message
         renderContextualMessage();
+
+        // Task 7.9: Screen reader milestone announcements
+        checkAndAnnounceTimerMilestones();
     }
 
     // Task 7.5: Render contextual insights & messaging
@@ -1075,7 +1328,10 @@
             return;
         }
 
-        // Tab wiring
+        // Task 7.6: Initialize theme toggle
+        initializeThemeToggle();
+
+        // Tab wiring with keyboard navigation (Task 7.9)
         document.querySelectorAll(".tab").forEach(tab => {
             tab.addEventListener("click", () => {
                 const tabId = tab.dataset.tab;
@@ -1083,6 +1339,8 @@
                     switchTab(tabId);
                 }
             });
+            // Add keyboard navigation
+            tab.addEventListener("keydown", handleTabKeyboard);
         });
 
         // Week selector wiring

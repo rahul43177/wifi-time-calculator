@@ -19,8 +19,8 @@ async def test_dashboard_includes_monthly_ui_elements() -> None:
     assert response.status_code == 200
     body = response.text
     
-    # Navigation
-    assert 'data-tab="monthly">Monthly</span>' in body
+    # Navigation (Task 7.9: tabs are now buttons for accessibility)
+    assert 'data-tab="monthly"' in body and 'Monthly</button>' in body
     
     # Section
     assert 'id="tab-monthly"' in body

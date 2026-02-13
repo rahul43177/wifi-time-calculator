@@ -4,17 +4,17 @@ Audit ONLY Phase mentioned below  :
 
 ---
 
-### Task 7.5: Contextual Insights & Messaging
-**Description:** Smart, context-aware motivational messages
-**Dependencies:** Task 7.1
+### Task 7.6: Dark Mode Support
+**Description:** Dark theme with system preference detection
+**Dependencies:** Task 7.3
 **Acceptance Criteria:**
-- [ ] Morning greeting with estimated completion time
-- [ ] Progress-based encouragement (50%, 75%, 90%)
-- [ ] Completion celebration message
-- [ ] Disconnection status with last session info
-- [ ] Messages update dynamically based on state
+- [ ] Auto-detects system dark mode preference
+- [ ] Manual toggle available
+- [ ] All colors optimized for dark background
+- [ ] Smooth theme transition animation
+- [ ] Preserves user preference in localStorage
 
-**File:** `static/app.js`
+**Files:** `static/style.css`, `static/app.js`
 
 ---
 
