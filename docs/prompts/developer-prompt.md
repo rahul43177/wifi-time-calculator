@@ -39,17 +39,17 @@ PHASE :
 
 ---
 
-### Task 7.4: Micro-Animations & Transitions
-**Description:** Smooth animations for better user feedback
-**Dependencies:** Task 7.2, 7.3
+### Task 7.5: Contextual Insights & Messaging
+**Description:** Smart, context-aware motivational messages
+**Dependencies:** Task 7.1
 **Acceptance Criteria:**
-- [ ] Progress bar animates smoothly (not instant jumps)
-- [ ] Status cards fade in on load
-- [ ] Connection status dot pulses
-- [ ] Celebration animation when target reached
-- [ ] All animations run at 60fps
+- [ ] Morning greeting with estimated completion time
+- [ ] Progress-based encouragement (50%, 75%, 90%)
+- [ ] Completion celebration message
+- [ ] Disconnection status with last session info
+- [ ] Messages update dynamically based on state
 
-**Files:** `static/style.css`, `static/app.js`
+**File:** `static/app.js`
 
 ---
 > Local-first • Offline-safe • Minimal • Deterministic • No new dependencies

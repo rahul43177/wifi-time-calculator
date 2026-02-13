@@ -79,6 +79,8 @@
         targetSeconds: null,
         // Task 7.4: Track completion state for celebration animation
         wasCompleted: false,
+        // Task 7.5: Track which milestone message was last shown
+        lastMilestoneShown: null,
         lastCompleted4h: null,
         activeTab: "live",
         selectedWeek: null, // YYYY-Www
@@ -106,6 +108,7 @@
         dom.progressTrack = document.querySelector(".progress-track");
         dom.completionBanner = document.getElementById("completion-banner");
         dom.completedTotal = document.getElementById("completed-total");
+        dom.contextualMessage = document.getElementById("contextual-message"); // Task 7.5
         dom.todaySessionsBody = document.getElementById("today-sessions-body");
         dom.todayTotalDisplay = document.getElementById("today-total-display");
         dom.notificationBadge = document.getElementById("notification-status-badge");
@@ -879,6 +882,91 @@
 
         // Task 7.2: Update status cards as part of timer tick
         renderStatusCards();
+
+        // Task 7.5: Update contextual message
+        renderContextualMessage();
+    }
+
+    // Task 7.5: Render contextual insights & messaging
+    function renderContextualMessage() {
+        if (!dom.contextualMessage) return;
+
+        const isConnected = state.status && Boolean(state.status.connected);
+        const sessionActive = state.status && Boolean(state.status.session_active);
+
+        // Clear previous classes
+        dom.contextualMessage.className = "contextual-message";
+
+        if (!isConnected || !sessionActive) {
+            // Disconnected state
+            if (state.today && state.today.total_display && state.today.total_display !== "0h 00m") {
+                const lastSession = state.today.sessions && state.today.sessions.length > 0
+                    ? state.today.sessions[state.today.sessions.length - 1]
+                    : null;
+                const endTime = lastSession && lastSession.end_time ? lastSession.end_time : "recently";
+                dom.contextualMessage.textContent = `Last session ended at ${endTime} (${state.today.total_display} today)`;
+                dom.contextualMessage.classList.add("disconnected");
+            } else {
+                dom.contextualMessage.textContent = "No active session. Connect to OfficeWifi to start tracking";
+                dom.contextualMessage.classList.add("disconnected");
+            }
+            return;
+        }
+
+        // Active session - calculate progress
+        const elapsedSeconds = getLiveElapsedSeconds();
+        const remainingSeconds = getLiveRemainingSeconds(elapsedSeconds);
+        const completed = Boolean(state.status.completed_4h) || remainingSeconds <= 0;
+        const progressValue = getLiveProgressPercent(elapsedSeconds, completed);
+
+        // Completion celebration
+        if (completed) {
+            dom.contextualMessage.textContent = "Target completed! 🎉 Great work today";
+            dom.contextualMessage.classList.add("celebration");
+            state.lastMilestoneShown = "completed";
+            return;
+        }
+
+        // Progress-based milestone messages
+        let message = "";
+        let milestone = null;
+
+        if (progressValue >= 90) {
+            message = "Final stretch! 💯 Just a bit more";
+            milestone = "90";
+        } else if (progressValue >= 75) {
+            message = "Three quarters done! 🚀 Almost there";
+            milestone = "75";
+        } else if (progressValue >= 50) {
+            message = "Halfway there! 🎯 You're doing great";
+            milestone = "50";
+        } else {
+            // Time-of-day contextual greeting
+            const now = new Date();
+            const hour = now.getHours();
+
+            if (hour < 12) {
+                // Morning greeting with ETA
+                const etaMinutes = Math.ceil(remainingSeconds / 60);
+                const etaTime = new Date(now.getTime() + etaMinutes * 60000);
+                const etaStr = etaTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                message = `Good morning! 🌅 At this pace, you'll reach your goal by ${etaStr}`;
+            } else if (hour < 17) {
+                message = "Afternoon progress! Keep it up 💪";
+            } else {
+                message = "Evening session! Stay focused 🌙";
+            }
+            milestone = "greeting";
+        }
+
+        // Only update if milestone changed (prevent flicker)
+        if (milestone !== state.lastMilestoneShown) {
+            dom.contextualMessage.textContent = message;
+            if (milestone === "50" || milestone === "75" || milestone === "90") {
+                dom.contextualMessage.classList.add("milestone");
+            }
+            state.lastMilestoneShown = milestone;
+        }
     }
 
     function getSessionStatusText(session) {
@@ -961,6 +1049,7 @@
         renderTimer();
         renderTodaySessions();
         renderStatusCards(); // Task 7.2
+        renderContextualMessage(); // Task 7.5
     }
 
     async function syncFromBackend() {

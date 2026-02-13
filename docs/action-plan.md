@@ -1251,17 +1251,21 @@ TEST_DURATION_MINUTES=2
 
 ---
 
-### Task 7.5: Contextual Insights & Messaging
+### Task 7.5: Contextual Insights & Messaging ✅ COMPLETE
 **Description:** Smart, context-aware motivational messages
 **Dependencies:** Task 7.1
 **Acceptance Criteria:**
-- [ ] Morning greeting with estimated completion time
-- [ ] Progress-based encouragement (50%, 75%, 90%)
-- [ ] Completion celebration message
-- [ ] Disconnection status with last session info
-- [ ] Messages update dynamically based on state
+- [x] Morning greeting with estimated completion time - ETA calculation based on remaining time
+- [x] Progress-based encouragement (50%, 75%, 90%) - Milestone messages at each threshold
+- [x] Completion celebration message - "Target completed! 🎉 Great work today"
+- [x] Disconnection status with last session info - Shows last end time + today's total
+- [x] Messages update dynamically based on state - Updates every 1s with renderTimer()
+- [x] Time-of-day context - Morning/afternoon/evening greetings
+- [x] Visual styling - Color-coded backgrounds (milestone/celebration/disconnected)
 
-**File:** `static/app.js`
+**Files:** `templates/index.html` (line 110), `static/style.css` (lines 447-485), `static/app.js` (lines 83, 109, 887-972, 1053)
+**Tests:** `tests/test_phase_7_5.py` (23 tests, all passing)
+**Status:** COMPLETE - All 426 tests passing, contextual messaging verified
 
 ---
 

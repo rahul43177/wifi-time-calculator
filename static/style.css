@@ -443,6 +443,41 @@ body {
     border-left: 4px solid var(--green);
 }
 
+/* --- Contextual Message (Task 7.5) --- */
+.contextual-message {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 0.9rem;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    line-height: 1.4;
+    min-height: 1.4rem;
+    transition: opacity 0.3s ease;
+}
+
+.contextual-message:empty {
+    display: none;
+}
+
+.contextual-message.milestone {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.contextual-message.celebration {
+    background: var(--green-light);
+    color: var(--green-dark);
+    font-weight: 700;
+}
+
+.contextual-message.disconnected {
+    background: var(--red-light);
+    color: var(--red-dark);
+}
+
 /* --- Sessions table --- */
 h2 {
     font-size: 1.1rem;
