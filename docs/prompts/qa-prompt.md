@@ -21,38 +21,16 @@ PHASE :
 
 ---
 
-### Task 4.2: Create HTML Dashboard Template
-**Description:** Single-page Jinja2 template with live timer, status, and session table
-**Dependencies:** Task 4.1
+### Task 4.3: Add CSS Styling
+**Description:** Clean, modern CSS for the dashboard
+**Dependencies:** Task 4.2
 **Acceptance Criteria:**
-- [ ] Shows connection status (green connected / red disconnected)
-- [ ] Large countdown timer display (HH:MM:SS)
-- [ ] Progress bar (0% → 100%)
-- [ ] After completion: shows "Completed! Total: HH:MM:SS" in green
-- [ ] Today's sessions table (Start | End | Duration | Status)
-- [ ] Today's total office time summary
-- [ ] Tab/section navigation placeholders for Weekly & Monthly views
+- [ ] Minimalist design with clear hierarchy
+- [ ] Color coding: green (connected/completed), yellow (>75%), red (disconnected)
+- [ ] Large, readable timer font
+- [ ] Responsive layout (works on laptop screen)
 
-**File:** `templates/index.html`
-
-**Layout:**
-```
-┌─────────────────────────────────────┐
-│ Office Wi-Fi Tracker           [tabs]│
-├─────────────────────────────────────┤
-│ ● Connected to OfficeWifi          │
-│ Started at 09:42:10                 │
-├─────────────────────────────────────┤
-│         01:44:30                    │
-│      ████████░░░░░ 56%              │
-│   Remaining (target: 4h 10m)       │
-├─────────────────────────────────────┤
-│ Today's Sessions                    │
-│ Start    | End      | Dur  | Status │
-│ 09:42:10 | —        | 2h15 | Active │
-│ Total: 2h 15m                       │
-└─────────────────────────────────────┘
-```
+**File:** `static/style.css`
 
 ---
 

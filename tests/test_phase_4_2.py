@@ -47,6 +47,20 @@ async def test_root_includes_required_dashboard_sections() -> None:
 
 
 @pytest.mark.asyncio
+async def test_root_hides_completion_banner_by_default() -> None:
+    """Completion banner should be present but hidden initially."""
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get("/")
+
+    assert response.status_code == 200
+    body = response.text
+    assert 'id="completion-banner"' in body
+    assert 'class="completion hidden"' in body
+
+
+@pytest.mark.asyncio
 async def test_root_includes_weekly_monthly_tab_placeholders() -> None:
     """Template includes navigation placeholders for Weekly and Monthly sections."""
     async with AsyncClient(

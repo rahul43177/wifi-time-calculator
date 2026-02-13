@@ -796,22 +796,40 @@ TEST_DURATION_MINUTES=2
 > `Jinja2Templates`, passing `office_wifi_name` and resolved target display
 > from backend settings.
 >
-> **Tests:** `tests/test_phase_4_2.py` (5 tests) — template rendering,
+> **Tests:** `tests/test_phase_4_2.py` (6 tests) — template rendering,
 > required section presence, tab placeholders, and backend context wiring for
-> office SSID + test-mode target display — all passing.
+> office SSID + test-mode target display, plus default-hidden completion banner
+> behavior — all passing.
 
 ---
 
-### Task 4.3: Add CSS Styling
+### Task 4.3: Add CSS Styling ✅ DONE
 **Description:** Clean, modern CSS for the dashboard
 **Dependencies:** Task 4.2
 **Acceptance Criteria:**
-- [ ] Minimalist design with clear hierarchy
-- [ ] Color coding: green (connected/completed), yellow (>75%), red (disconnected)
-- [ ] Large, readable timer font
-- [ ] Responsive layout (works on laptop screen)
+- [x] Minimalist design with clear hierarchy
+- [x] Color coding: green (connected/completed), yellow (>75%), red (disconnected)
+- [x] Large, readable timer font
+- [x] Responsive layout (works on laptop screen)
 
 **File:** `static/style.css`
+
+> **Implementation Note:** Extracted inline CSS from `templates/index.html` to `static/style.css`:
+> - Enabled `StaticFiles` mount in `app/main.py` (`/static` → `static/` directory)
+> - Template now uses `<link rel="stylesheet" href="/static/style.css">`
+> - Color system: green (`--green`/`--green-light`) for connected/completed,
+>   yellow (`--yellow`/`--progress-warning`) for >75% progress,
+>   red (`--red`/`--red-light`) for disconnected
+> - Timer uses monospace font family (`SF Mono`, `Menlo`, `Consolas`) for stable digit widths
+> - CSS classes for JS toggling: `.timer.completed`, `.timer.warning`,
+>   `.progress-fill.warning`, `.progress-fill.complete`
+> - Smooth transitions on progress bar width and color changes
+> - Completion banner styled with green background
+> - Responsive `@media (max-width: 600px)` breakpoint for mobile/small screens
+>
+> **Tests:** `tests/test_phase_4_3.py` (10 tests) — static file serving, stylesheet link,
+> no inline styles, color tokens, status classes, monospace font, responsive media query,
+> transitions, and 404 for missing files — all passing.
 
 ---
 
@@ -1307,6 +1325,6 @@ Before considering MVP complete:
 
 ---
 
-**Current State:** ✅ **Phase 4 Tasks 4.1-4.2 COMPLETE** — Dashboard backend APIs and Jinja template UI scaffold implemented. 175 tests passing, 0 warnings.
+**Current State:** ✅ **Phase 4 Tasks 4.1-4.3 COMPLETE** — Dashboard APIs, Jinja template, and CSS styling implemented. 186 tests passing, 0 warnings. Next: Task 4.4.
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!

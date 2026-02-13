@@ -1,0 +1,306 @@
+/* ==========================================================================
+   Office Wi-Fi Tracker — Dashboard Stylesheet
+   Task 4.3: Clean, modern, minimalist CSS
+   ========================================================================== */
+
+/* --- Design tokens --- */
+:root {
+    --surface: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #f8fafc;
+
+    /* Status colors */
+    --green: #15803d;
+    --green-light: #dcfce7;
+    --yellow: #a16207;
+    --yellow-light: #fef9c3;
+    --red: #b91c1c;
+    --red-light: #fee2e2;
+
+    /* Progress */
+    --progress: #2563eb;
+    --progress-warning: #eab308;
+    --progress-complete: #22c55e;
+    --progress-bg: #e2e8f0;
+
+    /* Sizing */
+    --max-width: 900px;
+    --radius: 12px;
+    --radius-sm: 8px;
+}
+
+/* --- Reset & base --- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* --- Layout --- */
+.dashboard {
+    max-width: var(--max-width);
+    margin: 24px auto;
+    padding: 0 16px;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+/* --- Header --- */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.title {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+/* --- Tabs --- */
+.tabs {
+    display: inline-flex;
+    gap: 6px;
+}
+
+.tab {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: var(--muted);
+    background: #f9fafb;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    user-select: none;
+}
+
+.tab:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.tab.active {
+    color: var(--text);
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    font-weight: 600;
+}
+
+/* --- Connection status --- */
+.status-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.connected {
+    color: var(--green);
+}
+
+.connected .status-dot {
+    background: var(--green);
+    box-shadow: 0 0 0 3px var(--green-light);
+}
+
+.disconnected {
+    color: var(--red);
+}
+
+.disconnected .status-dot {
+    background: var(--red);
+    box-shadow: 0 0 0 3px var(--red-light);
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+/* --- Timer display --- */
+.timer {
+    font-family: "SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
+    font-size: clamp(2.2rem, 8vw, 3.6rem);
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.04em;
+    margin: 8px 0 12px;
+    color: var(--text);
+    transition: color 0.3s;
+}
+
+.timer.completed {
+    color: var(--green);
+}
+
+.timer.warning {
+    color: var(--yellow);
+}
+
+/* --- Progress bar --- */
+.progress-wrap {
+    margin-top: 12px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    color: var(--muted);
+}
+
+.progress-track {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background: var(--progress-bg);
+    overflow: hidden;
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--progress);
+    border-radius: 999px;
+    transition: width 0.5s ease, background-color 0.3s;
+}
+
+.progress-fill.warning {
+    background: var(--progress-warning);
+}
+
+.progress-fill.complete {
+    background: var(--progress-complete);
+}
+
+/* --- Completion banner --- */
+.completion {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--green-light);
+    color: var(--green);
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: var(--radius-sm);
+    text-align: center;
+}
+
+/* --- Sessions table --- */
+h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 0.92rem;
+}
+
+th,
+td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.total {
+    margin-top: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+/* --- Utility --- */
+.hidden {
+    display: none !important;
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+    .dashboard {
+        margin: 12px auto;
+        padding: 0 10px;
+    }
+
+    .card {
+        padding: 14px;
+        margin-bottom: 10px;
+        border-radius: var(--radius-sm);
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .tabs {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .tab {
+        white-space: nowrap;
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+
+    .timer {
+        font-size: clamp(1.8rem, 10vw, 2.8rem);
+    }
+
+    table {
+        font-size: 0.85rem;
+    }
+
+    th,
+    td {
+        padding: 8px 6px;
+    }
+}

@@ -118,15 +118,16 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 | 3 | 3.5 | Timer integration with FastAPI lifespan | 7 tests | DONE |
 | 3 | 3.6 | Testing mode (short duration target override) | 7 tests | DONE |
 | 4 | 4.1 | Dashboard status/today API endpoints | 10 tests | DONE |
-| 4 | 4.2 | Jinja2 dashboard template scaffold | 5 tests | DONE |
+| 4 | 4.2 | Jinja2 dashboard template scaffold | 6 tests | DONE |
+| 4 | 4.3 | CSS styling (external stylesheet + static mount) | 10 tests | DONE |
 
-**Total: 175 tests, all passing, 0 warnings**
+**Total: 186 tests, all passing, 0 warnings**
 
 ### Next Up
 
 | Phase | Task | Description | Status |
 |-------|------|-------------|--------|
-| 4 | 4.3-4.5 | Live dashboard UI (HTML + Vanilla JS + Jinja2) | IN PROGRESS |
+| 4 | 4.4-4.5 | Live timer JS + browser notifications | IN PROGRESS |
 | 5 | 5.1-5.4 | Analytics & Charts (weekly/monthly + Chart.js) | NOT STARTED |
 | 6 | 6.1-6.5 | Auto-start on boot (launchd) | NOT STARTED |
 
@@ -170,7 +171,7 @@ tests/
 ├── test_phase_3_5.py    — 7 tests: Timer integration with FastAPI (lifespan, concurrency, shutdown)
 ├── test_phase_3_6.py    — 7 tests: Testing mode target override (toggle + integration checks)
 ├── test_phase_4_1.py    — 10 tests: Dashboard API status/today schema + edge-case handling
-└── test_phase_4_2.py    — 5 tests: Dashboard template rendering + placeholders/context wiring
+└── test_phase_4_2.py    — 6 tests: Dashboard template rendering + placeholders/context wiring + default hidden completion banner
 ```
 
 ### Configuration & Docs
