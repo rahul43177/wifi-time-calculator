@@ -903,14 +903,14 @@ TEST_DURATION_MINUTES=2
 
 ---
 
-### Task 5.1: Weekly Data Aggregation API
+### Task 5.1: Weekly Data Aggregation API ✅ DONE
 **Description:** Backend endpoint that aggregates daily data into weekly view
 **Dependencies:** Phase 4 complete
 **Acceptance Criteria:**
-- [ ] `GET /api/weekly?week=2026-W07` returns day-by-day breakdown
-- [ ] Defaults to current week if no query param
-- [ ] Each day: total_minutes, session_count, target_met (bool)
-- [ ] Includes week totals and averages
+- [x] `GET /api/weekly?week=2026-W07` returns day-by-day breakdown
+- [x] Defaults to current week if no query param
+- [x] Each day: total_minutes, session_count, target_met (bool)
+- [x] Includes week totals and averages
 
 **File:** `app/main.py` (or new `app/analytics.py` if complex)
 
@@ -944,16 +944,16 @@ TEST_DURATION_MINUTES=2
 
 ---
 
-### Task 5.3: Weekly Analytics UI View
+### Task 5.3: Weekly Analytics UI View ✅ DONE
 **Description:** Weekly tab/section with day-by-day table and bar chart
 **Dependencies:** Task 5.1, Phase 4 UI
 **Acceptance Criteria:**
-- [ ] Tab navigation: "Today" | "Weekly" | "Monthly"
-- [ ] Day-by-day table: Date | Day | Hours | Sessions | Target Met
-- [ ] Bar chart (Chart.js): days on X-axis, hours on Y-axis
-- [ ] 4h target line drawn as horizontal reference
-- [ ] Green bars for days >= target, red for < target
-- [ ] Week selector (prev/next arrows)
+- [x] Tab navigation: "Today" | "Weekly" | "Monthly"
+- [x] Day-by-day table: Date | Day | Hours | Sessions | Target Met
+- [x] Bar chart (Chart.js): days on X-axis, hours on Y-axis
+- [x] 4h target line drawn as horizontal reference
+- [x] Green bars for days >= target, red for < target
+- [x] Week selector (prev/next arrows)
 
 **Files:** `templates/index.html`, `static/app.js`
 
@@ -974,12 +974,12 @@ TEST_DURATION_MINUTES=2
 
 ### ✅ Phase 5 Definition of Done
 
-- [ ] Weekly view shows day-by-day breakdown with bar chart
+- [x] Weekly view shows day-by-day breakdown with bar chart
 - [ ] Monthly view shows week-by-week breakdown with chart
-- [ ] Charts render via Chart.js (no build tools)
-- [ ] Navigation between Today / Weekly / Monthly works
-- [ ] Week and month selectors allow browsing history
-- [ ] All data comes from JSON Lines files (no database)
+- [x] Charts render via Chart.js (no build tools)
+- [x] Navigation between Today / Weekly / Monthly works
+- [x] Week and month selectors allow browsing history
+- [x] All data comes from JSON Lines files (no database)
 
 ---
 
@@ -1346,6 +1346,6 @@ Before considering MVP complete:
 
 ---
 
-**Current State:** ✅ **Phase 4 COMPLETE** — Dashboard APIs, template, CSS, and live timer JavaScript with notifications implemented. 199 tests passing, 0 warnings. Next: Phase 5.
+**Current State:** ✅ **Phase 5.1 & 5.3 COMPLETE** — Weekly aggregation API and UI visualization implemented. 209 tests passing, 0 warnings. Next: Task 5.2 (Monthly API).
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!

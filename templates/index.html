@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Office Wi-Fi Tracker</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 <main class="dashboard">
@@ -13,63 +14,110 @@
         <div class="header-right">
             <span id="notification-status-badge" class="badge hidden" title="Notification Status"></span>
             <nav class="tabs" aria-label="Dashboard sections">
-                <span class="tab active">Live</span>
-                <span class="tab">Today</span>
-                <span class="tab">Weekly (Soon)</span>
-                <span class="tab">Monthly (Soon)</span>
+                <span class="tab active" data-tab="live">Live</span>
+                <span class="tab" data-tab="today">Today</span>
+                <span class="tab" data-tab="weekly">Weekly</span>
+                <span class="tab" data-tab="monthly">Monthly (Soon)</span>
             </nav>
         </div>
     </section>
 
-    <section class="card">
-        <div id="connection-status" class="status-line connected">
-            <span class="status-dot" aria-hidden="true"></span>
-            <span>
-                <span id="connection-label">Connected to</span>
-                <strong id="current-ssid">{{ office_wifi_name }}</strong>
-            </span>
-        </div>
-        <p class="muted" id="session-started-at">Started at <span id="start-time">09:42:10</span></p>
-        <p id="sync-status" class="muted sync-status hidden" aria-live="polite"></p>
-    </section>
-
-    <section class="card">
-        <p class="muted" id="timer-mode-label">Remaining (target: <span id="target-display">{{ target_display }}</span>)</p>
-        <div id="timer-display" class="timer">01:44:30</div>
-        <div class="progress-wrap">
-            <div class="progress-label">
-                <span>Progress</span>
-                <span id="progress-percent">56%</span>
+    <div id="tab-live" class="tab-content">
+        <section class="card">
+            <div id="connection-status" class="status-line connected">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span>
+                    <span id="connection-label">Connected to</span>
+                    <strong id="current-ssid">{{ office_wifi_name }}</strong>
+                </span>
             </div>
-            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="56">
-                <div id="progress-fill" class="progress-fill"></div>
-            </div>
-        </div>
-        <p id="completion-banner" class="completion hidden">Completed! Total: <span id="completed-total">04:10:05</span></p>
-    </section>
+            <p class="muted" id="session-started-at">Started at <span id="start-time">--:--:--</span></p>
+            <p id="sync-status" class="muted sync-status hidden" aria-live="polite"></p>
+        </section>
 
-    <section class="card">
-        <h2>Today's Sessions</h2>
-        <table id="today-sessions-table" aria-label="Today's sessions">
-            <thead>
-            <tr>
-                <th>Start</th>
-                <th>End</th>
-                <th>Duration</th>
-                <th>Status</th>
-            </tr>
-            </thead>
-            <tbody id="today-sessions-body">
-            <tr>
-                <td>09:42:10</td>
-                <td>&mdash;</td>
-                <td>2h 15m</td>
-                <td>Active</td>
-            </tr>
-            </tbody>
-        </table>
-        <p class="total">Total: <span id="today-total-display">2h 15m</span></p>
-    </section>
+        <section class="card">
+            <p class="muted" id="timer-mode-label">Remaining (target: <span id="target-display">{{ target_display }}</span>)</p>
+            <div id="timer-display" class="timer">00:00:00</div>
+            <div class="progress-wrap">
+                <div class="progress-label">
+                    <span>Progress</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+                <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+            </div>
+            <p id="completion-banner" class="completion hidden">Completed! Total: <span id="completed-total">00:00:00</span></p>
+        </section>
+    </div>
+
+    <div id="tab-today" class="tab-content hidden">
+        <section class="card">
+            <h2>Today's Sessions</h2>
+            <table id="today-sessions-table" aria-label="Today's sessions">
+                <thead>
+                <tr>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody id="today-sessions-body">
+                <tr>
+                    <td colspan="4">No sessions for today.</td>
+                </tr>
+                </tbody>
+            </table>
+            <p class="total">Total: <span id="today-total-display">0h 00m</span></p>
+        </section>
+    </div>
+
+    <div id="tab-weekly" class="tab-content hidden">
+        <section class="card">
+            <div class="section-header">
+                <h2>Weekly Analytics</h2>
+                <div class="selector">
+                    <button id="prev-week" class="btn-secondary">&larr;</button>
+                    <span id="current-week-label">YYYY-Www</span>
+                    <button id="next-week" class="btn-secondary">&rarr;</button>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="weekly-chart"></canvas>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Total Hours</span>
+                    <span id="weekly-total-hours" class="stat-value">0h 00m</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Daily Average</span>
+                    <span id="weekly-avg-hours" class="stat-value">0h 00m</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Targets Met</span>
+                    <span id="weekly-targets-met" class="stat-value">0 / 7</span>
+                </div>
+            </div>
+
+            <table id="weekly-table" class="mt-16">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Day</th>
+                    <th>Hours</th>
+                    <th>Sessions</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody id="weekly-table-body">
+                </tbody>
+            </table>
+        </section>
+    </div>
 </main>
 <script src="/static/app.js" defer></script>
 </body>

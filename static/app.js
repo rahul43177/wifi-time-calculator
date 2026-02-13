@@ -27,17 +27,34 @@
         todaySessionsBody: null,
         todayTotalDisplay: null,
         notificationBadge: null,
+        tabLive: null,
+        tabToday: null,
+        tabWeekly: null,
+        weeklyTableBody: null,
+        weeklyTotalHours: null,
+        weeklyAvgHours: null,
+        weeklyTargetsMet: null,
+        currentWeekLabel: null,
+        prevWeekBtn: null,
+        nextWeekBtn: null,
+        weeklyChartCanvas: null,
     };
 
     const state = {
         status: null,
         today: null,
+        weekly: null,
         syncAtMs: null,
         sessionStartMs: null,
         baseElapsedSeconds: 0,
         baseRemainingSeconds: 0,
         targetSeconds: null,
         lastCompleted4h: null,
+        activeTab: "live",
+        selectedWeek: null, // YYYY-Www
+        charts: {
+            weekly: null
+        }
     };
 
     function cacheElements() {
@@ -56,6 +73,19 @@
         dom.todaySessionsBody = document.getElementById("today-sessions-body");
         dom.todayTotalDisplay = document.getElementById("today-total-display");
         dom.notificationBadge = document.getElementById("notification-status-badge");
+        
+        dom.tabLive = document.getElementById("tab-live");
+        dom.tabToday = document.getElementById("tab-today");
+        dom.tabWeekly = document.getElementById("tab-weekly");
+        
+        dom.weeklyTableBody = document.getElementById("weekly-table-body");
+        dom.weeklyTotalHours = document.getElementById("weekly-total-hours");
+        dom.weeklyAvgHours = document.getElementById("weekly-avg-hours");
+        dom.weeklyTargetsMet = document.getElementById("weekly-targets-met");
+        dom.currentWeekLabel = document.getElementById("current-week-label");
+        dom.prevWeekBtn = document.getElementById("prev-week");
+        dom.nextWeekBtn = document.getElementById("next-week");
+        dom.weeklyChartCanvas = document.getElementById("weekly-chart");
     }
 
     function hasRequiredDom() {
@@ -70,8 +100,166 @@
             dom.completionBanner &&
             dom.completedTotal &&
             dom.todaySessionsBody &&
-            dom.todayTotalDisplay
+            dom.todayTotalDisplay &&
+            dom.tabLive &&
+            dom.tabToday &&
+            dom.tabWeekly
         );
+    }
+
+    // --- Helpers ---
+
+    function getISOWeek(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+    }
+
+    function addWeeks(weekStr, n) {
+        const match = weekStr.match(/^(\d{4})-W(\d{2})$/);
+        if (!match) return weekStr;
+        const year = parseInt(match[1]);
+        const week = parseInt(match[2]);
+        
+        // Simple but effective: move to a Thursday in that week, then add 7*n days
+        const jan4 = new Date(year, 0, 4);
+        const dayNum = jan4.getDay() || 7;
+        const thursOfFirstWeek = new Date(jan4.getTime() + (4 - dayNum) * 86400000);
+        const targetThurs = new Date(thursOfFirstWeek.getTime() + (week - 1) * 7 * 86400000 + n * 7 * 86400000);
+        
+        return getISOWeek(targetThurs);
+    }
+
+    // --- Tab Management ---
+
+    function switchTab(tabId) {
+        state.activeTab = tabId;
+        
+        // Update tabs UI
+        document.querySelectorAll(".tab").forEach(tab => {
+            tab.classList.toggle("active", tab.dataset.tab === tabId);
+        });
+        
+        // Update content visibility
+        dom.tabLive.classList.toggle("hidden", tabId !== "live");
+        dom.tabToday.classList.toggle("hidden", tabId !== "today");
+        dom.tabWeekly.classList.toggle("hidden", tabId !== "weekly");
+        
+        if (tabId === "weekly") {
+            if (!state.selectedWeek) {
+                state.selectedWeek = getISOWeek(new Date());
+            }
+            void syncWeekly();
+        }
+    }
+
+    // --- Analytics Rendering ---
+
+    function renderWeeklyTable() {
+        if (!state.weekly || !dom.weeklyTableBody) return;
+        
+        dom.weeklyTableBody.innerHTML = "";
+        state.weekly.days.forEach(day => {
+            const row = document.createElement("tr");
+            
+            const dateCell = document.createElement("td");
+            dateCell.textContent = day.date;
+            
+            const dayCell = document.createElement("td");
+            dayCell.textContent = day.day;
+            
+            const hoursCell = document.createElement("td");
+            hoursCell.textContent = formatMinutes(day.total_minutes);
+            
+            const sessionsCell = document.createElement("td");
+            sessionsCell.textContent = day.session_count;
+            
+            const statusCell = document.createElement("td");
+            statusCell.textContent = day.target_met ? "✅ Met" : "❌ No";
+            statusCell.className = day.target_met ? "connected" : "muted";
+            
+            row.appendChild(dateCell);
+            row.appendChild(dayCell);
+            row.appendChild(hoursCell);
+            row.appendChild(sessionsCell);
+            row.appendChild(statusCell);
+            dom.weeklyTableBody.appendChild(row);
+        });
+        
+        dom.weeklyTotalHours.textContent = formatMinutes(state.weekly.total_minutes);
+        dom.weeklyAvgHours.textContent = formatMinutes(Math.round(state.weekly.avg_minutes_per_day));
+        dom.weeklyTargetsMet.textContent = `${state.weekly.days_target_met} / 7`;
+        dom.currentWeekLabel.textContent = state.weekly.week;
+    }
+
+    function renderWeeklyChart() {
+        if (!state.weekly || !dom.weeklyChartCanvas) return;
+        
+        const ctx = dom.weeklyChartCanvas.getContext("2d");
+        const labels = state.weekly.days.map(d => d.day);
+        const data = state.weekly.days.map(d => d.total_minutes / 60);
+        const colors = state.weekly.days.map(d => d.target_met ? "#22c55e" : "#ef4444");
+
+        if (state.charts.weekly) {
+            state.charts.weekly.destroy();
+        }
+
+        // Get target hours from backend status or default to 4
+        const targetHours = state.status ? (state.targetSeconds / 3600) : 4.16; // 4h 10m fallback
+
+        state.charts.weekly = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Hours Worked",
+                    data: data,
+                    backgroundColor: colors,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Hours"
+                        },
+                        suggestedMax: 6
+                    }
+                },
+                plugins: {
+                    annotation: { // Note: standard chart.js doesn't include annotation plugin by default, 
+                                 // we'll use a simple horizontal line if we wanted, 
+                                 // but for now let's just use standard bar chart.
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    async function syncWeekly() {
+        try {
+            const url = `/api/weekly${state.selectedWeek ? `?week=${state.selectedWeek}` : ""}`;
+            const data = await fetchJson(url);
+            state.weekly = data;
+            state.selectedWeek = data.week;
+            renderWeeklyTable();
+            renderWeeklyChart();
+            clearSyncError();
+        } catch (error) {
+            console.warn("Weekly sync failed:", error);
+            showSyncError("Failed to load weekly analytics.");
+        }
     }
 
     function clamp(value, min, max) {
@@ -464,12 +652,39 @@
             return;
         }
 
+        // Tab wiring
+        document.querySelectorAll(".tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                const tabId = tab.dataset.tab;
+                if (tabId && !tab.textContent.includes("(Soon)")) {
+                    switchTab(tabId);
+                }
+            });
+        });
+
+        // Week selector wiring
+        if (dom.prevWeekBtn) {
+            dom.prevWeekBtn.addEventListener("click", () => {
+                state.selectedWeek = addWeeks(state.selectedWeek, -1);
+                void syncWeekly();
+            });
+        }
+        if (dom.nextWeekBtn) {
+            dom.nextWeekBtn.addEventListener("click", () => {
+                state.selectedWeek = addWeeks(state.selectedWeek, 1);
+                void syncWeekly();
+            });
+        }
+
         requestNotificationPermission();
         updateNotificationBadge();
         void syncFromBackend();
         setInterval(renderTimer, TICK_INTERVAL_MS);
         setInterval(() => {
             void syncFromBackend();
+            if (state.activeTab === "weekly") {
+                void syncWeekly();
+            }
         }, SYNC_INTERVAL_MS);
     }
 

@@ -69,7 +69,7 @@ async def test_root_includes_weekly_monthly_tab_placeholders() -> None:
         response = await client.get("/")
 
     assert response.status_code == 200
-    assert "Weekly (Soon)" in response.text
+    assert "Weekly" in response.text
     assert "Monthly (Soon)" in response.text
 
 
