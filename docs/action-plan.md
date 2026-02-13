@@ -931,16 +931,32 @@ TEST_DURATION_MINUTES=2
 
 ---
 
-### Task 5.2: Monthly Data Aggregation API
+### Task 5.2: Monthly Data Aggregation API ✅ DONE
 **Description:** Backend endpoint that aggregates weekly data into monthly view
 **Dependencies:** Task 5.1
 **Acceptance Criteria:**
-- [ ] `GET /api/monthly?month=2026-02` returns week-by-week breakdown
-- [ ] Defaults to current month if no query param
-- [ ] Each week: total_minutes, days_present, avg_daily_minutes
-- [ ] Includes month totals
+- [x] `GET /api/monthly?month=2026-02` returns week-by-week breakdown
+- [x] Defaults to current month if no query param
+- [x] Each week: total_minutes, days_present, avg_daily_minutes
+- [x] Includes month totals
 
 **File:** `app/main.py` (or `app/analytics.py`)
+
+> **Implementation Note:** Added monthly aggregation in `app/analytics.py`:
+> - `get_month_range(month_str)` parses `YYYY-MM` with fallback to current month
+> - `get_monthly_aggregation(month_str)` buckets the month into week-sized ranges
+>   (from day 1 in 7-day slices, clipping the final partial week)
+> - Each week returns `total_minutes`, `days_present`, and `avg_daily_minutes`
+> - Month-level totals include `total_minutes`, `total_days_present`, and `avg_daily_minutes`
+> - Aggregation remains local-first (reads existing JSONL logs only), no mutations
+>
+> Added typed API response models and endpoint in `app/main.py`:
+> - `GET /api/monthly` with optional `month` query
+> - Deterministic fallback on invalid month inputs
+>
+> **Tests:** `tests/test_phase_5_2.py` (12 tests) — schema stability, normal aggregation,
+> empty month handling, invalid month fallback, deduplication, malformed entry handling,
+> duration clamping, 31-day month bucket coverage, average calculations, and storage-failure hardening — all passing.
 
 ---
 
@@ -1094,6 +1110,176 @@ TEST_DURATION_MINUTES=2
 - [ ] Installation documented in README
 - [ ] Uninstall process works
 - [ ] Tested with actual restart
+
+---
+
+## 🎨 Phase 7: UI Polish & UX Enhancements
+
+**Goal:** Improve visual appeal, information clarity, and user engagement
+**Estimated Time:** 15-20 hours (incremental)
+**Priority:** HIGH for 7.1 (Core Timer Enhancement)
+
+**See detailed proposal:** `docs/ui-enhancement-proposal.md`
+
+---
+
+### Task 7.1: Dual Timer Display (Elapsed + Countdown) ⚡ PRIORITY
+**Description:** Add clear elapsed/target display alongside countdown timer
+**Dependencies:** Phase 4 complete
+**Acceptance Criteria:**
+- [ ] Display elapsed/target ratio: "2h 30m / 4h 10m"
+- [ ] Keep existing countdown timer visible
+- [ ] Color-code based on progress (blue <50%, yellow 50-80%, green >80%)
+- [ ] Large, prominent display
+- [ ] Works on all screen sizes
+
+**File:** `templates/index.html`, `static/app.js`, `static/style.css`
+
+**Proposed Layout:**
+```
+┌─────────────────────────────────┐
+│  Elapsed: 2h 30m / 4h 10m (60%) │
+│  ━━━━━━━━━━━━━━░░░░░░░          │
+│  Countdown: 01:44:30            │
+└─────────────────────────────────┘
+```
+
+---
+
+### Task 7.2: Status Cards with Icons
+**Description:** Rich visual status indicators with icons
+**Dependencies:** Task 7.1
+**Acceptance Criteria:**
+- [ ] Connection status with icon (🌐 Connected / ⚠️ Disconnected)
+- [ ] Session details card with timer icon (⏱️)
+- [ ] Today's total card with chart icon (📊)
+- [ ] Target progress card with goal icon (🎯)
+- [ ] Grid layout (2x2 on desktop, stacked on mobile)
+
+**Files:** `templates/index.html`, `static/style.css`
+
+---
+
+### Task 7.3: Improved Color Scheme & Gradients
+**Description:** Modern color palette with subtle gradients
+**Dependencies:** Task 7.1
+**Acceptance Criteria:**
+- [ ] Blue primary (#4F46E5) for brand elements
+- [ ] Green (#22C55E) for success states
+- [ ] Yellow (#EAB308) for warnings
+- [ ] Subtle gradients on hero sections
+- [ ] Better contrast ratios (WCAG AA)
+
+**File:** `static/style.css`
+
+---
+
+### Task 7.4: Micro-Animations & Transitions
+**Description:** Smooth animations for better user feedback
+**Dependencies:** Task 7.2, 7.3
+**Acceptance Criteria:**
+- [ ] Progress bar animates smoothly (not instant jumps)
+- [ ] Status cards fade in on load
+- [ ] Connection status dot pulses
+- [ ] Celebration animation when target reached
+- [ ] All animations run at 60fps
+
+**Files:** `static/style.css`, `static/app.js`
+
+---
+
+### Task 7.5: Contextual Insights & Messaging
+**Description:** Smart, context-aware motivational messages
+**Dependencies:** Task 7.1
+**Acceptance Criteria:**
+- [ ] Morning greeting with estimated completion time
+- [ ] Progress-based encouragement (50%, 75%, 90%)
+- [ ] Completion celebration message
+- [ ] Disconnection status with last session info
+- [ ] Messages update dynamically based on state
+
+**File:** `static/app.js`
+
+---
+
+### Task 7.6: Dark Mode Support
+**Description:** Dark theme with system preference detection
+**Dependencies:** Task 7.3
+**Acceptance Criteria:**
+- [ ] Auto-detects system dark mode preference
+- [ ] Manual toggle available
+- [ ] All colors optimized for dark background
+- [ ] Smooth theme transition animation
+- [ ] Preserves user preference in localStorage
+
+**Files:** `static/style.css`, `static/app.js`
+
+---
+
+### Task 7.7: Gamification Elements (Optional)
+**Description:** Engagement boosters with streaks and achievements
+**Dependencies:** Phase 5 complete (needs analytics)
+**Acceptance Criteria:**
+- [ ] Streak counter ("5 days in a row! 🔥")
+- [ ] Achievement badges (Early Bird, Marathon Runner, etc.)
+- [ ] Progress milestones with visual checkpoints
+- [ ] Weekly challenges
+- [ ] Badge storage in file system
+
+**Files:** `app/gamification.py`, `app/main.py`, `static/app.js`
+
+---
+
+### Task 7.8: Enhanced Data Visualizations (Optional)
+**Description:** Better charts with hover effects and animations
+**Dependencies:** Phase 5 complete
+**Acceptance Criteria:**
+- [ ] Animated bar charts on load
+- [ ] Hover tooltips with exact values
+- [ ] Monthly calendar heatmap
+- [ ] 30-day trend line
+- [ ] Color gradients for data points
+
+**Files:** `static/app.js`, `templates/index.html`
+
+---
+
+### Task 7.9: Accessibility Improvements
+**Description:** WCAG 2.1 AA compliance
+**Dependencies:** Task 7.2, 7.3
+**Acceptance Criteria:**
+- [ ] Keyboard navigation for all interactions
+- [ ] ARIA labels on all interactive elements
+- [ ] Screen reader-friendly timer updates
+- [ ] High contrast mode option
+- [ ] Focus indicators visible
+
+**Files:** `templates/index.html`, `static/app.js`, `static/style.css`
+
+---
+
+### ✅ Phase 7 Definition of Done
+
+**Must Have (MVP++):**
+- [x] Elapsed/target display visible ("2h 30m / 4h 10m")
+- [x] Countdown timer still works
+- [x] Color-coded progress indicator
+- [x] Improved visual hierarchy
+- [x] Better spacing and typography
+
+**Nice to Have:**
+- [ ] Dark mode with auto-detection
+- [ ] Contextual insights and messaging
+- [ ] Status cards with icons
+- [ ] Smooth animations
+- [ ] Gamification elements
+
+**Quality Gates:**
+- [ ] 60fps animations
+- [ ] WCAG AA contrast ratios
+- [ ] Mobile responsive (320px+)
+- [ ] No layout shifts
+- [ ] Graceful degradation
 
 ---
 
@@ -1346,6 +1532,6 @@ Before considering MVP complete:
 
 ---
 
-**Current State:** ✅ **Phase 5.1 & 5.3 COMPLETE** — Weekly aggregation API and UI visualization implemented. 209 tests passing, 0 warnings. Next: Task 5.2 (Monthly API).
+**Current State:** ✅ **Phase 5.1, 5.2 & 5.3 COMPLETE** — Weekly + monthly aggregation APIs and weekly UI visualization implemented. 221 tests passing, 0 warnings. Next: Task 5.4 (Monthly UI).
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!

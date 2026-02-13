@@ -25,33 +25,19 @@ PHASE UNDER AUDIT
 
 Phase 5 → Analytics & Charts  
 Task: 
+
 ---
 
-### Task 5.1: Weekly Data Aggregation API
-**Description:** Backend endpoint that aggregates daily data into weekly view
-**Dependencies:** Phase 4 complete
+### Task 5.2: Monthly Data Aggregation API
+**Description:** Backend endpoint that aggregates weekly data into monthly view
+**Dependencies:** Task 5.1
 **Acceptance Criteria:**
-- [ ] `GET /api/weekly?week=2026-W07` returns day-by-day breakdown
-- [ ] Defaults to current week if no query param
-- [ ] Each day: total_minutes, session_count, target_met (bool)
-- [ ] Includes week totals and averages
+- [ ] `GET /api/monthly?month=2026-02` returns week-by-week breakdown
+- [ ] Defaults to current month if no query param
+- [ ] Each week: total_minutes, days_present, avg_daily_minutes
+- [ ] Includes month totals
 
-**File:** `app/main.py` (or new `app/analytics.py` if complex)
-
-**Response Example:**
-```json
-{
-  "week": "2026-W07",
-  "days": [
-    {"date": "09-02-2026", "day": "Mon", "total_minutes": 380, "sessions": 2, "target_met": true},
-    {"date": "10-02-2026", "day": "Tue", "total_minutes": 250, "sessions": 1, "target_met": true},
-    {"date": "11-02-2026", "day": "Wed", "total_minutes": 0, "sessions": 0, "target_met": false}
-  ],
-  "total_minutes": 630,
-  "avg_minutes_per_day": 210,
-  "days_target_met": 2
-}
-```
+**File:** `app/main.py` (or `app/analytics.py`)
 
 ---
 

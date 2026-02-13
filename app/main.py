@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 from app.config import settings
 from app.file_store import read_sessions
-from app.analytics import get_weekly_aggregation
+from app.analytics import get_monthly_aggregation, get_weekly_aggregation
 from app.session_manager import SessionState
 from app.timer_engine import (
     _resolve_target_components,
@@ -117,6 +117,27 @@ class WeeklyResponse(BaseModel):
     total_minutes: int
     avg_minutes_per_day: float
     days_target_met: int
+
+
+class MonthlyWeekResponse(BaseModel):
+    """Typed schema for one week in monthly aggregation."""
+
+    week: str
+    start_date: str
+    end_date: str
+    total_minutes: int
+    days_present: int
+    avg_daily_minutes: float
+
+
+class MonthlyResponse(BaseModel):
+    """Typed schema for monthly aggregation API."""
+
+    month: str
+    weeks: list[MonthlyWeekResponse]
+    total_minutes: int
+    total_days_present: int
+    avg_daily_minutes: float
 
 
 def _get_now(tz: Optional[tzinfo] = None) -> datetime:
@@ -412,6 +433,14 @@ async def get_weekly_data(week: Optional[str] = None) -> WeeklyResponse:
     Return weekly session aggregation.
     """
     return WeeklyResponse(**get_weekly_aggregation(week))
+
+
+@app.get("/api/monthly", response_model=MonthlyResponse)
+async def get_monthly_data(month: Optional[str] = None) -> MonthlyResponse:
+    """
+    Return monthly week-by-week session aggregation.
+    """
+    return MonthlyResponse(**get_monthly_aggregation(month))
 
 
 if __name__ == "__main__":

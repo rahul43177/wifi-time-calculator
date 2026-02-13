@@ -123,15 +123,15 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 | 4 | 4.4 | Live timer JavaScript + backend sync loop | 9 tests | DONE |
 | 4 | 4.5 | Browser notification support (Notification API) | 4 tests | DONE |
 | 5 | 5.1 | Weekly Data Aggregation API | 10 tests | DONE |
+| 5 | 5.2 | Monthly Data Aggregation API | 12 tests | DONE |
 | 5 | 5.3 | Weekly Analytics UI View (Chart.js) | — | DONE |
 
-**Total: 209 tests, all passing, 0 warnings**
+**Total: 221 tests, all passing, 0 warnings**
 
 ### Next Up
 
 | Phase | Task | Description | Status |
 |-------|------|-------------|--------|
-| 5 | 5.2 | Monthly Data Aggregation API | NOT STARTED |
 | 5 | 5.4 | Monthly Analytics UI View | NOT STARTED |
 | 6 | 6.1-6.5 | Auto-start on boot (launchd) | NOT STARTED |
 
@@ -144,6 +144,7 @@ The `airport -I` command is **deprecated** on modern macOS and doesn't work.
 ```
 app/
 ├── __init__.py          — Package init
+├── analytics.py         — Weekly/monthly aggregation helpers for analytics APIs
 ├── config.py            — Settings via pydantic-settings (ConfigDict)
 ├── wifi_detector.py     — SSID detection + polling + session transition routing
 ├── main.py              — FastAPI app, lifespan, APIs, Jinja dashboard route
@@ -186,7 +187,8 @@ tests/
 ├── test_phase_4_3.py    — 10 tests: CSS extraction/static serving/tokens/responsive/utility validation
 ├── test_phase_4_4.py    — 9 tests: app.js polling/tick/completion/table-refresh/failure-fallback hooks
 ├── test_phase_4_5.py    — 4 tests: Browser Notification API integration + flip detection
-└── test_phase_5_1.py    — 10 tests: Weekly aggregation logic + deduplication + boundaries
+├── test_phase_5_1.py    — 10 tests: Weekly aggregation logic + deduplication + boundaries
+└── test_phase_5_2.py    — 12 tests: Monthly aggregation logic + fallbacks + edge-date + storage-failure coverage
 ```
 
 ### Configuration & Docs
@@ -263,6 +265,8 @@ settings = Settings()
   - `GET /health` (JSON status)
   - `GET /api/status` (live session/timer status for dashboard)
   - `GET /api/today` (today's sessions + total minutes/display)
+  - `GET /api/weekly` (week-level day-by-day analytics aggregation)
+  - `GET /api/monthly` (month-level week-by-week analytics aggregation)
 
 ### 5.4 file_store.py — Storage Module
 
