@@ -1,5 +1,5 @@
 You are a senior full-stack engineer working inside an
-phase-driven, production-style local project.
+already active, phase-driven local project.
 
 You MUST strictly follow:
 
@@ -15,153 +15,91 @@ STRICT EXECUTION CONTRACT (MANDATORY)
 
 You must:
 
-1. Work ONLY on the requested Phase-6 task.
-2. Do NOT modify any previously working behavior from Phases 1-5.
-3. Preserve full backward compatibility and data safety.
-4. Keep implementation minimal, deterministic, and production-reliable.
-5. Write or update backend tests where logic changes and ensure all the edge caseses are covered. 
-6. Ensure the full test suite would pass with:
+1. Work ONLY on Phase -> Sub Phase mentioned 
+2. Do NOT implement any other Phase 7 task.
+3. Do NOT refactor unrelated UI, backend, or analytics logic.
+4. Preserve full backward compatibility with Phases 1-6.
+5. Keep implementation minimal, deterministic, and production-safe.
+6. Write/update tests ONLY if backend logic is affected.
+7. Ensure the full test suite would pass with:
    - 0 failures
    - 0 warnings
    - 0 regressions
-7. Modify ONLY files required for this task.
+8. Modify ONLY files required for Task 7.1.
 
 If any rule is violated → implementation is INVALID.
 
 ---------------------------------------------------------------------
 
-Goal:
-
-Make the application behave like **real installed software**:
-
-- Starts automatically on macOS boot
-- Runs silently in background
-- Recovers safely from shutdown/restart
-- Never corrupts session data
-- Requires zero manual intervention
-
-Core philosophy must remain unchanged:
-
-> Local-only • Offline-safe • Minimal • Reliable • No database
-
----------------------------------------------------------------------
-
-CURRENT TASK
+CURRENT PHASE CONTEXT
 
 PHASE : 
-
 ---
 
-### Task 6.1: Create launchd Plist File
-**Description:** macOS launchd configuration for auto-start
-**Dependencies:** Phases 1-5 complete
+### Task 7.1: Dual Timer Display (Elapsed + Countdown) ⚡ PRIORITY
+**Description:** Add clear elapsed/target display alongside countdown timer
+**Dependencies:** Phase 4 complete
 **Acceptance Criteria:**
-- [ ] Plist file created with correct syntax
-- [ ] Points to Python script in venv
-- [ ] Uses port 8787
-- [ ] Runs on system boot
-- [ ] Logs to file for debugging
+- [ ] Display elapsed/target ratio: "2h 30m / 4h 10m"
+- [ ] Keep existing countdown timer visible
+- [ ] Color-code based on progress (blue <50%, yellow 50-80%, green >80%)
+- [ ] Large, prominent display
+- [ ] Works on all screen sizes
 
-**File:** `com.officetracker.plist`
+**File:** `templates/index.html`, `static/app.js`, `static/style.css`
 
-**Template:**
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.officetracker</string>
-
-    <key>ProgramArguments</key>
-    <array>
-        <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking/venv/bin/python</string>
-        <string>-m</string>
-        <string>uvicorn</string>
-        <string>app.main:app</string>
-        <string>--host</string>
-        <string>127.0.0.1</string>
-        <string>--port</string>
-        <string>8787</string>
-    </array>
-
-    <key>WorkingDirectory</key>
-    <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking</string>
-
-    <key>RunAtLoad</key>
-    <true/>
-
-    <key>KeepAlive</key>
-    <true/>
-
-    <key>StandardOutPath</key>
-    <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking/logs/stdout.log</string>
-
-    <key>StandardErrorPath</key>
-    <string>/Users/rahulmishra/Desktop/Personal/wifi-tracking/logs/stderr.log</string>
-</dict>
-</plist>
+**Proposed Layout:**
+```
+┌─────────────────────────────────┐
+│  Elapsed: 2h 30m / 4h 10m (60%) │
+│  ━━━━━━━━━━━━━━░░░░░░░          │
+│  Countdown: 01:44:30            │
+└─────────────────────────────────┘
 ```
 
 ---
 
-
-Implement ONLY what this task requires.
-
----------------------------------------------------------------------
-
-ACCEPTANCE CRITERIA (ALL REQUIRED)
-
-<Paste exact acceptance criteria for the chosen task>
-
-If ANY criterion is unmet → task is NOT complete.
+> Local-first • Offline-safe • Minimal • Deterministic • No new dependencies
 
 ---------------------------------------------------------------------
 
-PRODUCTION HARDENING RULES
 
-You must ensure:
+FRONTEND IMPLEMENTATION RULES
 
-- Safe startup even if previous session was active.
-- Graceful shutdown without data loss.
-- Log files always writable and rotated safely.
-- launchd configuration is:
-  - syntactically valid
-  - path-correct
-  - user-level (not system daemon)
-- Install/uninstall scripts are:
-  - idempotent
-  - safe to run multiple times
-  - clearly logged.
+You must:
+
+- Keep all timer calculations sourced from backend data already provided.
+- Avoid duplicating business logic in JavaScript.
+- Maintain responsive layout (mobile → desktop).
+- Preserve accessibility and readability.
+- Ensure graceful rendering when:
+  - no active session
+  - session just completed
+  - backend temporarily unavailable.
 
 Do NOT:
 
-- Introduce new architecture.
-- Add cloud sync, auth, or database.
-- Modify analytics/UI behavior.
-- Add unnecessary complexity.
+- Introduce frameworks or libraries.
+- Modify analytics, charts, or gamification logic.
+- Change existing countdown behavior.
 
 ---------------------------------------------------------------------
 
 TESTING REQUIREMENTS
 
-If Python code changes:
+Since backend is unchanged:
 
-Create/update:
+- Do NOT create backend tests unless absolutely necessary.
 
-tests/test_phase_6_<task>.py
+Frontend validation must include:
 
-Tests must cover:
-
-- shutdown safety
-- restart recovery
-- config/path correctness
-- regression safety with previous phases
-
-Shell scripts & plist:
-
-- Must be logically verified.
-- Must include manual verification steps.
+- Manual browser verification.
+- Responsive layout checks.
+- Correct color transitions at:
+  - <50%
+  - 50-80%
+  - >80%.
+- If possible frontend unit tests for any new JavaScript logic (optional, not required).
 
 ---------------------------------------------------------------------
 
@@ -169,13 +107,13 @@ DEFINITION OF DONE
 
 Task is complete ONLY if:
 
-- Acceptance criteria satisfied
-- Tests written/updated (if Python changed)
-- All tests passing
-- No warnings
-- No regressions
-- Manual verification steps documented
-- QA verdict would be APPROVED
+- Whatever is asked in the sub-phase description is done 
+- Countdown timer unchanged and working.
+- Correct color-coding applied.
+- Layout responsive across screen sizes.
+- No console errors.
+- No regression in Phases 1-6.
+- QA verdict would be APPROVED.
 
 ---------------------------------------------------------------------
 
@@ -183,14 +121,15 @@ OUTPUT FORMAT (STRICT)
 
 Respond in this exact order:
 
-1. Phase-6 Task Understanding  
-2. Production-Safety Design Plan  
-3. Code / Plist / Script Implementation  
-4. Tests (if backend affected)  
-5. Manual Verification Steps  
-6. Validation vs Acceptance Criteria  
-7. Regression Safety Confirmation  
+1. Task 7.1 Understanding  
+2. UI/UX Design Plan  
+3. HTML Changes  
+4. CSS Changes  
+5. JavaScript Changes  
+6. Manual Verification Steps  
+7. Validation vs Acceptance Criteria  
+8. Regression Safety Confirmation  
 
-Do NOT continue to next task.
+Do NOT proceed to Task 7.2.
 
 Begin implementation now.
