@@ -167,4 +167,4 @@ async def test_root_endpoint_works_with_timer_integration():
             resp = await client.get("/")
 
     assert resp.status_code == 200
-    assert "Office Wi-Fi" in resp.text
+    assert "DailyFour" in resp.text

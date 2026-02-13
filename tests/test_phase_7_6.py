@@ -61,17 +61,17 @@ def html_content(template_html_path):
 # --- Acceptance Criterion 1: Auto-detects system dark mode preference ---
 
 def test_dark_mode_css_variables_defined(css_content):
-    """Test that dark mode CSS variables are defined."""
+    """Test that dark mode CSS variables are defined (Phase 9 updated)."""
     assert '[data-theme="dark"]' in css_content, \
         "Dark mode CSS selector [data-theme='dark'] not found"
 
-    # Check key dark mode variables exist
+    # Phase 9: Check refined dark mode variables (lowercase hex)
     dark_vars = [
-        '--surface: #1E293B',  # Slate 800
-        '--text: #F1F5F9',     # Slate 100
-        '--bg: #0F172A',       # Slate 950
-        '--muted: #94A3B8',    # Slate 400
-        '--border: #334155',   # Slate 700
+        '--card-bg: #1e293b',   # Slate 800 (renamed from --surface)
+        '--text: #f1f5f9',      # Slate 100
+        '--bg: #0f172a',        # Slate 900 (updated)
+        '--text-secondary: #cbd5e1',  # Slate 300 (renamed from --muted)
+        '--border: #334155',    # Slate 700
     ]
 
     for var in dark_vars:
@@ -204,29 +204,26 @@ def test_theme_toggle_icon_updates(js_content):
 # --- Acceptance Criterion 3: All colors optimized for dark background ---
 
 def test_dark_mode_brand_colors_adjusted(css_content):
-    """Test that brand colors are adjusted for dark backgrounds."""
-    # Primary color should be brighter in dark mode
-    assert '--primary: #6366F1' in css_content or \
-           '--primary: #818CF8' in css_content, \
-        "Primary color not adjusted for dark mode (should be brighter)"
+    """Test that brand colors are adjusted for dark backgrounds (Phase 9)."""
+    # Phase 9: Primary color is Indigo 500 in dark mode (lowercase)
+    assert '--primary: #6366f1' in css_content, \
+        "Primary color not adjusted for dark mode (should be #6366f1 - Indigo 500)"
 
 
 def test_dark_mode_status_colors_wcag_compliant(css_content):
-    """Test that status colors maintain WCAG AA compliance in dark mode."""
-    # Check for dark mode green (should be brighter)
-    assert '--green-dark: #4ADE80' in css_content or \
-           '--green: #22C55E' in css_content, \
-        "Green color not optimized for dark backgrounds"
+    """Test that status colors maintain WCAG AA compliance in dark mode (Phase 9)."""
+    # Phase 9: Semantic colors adjusted for dark mode (lowercase hex)
+    # Success (green) - Emerald 500
+    assert '--success: #10b981' in css_content, \
+        "Success color not optimized for dark backgrounds (should be #10b981)"
 
-    # Check for dark mode yellow (should be brighter)
-    assert '--yellow-dark: #FDE047' in css_content or \
-           '--yellow: #FCD34D' in css_content, \
-        "Yellow color not optimized for dark backgrounds"
+    # Warning (yellow) - Amber 500
+    assert '--warning: #f59e0b' in css_content, \
+        "Warning color not optimized for dark backgrounds (should be #f59e0b)"
 
-    # Check for dark mode red (should be brighter)
-    assert '--red-dark: #F87171' in css_content or \
-           '--red: #EF4444' in css_content, \
-        "Red color not optimized for dark backgrounds"
+    # Error (red) - Red 500
+    assert '--error: #ef4444' in css_content, \
+        "Error color not optimized for dark backgrounds (should be #ef4444)"
 
 
 def test_dark_mode_progress_colors_defined(css_content):
@@ -256,16 +253,14 @@ def test_dark_mode_gradient_definitions(css_content):
 
 
 def test_dark_mode_text_contrast(css_content):
-    """Test that dark mode text colors provide adequate contrast."""
-    # Light text on dark background
-    assert '--text: #F1F5F9' in css_content or \
-           '--text: #F8FAFC' in css_content, \
-        "Text color not light enough for dark backgrounds"
+    """Test that dark mode text colors provide adequate contrast (Phase 9)."""
+    # Phase 9: Light text on dark background (lowercase hex)
+    assert '--text: #f1f5f9' in css_content, \
+        "Text color not light enough for dark backgrounds (should be #f1f5f9 - Slate 100)"
 
-    # Muted text should still be readable
-    assert '--muted: #94A3B8' in css_content or \
-           '--muted: #CBD5E1' in css_content, \
-        "Muted text color not optimized for dark mode"
+    # Phase 9: text-secondary (renamed from muted) should still be readable
+    assert '--text-secondary: #cbd5e1' in css_content, \
+        "Secondary text color not optimized for dark mode (should be #cbd5e1 - Slate 300)"
 
 
 # --- Acceptance Criterion 4: Smooth theme transition animation ---

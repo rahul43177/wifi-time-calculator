@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office Wi-Fi Tracker</title>
+    <title>DailyFour - Track Your 4 Hours</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 <main class="dashboard">
     <section class="card header">
-        <h1 class="title">Office Wi-Fi Tracker</h1>
+        <h1 class="title">DailyFour</h1>
         <div class="header-right">
             <span id="notification-status-badge" class="badge hidden" title="Notification Status"></span>
             <button id="theme-toggle" class="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
@@ -42,9 +42,6 @@
         <div class="status-cards-grid">
             <!-- Card 1: Connection Status -->
             <section class="status-card" id="card-connection">
-                <div class="status-card-icon">
-                    <span id="connection-icon" aria-hidden="true">🌐</span>
-                </div>
                 <div class="status-card-content">
                     <div class="status-card-label">Connection</div>
                     <div id="card-connection-value" class="status-card-value">Connected</div>
@@ -54,9 +51,6 @@
 
             <!-- Card 2: Session Details -->
             <section class="status-card" id="card-session">
-                <div class="status-card-icon">
-                    <span aria-hidden="true">⏱️</span>
-                </div>
                 <div class="status-card-content">
                     <div class="status-card-label">Session</div>
                     <div id="card-session-value" class="status-card-value">--:--:--</div>
@@ -66,9 +60,6 @@
 
             <!-- Card 3: Today's Total -->
             <section class="status-card" id="card-today">
-                <div class="status-card-icon">
-                    <span aria-hidden="true">📊</span>
-                </div>
                 <div class="status-card-content">
                     <div class="status-card-label">Today's Total</div>
                     <div id="card-today-value" class="status-card-value">0h 00m</div>
@@ -78,9 +69,6 @@
 
             <!-- Card 4: Target Progress -->
             <section class="status-card" id="card-target">
-                <div class="status-card-icon">
-                    <span aria-hidden="true">🎯</span>
-                </div>
                 <div class="status-card-content">
                     <div class="status-card-label">Target Progress</div>
                     <div id="card-target-value" class="status-card-value">0%</div>
@@ -122,7 +110,6 @@
             <!-- Streak Counter -->
             <div class="streak-display">
                 <div class="streak-item">
-                    <span class="streak-icon" aria-hidden="true">🔥</span>
                     <div class="streak-content">
                         <div class="streak-label">Current Streak</div>
                         <div id="current-streak" class="streak-value">0</div>
@@ -130,7 +117,6 @@
                     </div>
                 </div>
                 <div class="streak-item">
-                    <span class="streak-icon" aria-hidden="true">🏆</span>
                     <div class="streak-content">
                         <div class="streak-label">Longest Streak</div>
                         <div id="longest-streak" class="streak-value">0</div>
@@ -138,7 +124,6 @@
                     </div>
                 </div>
                 <div class="streak-item">
-                    <span class="streak-icon" aria-hidden="true">⭐</span>
                     <div class="streak-content">
                         <div class="streak-label">Total Days</div>
                         <div id="total-days-met" class="streak-value">0</div>
@@ -150,36 +135,44 @@
             <!-- Achievements Grid -->
             <div class="achievements-grid" role="list" aria-label="Achievements">
                 <div class="achievement" data-achievement-id="early_bird" role="listitem">
-                    <div class="achievement-icon locked" aria-hidden="true">🌅</div>
+                    <div class="achievement-badge locked" data-badge="EB" aria-hidden="true">
+                        <span>EB</span>
+                    </div>
                     <div class="achievement-content">
                         <div class="achievement-name">Early Bird</div>
                         <div class="achievement-description">Started work before 9 AM</div>
                     </div>
-                    <div class="achievement-status locked" aria-label="Locked">🔒</div>
+                    <div class="achievement-status locked" aria-label="Locked"></div>
                 </div>
                 <div class="achievement" data-achievement-id="marathon_runner" role="listitem">
-                    <div class="achievement-icon locked" aria-hidden="true">🏃</div>
+                    <div class="achievement-badge locked" data-badge="MR" aria-hidden="true">
+                        <span>MR</span>
+                    </div>
                     <div class="achievement-content">
                         <div class="achievement-name">Marathon Runner</div>
                         <div class="achievement-description">Worked 5+ hours in one session</div>
                     </div>
-                    <div class="achievement-status locked" aria-label="Locked">🔒</div>
+                    <div class="achievement-status locked" aria-label="Locked"></div>
                 </div>
                 <div class="achievement" data-achievement-id="consistent" role="listitem">
-                    <div class="achievement-icon locked" aria-hidden="true">🔥</div>
+                    <div class="achievement-badge locked" data-badge="CS" aria-hidden="true">
+                        <span>CS</span>
+                    </div>
                     <div class="achievement-content">
                         <div class="achievement-name">Consistent</div>
                         <div class="achievement-description">Met target 5 days in a row</div>
                     </div>
-                    <div class="achievement-status locked" aria-label="Locked">🔒</div>
+                    <div class="achievement-status locked" aria-label="Locked"></div>
                 </div>
                 <div class="achievement" data-achievement-id="dedicated" role="listitem">
-                    <div class="achievement-icon locked" aria-hidden="true">⭐</div>
+                    <div class="achievement-badge locked" data-badge="DD" aria-hidden="true">
+                        <span>DD</span>
+                    </div>
                     <div class="achievement-content">
                         <div class="achievement-name">Dedicated</div>
                         <div class="achievement-description">Met target on 10+ different days</div>
                     </div>
-                    <div class="achievement-status locked" aria-label="Locked">🔒</div>
+                    <div class="achievement-status locked" aria-label="Locked"></div>
                 </div>
             </div>
         </section>

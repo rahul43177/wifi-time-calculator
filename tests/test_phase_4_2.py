@@ -24,8 +24,8 @@ async def test_root_renders_dashboard_template() -> None:
 
     assert response.status_code == 200
     assert "text/html" in response.headers.get("content-type", "")
-    assert "<title>Office Wi-Fi Tracker</title>" in response.text
-    assert "Office Wi-Fi Tracker" in response.text
+    assert "<title>DailyFour - Track Your 4 Hours</title>" in response.text
+    assert "DailyFour" in response.text
 
 
 @pytest.mark.asyncio

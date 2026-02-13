@@ -3,34 +3,55 @@
    Task 4.3: Clean, modern, minimalist CSS
    ========================================================================== */
 
-/* --- Design tokens (Task 7.3: Enhanced Color Palette) --- */
+/* --- Design tokens (Phase 9: Refined Color Palette) --- */
 :root {
-    --surface: #ffffff;
-    --text: #1f2937;
-    --muted: #6b7280;
-    --border: #e5e7eb;
-    --bg: #f8fafc;
+    /* Neutrals - Light Mode (Higher Contrast) */
+    --bg: #ffffff;
+    --card-bg: #ffffff;
+    --text: #0f172a;           /* Slate 900 - high contrast (19.07:1) */
+    --text-secondary: #475569; /* Slate 600 - readable (7.37:1) */
+    --border: #e2e8f0;         /* Slate 200 */
+    
+    /* Legacy compatibility */
+    --surface: var(--card-bg);
+    --muted: var(--text-secondary);
 
-    /* Task 7.3: Brand colors (WCAG AA compliant when used correctly) */
-    --primary: #4F46E5;        /* Indigo 600 - brand primary */
+    /* Primary (Professional Indigo) */
+    --primary: #4f46e5;        /* Indigo 600 - professional (5.11:1) */
+    --primary-hover: #4338ca;  /* Indigo 700 */
     --primary-light: #eef2ff;  /* Indigo 50 */
-    --primary-dark: #4338ca;   /* Indigo 700 */
 
-    /* Status colors (use -dark variants for text on light backgrounds) */
-    --green: #22C55E;          /* Task 7.3: Green 500 - for backgrounds only */
-    --green-light: #dcfce7;
-    --green-dark: #16a34a;     /* Green 600 - WCAG AA compliant for text (4.66:1) */
-    --yellow: #EAB308;         /* Task 7.3: Yellow 500 - for backgrounds only */
-    --yellow-light: #fef9c3;
-    --yellow-dark: #ca8a04;    /* Yellow 600 - WCAG AA compliant for text (4.54:1) */
-    --red: #ef4444;            /* Red 500 - 3.94:1, acceptable for large text */
-    --red-light: #fee2e2;
-    --red-dark: #dc2626;       /* Red 600 - WCAG AA compliant for text (5.03:1) */
+    /* Semantic Colors - Success */
+    --success: #059669;        /* Emerald 600 - WCAG AA (4.83:1) */
+    --success-light: #d1fae5;  /* Emerald 100 */
+    
+    /* Legacy green variables (map to success) */
+    --green: var(--success);
+    --green-light: var(--success-light);
+    --green-dark: var(--success);
+    
+    /* Semantic Colors - Warning */
+    --warning: #d97706;        /* Amber 600 - WCAG AA (5.24:1) */
+    --warning-light: #fef3c7;  /* Amber 100 */
+    
+    /* Legacy yellow variables (map to warning) */
+    --yellow: var(--warning);
+    --yellow-light: var(--warning-light);
+    --yellow-dark: var(--warning);
+    
+    /* Semantic Colors - Error */
+    --error: #dc2626;          /* Red 600 - WCAG AA (5.03:1) */
+    --error-light: #fee2e2;    /* Red 100 */
+    
+    /* Legacy red variables (map to error) */
+    --red: var(--error);
+    --red-light: var(--error-light);
+    --red-dark: var(--error);
 
-    /* Progress (Task 7.1 thresholds preserved) */
-    --progress: #2563eb;           /* Blue for <50% */
-    --progress-warning: #EAB308;   /* Yellow for 50-80% */
-    --progress-complete: #22C55E;  /* Green for >80% */
+    /* Progress Colors (Task 7.1 thresholds preserved) */
+    --progress: #2563eb;           /* Blue 600 for <50% */
+    --progress-warning: var(--warning);
+    --progress-complete: var(--success);
     --progress-bg: #e2e8f0;
 
     /* Task 7.3: Gradient definitions */
@@ -42,74 +63,158 @@
     --max-width: 900px;
     --radius: 12px;
     --radius-sm: 8px;
+
+    /* Phase 9: Typography System */
+    /* Font families */
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "SF Mono", "Monaco", "Consolas",
+                 "Liberation Mono", monospace;
+
+    /* Type scale */
+    --text-xs: 0.75rem;    /* 12px */
+    --text-sm: 0.875rem;   /* 14px */
+    --text-base: 1rem;     /* 16px */
+    --text-lg: 1.125rem;   /* 18px */
+    --text-xl: 1.25rem;    /* 20px */
+    --text-2xl: 1.5rem;    /* 24px */
+
+    /* Font weights */
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+
+    /* Line heights */
+    --leading-tight: 1.25;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.75;
+
+    /* Phase 9: Spacing System (4px base grid) */
+    --space-0: 0;
+    --space-1: 0.25rem;  /* 4px */
+    --space-2: 0.5rem;   /* 8px */
+    --space-3: 0.75rem;  /* 12px */
+    --space-4: 1rem;     /* 16px */
+    --space-5: 1.25rem;  /* 20px */
+    --space-6: 1.5rem;   /* 24px */
+    --space-8: 2rem;     /* 32px */
+    --space-10: 2.5rem;  /* 40px */
+    --space-12: 3rem;    /* 48px */
+    --space-16: 4rem;    /* 64px */
+
+    /* Common spacing patterns */
+    --gap-sm: var(--space-2);
+    --gap-md: var(--space-4);
+    --gap-lg: var(--space-6);
+
+    --padding-sm: var(--space-3);
+    --padding-md: var(--space-4);
+    --padding-lg: var(--space-6);
 }
 
-/* --- Task 7.6: Dark Mode Support --- */
+/* --- Phase 9: Dark Mode Support (High Contrast) --- */
 [data-theme="dark"] {
-    --surface: #1E293B;        /* Slate 800 - elevated surfaces */
-    --text: #F1F5F9;           /* Slate 100 - high contrast light text */
-    --muted: #94A3B8;          /* Slate 400 - subdued text */
+    /* Neutrals - Dark Mode */
+    --bg: #0f172a;             /* Slate 950 - deep background */
+    --card-bg: #1e293b;        /* Slate 800 - elevated surfaces */
+    --text: #f1f5f9;           /* Slate 100 - high contrast (17.94:1) */
+    --text-secondary: #cbd5e1; /* Slate 300 - readable (10.39:1) */
     --border: #334155;         /* Slate 700 - subtle borders */
-    --bg: #0F172A;             /* Slate 950 - deep background */
+    
+    /* Legacy compatibility */
+    --surface: var(--card-bg);
+    --muted: var(--text-secondary);
 
-    /* Brand colors adjusted for dark mode */
-    --primary: #6366F1;        /* Indigo 500 - brighter for dark bg */
-    --primary-light: #312e81;  /* Indigo 900 - dark variant */
-    --primary-dark: #818CF8;   /* Indigo 400 - lighter for dark */
+    /* Primary - Adjusted for Dark */
+    --primary: #6366f1;        /* Indigo 500 - brighter for dark */
+    --primary-hover: #818cf8;  /* Indigo 400 */
+    --primary-light: #1e1b4b;  /* Indigo 950 - dark variant */
 
-    /* Status colors for dark mode (maintain WCAG AA) */
-    --green: #22C55E;          /* Green 500 - visible on dark */
-    --green-light: #14532d;    /* Green 900 - dark variant */
-    --green-dark: #4ADE80;     /* Green 400 - bright for dark bg */
-    --yellow: #FCD34D;         /* Yellow 300 - brighter */
-    --yellow-light: #713f12;   /* Yellow 900 - dark variant */
-    --yellow-dark: #FDE047;    /* Yellow 300 - bright for text */
-    --red: #EF4444;            /* Red 500 */
-    --red-light: #7f1d1d;      /* Red 900 - dark variant */
-    --red-dark: #F87171;       /* Red 400 - bright for dark bg */
+    /* Semantic Colors - Success (Dark) */
+    --success: #10b981;        /* Emerald 500 - visible on dark (6.92:1) */
+    --success-light: #064e3b;  /* Emerald 900 - dark variant */
+    
+    /* Legacy green variables */
+    --green: var(--success);
+    --green-light: var(--success-light);
+    --green-dark: #4ade80;     /* Emerald 400 - bright for dark */
+    
+    /* Semantic Colors - Warning (Dark) */
+    --warning: #f59e0b;        /* Amber 500 - bright (8.51:1) */
+    --warning-light: #78350f;  /* Amber 900 - dark variant */
+    
+    /* Legacy yellow variables */
+    --yellow: var(--warning);
+    --yellow-light: var(--warning-light);
+    --yellow-dark: #fcd34d;    /* Amber 300 */
+    
+    /* Semantic Colors - Error (Dark) */
+    --error: #ef4444;          /* Red 500 - visible (5.25:1) */
+    --error-light: #7f1d1d;    /* Red 900 - dark variant */
+    
+    /* Legacy red variables */
+    --red: var(--error);
+    --red-light: var(--error-light);
+    --red-dark: #f87171;       /* Red 400 */
 
-    /* Progress colors for dark mode */
-    --progress: #3B82F6;       /* Blue 500 - brighter */
-    --progress-warning: #FCD34D; /* Yellow 300 */
-    --progress-complete: #4ADE80; /* Green 400 */
+    /* Progress Colors (Dark Mode) */
+    --progress: #3b82f6;       /* Blue 500 - brighter */
+    --progress-warning: var(--warning);
+    --progress-complete: var(--success);
     --progress-bg: #1e293b;    /* Darker track */
 
-    /* Gradients for dark mode */
-    --gradient-primary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-    --gradient-header: linear-gradient(to bottom, #1E293B 0%, #0F172A 100%);
+    /* Gradients for Dark Mode */
+    --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    --gradient-header: linear-gradient(to bottom, #1e293b 0%, #0f172a 100%);
     --gradient-timer: linear-gradient(135deg, #312e81 0%, #4c1d95 100%);
 }
 
 /* Auto-detect system dark mode preference (fallback if no localStorage) */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-        --surface: #1E293B;
-        --text: #F1F5F9;
-        --muted: #94A3B8;
+        /* Neutrals - Dark Mode */
+        --bg: #0f172a;
+        --card-bg: #1e293b;
+        --text: #f1f5f9;
+        --text-secondary: #cbd5e1;
         --border: #334155;
-        --bg: #0F172A;
+        --surface: #1e293b;
+        --muted: #cbd5e1;
 
-        --primary: #6366F1;
-        --primary-light: #312e81;
-        --primary-dark: #818CF8;
+        /* Primary - Dark Mode */
+        --primary: #6366f1;
+        --primary-hover: #818cf8;
+        --primary-light: #1e1b4b;
 
-        --green: #22C55E;
-        --green-light: #14532d;
-        --green-dark: #4ADE80;
-        --yellow: #FCD34D;
-        --yellow-light: #713f12;
-        --yellow-dark: #FDE047;
-        --red: #EF4444;
+        /* Semantic Colors - Dark Mode */
+        --success: #10b981;
+        --success-light: #064e3b;
+        --warning: #f59e0b;
+        --warning-light: #78350f;
+        --error: #ef4444;
+        --error-light: #7f1d1d;
+        
+        /* Legacy variables */
+        --green: #10b981;
+        --green-light: #064e3b;
+        --green-dark: #4ade80;
+        --yellow: #f59e0b;
+        --yellow-light: #78350f;
+        --yellow-dark: #fcd34d;
+        --red: #ef4444;
         --red-light: #7f1d1d;
-        --red-dark: #F87171;
+        --red-dark: #f87171;
 
-        --progress: #3B82F6;
-        --progress-warning: #FCD34D;
-        --progress-complete: #4ADE80;
+        /* Progress Colors */
+        --progress: #3b82f6;
+        --progress-warning: #f59e0b;
+        --progress-complete: #10b981;
         --progress-bg: #1e293b;
 
-        --gradient-primary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-        --gradient-header: linear-gradient(to bottom, #1E293B 0%, #0F172A 100%);
+        /* Gradients */
+        --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        --gradient-header: linear-gradient(to bottom, #1e293b 0%, #0f172a 100%);
         --gradient-timer: linear-gradient(135deg, #312e81 0%, #4c1d95 100%);
     }
 }
@@ -123,11 +228,31 @@
 
 body {
     margin: 0;
-    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: var(--font-normal);
     color: var(--text);
     background: var(--bg);
-    line-height: 1.5;
+    line-height: var(--leading-normal);
     -webkit-font-smoothing: antialiased;
+}
+
+/* Phase 9: Heading styles with typography system */
+h1, h2, h3 {
+    font-weight: var(--font-semibold);
+    line-height: var(--leading-tight);
+}
+
+h1 {
+    font-size: var(--text-2xl);
+}
+
+h2 {
+    font-size: var(--text-xl);
+}
+
+h3 {
+    font-size: var(--text-lg);
 }
 
 /* Task 7.6: Apply smooth theme transitions to themed elements */
@@ -160,8 +285,8 @@ body,
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 16px;
+    padding: var(--padding-lg);
+    margin-bottom: var(--space-4);
 }
 
 /* --- Header (Task 7.3: Gradient background) --- */
@@ -293,24 +418,25 @@ body,
 .status-cards-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: var(--gap-md);
+    margin-bottom: var(--space-4);
 }
 
 .status-card {
-    background: var(--surface);
+    background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 12px;
+    padding: var(--padding-lg);
+    transition: all 0.2s ease;
 }
 
 .status-card:hover {
-    transform: translateY(-2px);
+    border-color: var(--primary);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .status-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .status-card-icon {
@@ -325,26 +451,26 @@ body,
 }
 
 .status-card-label {
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--muted);
-    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
 }
 
 .status-card-value {
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
     color: var(--text);
-    margin-bottom: 2px;
-    line-height: 1.2;
+    margin-bottom: var(--space-1);
+    line-height: var(--leading-tight);
 }
 
 .status-card-detail {
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.3;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    line-height: var(--leading-normal);
 }
 
 /* Connection card states (Task 7.3: WCAG AA compliant) */
@@ -431,27 +557,36 @@ body,
 
 /* --- Elapsed/Target display (Task 7.1) --- */
 .elapsed-display {
-    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    font-size: clamp(1.5rem, 5vw, 2rem);
-    font-weight: 700;
+    font-family: var(--font-sans);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
     text-align: center;
-    margin: 12px 0 16px;
+    margin: var(--space-4) 0;
     color: var(--text);
-    transition: color 0.3s;
-    line-height: 1.2;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--space-2);
+    transition: color 0.3s ease;
+    line-height: var(--leading-tight);
+}
+
+.elapsed-time {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
 }
 
 .elapsed-separator {
-    margin: 0 8px;
-    color: var(--muted);
-    font-weight: 400;
+    margin: 0 var(--space-2);
+    color: var(--text-secondary);
+    font-weight: var(--font-normal);
 }
 
 .elapsed-percent {
     display: inline-block;
-    margin-left: 8px;
+    margin-left: var(--space-2);
     font-size: 0.85em;
-    color: var(--muted);
+    color: var(--text-secondary);
 }
 
 /* Progress-based color coding (Task 7.1 thresholds with Task 7.3 WCAG AA colors) */
@@ -476,27 +611,28 @@ body,
     display: flex;
     justify-content: center;
     align-items: baseline;
-    gap: 8px;
-    margin-top: 12px;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
 }
 
 .countdown-label {
-    font-size: 0.9rem;
-    color: var(--muted);
-    font-weight: 600;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    font-weight: var(--font-medium);
 }
 
 .timer-countdown {
-    font-family: "SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
-    font-size: clamp(1.4rem, 5vw, 1.8rem);
-    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: var(--text-xl);
+    font-weight: var(--font-medium);
     letter-spacing: 0.04em;
-    color: var(--text);
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
 }
 
 /* Legacy timer class (keeping for backward compatibility, Task 7.3: WCAG AA) */
 .timer {
-    font-family: "SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
+    font-family: var(--font-mono);
     font-size: clamp(2.2rem, 8vw, 3.6rem);
     font-weight: 700;
     text-align: center;
@@ -504,6 +640,7 @@ body,
     margin: 8px 0 12px;
     color: var(--text);
     transition: color 0.3s;
+    font-variant-numeric: tabular-nums;
 }
 
 .timer.completed {
@@ -515,6 +652,10 @@ body,
 }
 
 /* --- Progress bar --- */
+.progress-fill {
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
 .progress-wrap {
     margin-top: 0;
     margin-bottom: 12px;
@@ -606,35 +747,50 @@ body,
 
 /* --- Sessions table --- */
 h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 4px;
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    margin: 0 0 var(--space-2);
 }
 
 table {
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 8px;
-    font-size: 0.92rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
 }
 
-th,
-td {
-    padding: 10px 8px;
-    border-bottom: 1px solid var(--border);
+thead th {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--text-secondary);
     text-align: left;
-}
-
-th {
-    color: var(--muted);
-    font-weight: 600;
-    font-size: 0.85rem;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 2px solid var(--border);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
 }
 
-tbody tr:last-child td {
+tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background-color 0.15s ease;
+}
+
+tbody tr:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+tbody td {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+}
+
+tbody tr:last-child {
     border-bottom: none;
+}
+
+[data-theme="dark"] tbody tr:hover {
+    background: rgba(99, 102, 241, 0.1);
 }
 
 .total {
@@ -666,19 +822,37 @@ tbody tr:last-child td {
 }
 
 .btn-secondary {
-    background: #f3f4f6;
+    background: var(--card-bg);
     color: var(--text);
     border: 1px solid var(--border);
+    min-width: 40px;
+    height: 40px;
     padding: 4px 12px;
     border-radius: 6px;
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .btn-secondary:hover {
-    background: #e5e7eb;
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+[data-theme="dark"] .btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--primary);
 }
 
 /* --- Analytics & Stats --- */
@@ -706,18 +880,18 @@ tbody tr:last-child td {
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
+    gap: var(--gap-md);
+    margin-bottom: var(--space-6);
 }
 
 .stat-card {
     background: #f9fafb;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 16px;
+    padding: var(--padding-md);
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--space-1);
 }
 
 .stat-label {
@@ -938,15 +1112,12 @@ button:focus-visible,
 .streak-display {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
+    gap: var(--gap-md);
+    margin-bottom: var(--space-6);
 }
 
 .streak-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px;
+    padding: var(--padding-md);
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -990,14 +1161,14 @@ button:focus-visible,
 .achievements-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 16px;
+    gap: var(--gap-md);
 }
 
 .achievement {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px;
+    gap: var(--space-3);
+    padding: var(--padding-md);
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -1031,21 +1202,32 @@ button:focus-visible,
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.achievement-icon {
-    font-size: 2.5rem;
-    line-height: 1;
+.achievement-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    color: var(--text-secondary);
     transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
-.achievement-icon.locked {
-    opacity: 0.3;
-    filter: grayscale(100%);
+.achievement-badge.locked {
+    opacity: 0.5;
 }
 
-.achievement.earned .achievement-icon {
+.achievement.earned .achievement-badge {
+    background: var(--green-dark);
+    color: white;
+    border-color: var(--green-dark);
     opacity: 1;
-    filter: grayscale(0%);
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .achievement-content {

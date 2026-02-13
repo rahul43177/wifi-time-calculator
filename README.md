@@ -1,6 +1,8 @@
-# Office Wi-Fi Tracker
+# DailyFour
 
-Office Wi-Fi Tracker is a local-first FastAPI application that tracks office presence by detecting Wi-Fi connectivity, managing office sessions, and calculating target completion time (work duration + buffer).  
+**Track Your Daily 4-Hour Work Goal**
+
+DailyFour is a local-first FastAPI application that tracks office presence by detecting Wi-Fi connectivity, managing office sessions, and calculating target completion time (work duration + buffer).  
 It uses JSON Lines files for persistence and includes a browser dashboard for live status and analytics.
 
 ## Current Status

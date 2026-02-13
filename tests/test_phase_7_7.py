@@ -348,15 +348,16 @@ def test_html_has_all_achievements(project_root):
 
 
 def test_html_achievements_have_icons(project_root):
-    """Test that achievements have emoji icons."""
+    """Test that achievements have badge indicators (Phase 8: emojis replaced with text badges)."""
     html_file = project_root / "templates" / "index.html"
     html_content = html_file.read_text()
 
-    # Check for achievement icons
-    assert "🌅" in html_content  # Early Bird
-    assert "🏃" in html_content  # Marathon Runner
-    assert "🔥" in html_content  # Consistent
-    assert "⭐" in html_content  # Dedicated
+    # Phase 8: Check for text badge system instead of emojis
+    assert 'class="achievement-badge' in html_content
+    assert 'data-badge="EB"' in html_content  # Early Bird
+    assert 'data-badge="MR"' in html_content  # Marathon Runner
+    assert 'data-badge="CS"' in html_content  # Consistent
+    assert 'data-badge="DD"' in html_content  # Dedicated
 
 
 def test_html_achievements_have_descriptions(project_root):

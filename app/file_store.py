@@ -16,6 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from app.cache import cache_sessions, invalidate_cache
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -152,7 +153,7 @@ def append_session(session_dict: dict[str, Any]) -> bool:
     Append a session entry as a JSON line to today's log file.
 
     Thread-safe via module-level lock. Creates the data directory
-    and file if they don't exist.
+    and file if they don't exist. Invalidates cache for today's date.
 
     Args:
         session_dict: Session data to write.
@@ -172,17 +173,21 @@ def append_session(session_dict: dict[str, Any]) -> bool:
             with open(log_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(session_dict, ensure_ascii=False) + "\n")
         logger.info("Session appended to %s", log_path.name)
+        # Invalidate cache for today's date
+        invalidate_cache(date)
         return True
     except OSError as e:
         logger.error("Failed to append session to %s: %s", log_path, e)
         return False
 
 
+@cache_sessions(ttl=30)  # Cache for 30 seconds
 def read_sessions(date: datetime | None = None) -> list[dict[str, Any]]:
     """
     Read all sessions from a log file for a given date.
 
     Skips corrupted/malformed lines without crashing.
+    Results are cached for 30 seconds to reduce file I/O.
 
     Args:
         date: The date to read sessions for. Defaults to today.
@@ -306,6 +311,8 @@ def update_session(
                             return False
 
                         logger.info("Session updated in %s", log_path.name)
+                        # Invalidate cache for this date
+                        invalidate_cache(date_obj)
                         return True
 
             logger.warning(

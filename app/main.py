@@ -274,9 +274,9 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app
 app = FastAPI(
-    title="Office Wi-Fi 4-Hour Tracker",
-    description="Local automation tool for tracking office presence",
-    version="0.1.0",
+    title="DailyFour",
+    description="Simple time tracking for your daily 4-hour work goal",
+    version="1.0.0",
     lifespan=lifespan
 )
 

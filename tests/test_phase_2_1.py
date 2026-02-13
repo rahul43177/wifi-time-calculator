@@ -18,16 +18,21 @@ from unittest.mock import patch
 
 import pytest
 
+from app.cache import invalidate_cache
 from app.file_store import get_log_path, append_session, read_sessions
 
 
 @pytest.fixture(autouse=True)
 def _tmp_data_dir():
-    """Redirect all file_store operations to a temp directory."""
+    """Redirect all file_store operations to a temp directory and clear cache."""
+    # Clear cache before each test
+    invalidate_cache()
     with tempfile.TemporaryDirectory() as tmpdir:
         with patch("app.file_store.settings") as mock_settings:
             mock_settings.data_dir = tmpdir
             yield tmpdir
+    # Clear cache after each test
+    invalidate_cache()
 
 
 # --- get_log_path tests ---

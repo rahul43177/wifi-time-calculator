@@ -40,7 +40,7 @@ async def test_root_returns_html():
             resp = await client.get("/")
 
     assert resp.status_code == 200
-    assert "Office Wi-Fi" in resp.text
+    assert "DailyFour" in resp.text
 
 
 @pytest.mark.asyncio

@@ -34,7 +34,7 @@ async def test_status_cards_grid_exists() -> None:
 
 @pytest.mark.asyncio
 async def test_connection_status_card_exists() -> None:
-    """Card 1: Connection status with 🌐/⚠️ icon should exist."""
+    """Card 1: Connection status should exist (Phase 8: emojis removed)."""
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -42,16 +42,14 @@ async def test_connection_status_card_exists() -> None:
 
     html = response.text
     assert 'id="card-connection"' in html
-    assert 'id="connection-icon"' in html
     assert 'id="card-connection-value"' in html
     assert 'id="card-connection-detail"' in html
-    # Icon is dynamically set, but container exists
-    assert 'class="status-card-icon"' in html
+    # Phase 8: Icons removed for professional appearance
 
 
 @pytest.mark.asyncio
 async def test_session_details_card_exists() -> None:
-    """Card 2: Session details with ⏱️ icon should exist."""
+    """Card 2: Session details should exist (Phase 8: emojis removed)."""
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -61,12 +59,12 @@ async def test_session_details_card_exists() -> None:
     assert 'id="card-session"' in html
     assert 'id="card-session-value"' in html
     assert 'id="card-session-detail"' in html
-    assert "⏱️" in html  # Timer icon
+    # Phase 8: Icons removed for professional appearance
 
 
 @pytest.mark.asyncio
 async def test_today_total_card_exists() -> None:
-    """Card 3: Today's total with 📊 icon should exist."""
+    """Card 3: Today's total should exist (Phase 8: emojis removed)."""
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -76,12 +74,12 @@ async def test_today_total_card_exists() -> None:
     assert 'id="card-today"' in html
     assert 'id="card-today-value"' in html
     assert 'id="card-today-detail"' in html
-    assert "📊" in html  # Chart icon
+    # Phase 8: Icons removed for professional appearance
 
 
 @pytest.mark.asyncio
 async def test_target_progress_card_exists() -> None:
-    """Card 4: Target progress with 🎯 icon should exist."""
+    """Card 4: Target progress should exist (Phase 8: emojis removed)."""
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -91,7 +89,7 @@ async def test_target_progress_card_exists() -> None:
     assert 'id="card-target"' in html
     assert 'id="card-target-value"' in html
     assert 'id="card-target-detail"' in html
-    assert "🎯" in html  # Goal icon
+    # Phase 8: Icons removed for professional appearance
 
 
 @pytest.mark.asyncio
@@ -110,14 +108,14 @@ async def test_all_four_cards_present() -> None:
 
 @pytest.mark.asyncio
 async def test_status_card_structure() -> None:
-    """Each status card should have icon, label, value, and detail."""
+    """Each status card should have label, value, and detail (Phase 8: icons removed)."""
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
         response = await client.get("/")
 
     html = response.text
-    assert 'class="status-card-icon"' in html
+    # Phase 8: Icons removed, checking essential structure only
     assert 'class="status-card-content"' in html
     assert 'class="status-card-label"' in html
     assert 'class="status-card-value"' in html
@@ -153,8 +151,7 @@ async def test_css_defines_status_card_styling() -> None:
 
     css = response.text
     assert ".status-card {" in css
-    assert "display: flex;" in css
-    assert "align-items: flex-start;" in css
+    # Phase 8: Removed flex properties (no icon to align with)
 
 
 @pytest.mark.asyncio
@@ -232,7 +229,7 @@ async def test_js_caches_status_card_dom_elements() -> None:
 
     js = response.text
     assert 'cardConnection: null,' in js
-    assert 'cardConnectionIcon: null,' in js
+    # Phase 8: cardConnectionIcon removed (no more emoji icons)
     assert 'cardConnectionValue: null,' in js
     assert 'cardConnectionDetail: null,' in js
     assert 'cardSessionValue: null,' in js
@@ -254,7 +251,7 @@ async def test_js_caches_status_card_elements_in_cache_function() -> None:
 
     js = response.text
     assert 'dom.cardConnection = document.getElementById("card-connection");' in js
-    assert 'dom.cardConnectionIcon = document.getElementById("connection-icon");' in js
+    # Phase 8: connection-icon removed (no more emoji icons)
     assert 'dom.cardConnectionValue = document.getElementById("card-connection-value");' in js
     assert 'dom.cardSessionValue = document.getElementById("card-session-value");' in js
     assert 'dom.cardTodayValue = document.getElementById("card-today-value");' in js
@@ -282,8 +279,7 @@ async def test_render_status_cards_updates_connection_card() -> None:
         response = await client.get("/static/app.js")
 
     js = response.text
-    # Check connection card update logic
-    assert 'dom.cardConnectionIcon.textContent = isConnected ? "🌐" : "⚠️";' in js
+    # Check connection card update logic (Phase 8: icon logic removed)
     assert 'dom.cardConnectionValue.textContent = isConnected ? "Connected" : "Disconnected";' in js
 
 

@@ -513,19 +513,37 @@
                         labels: {
                             boxWidth: 12,
                             usePointStyle: true,
-                            pointStyle: "circle"
+                            pointStyle: "circle",
+                            font: {
+                                family: getComputedStyle(document.documentElement).getPropertyValue('--font-sans').trim() || '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                                size: 14,
+                                weight: 500
+                            },
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim(),
+                            padding: 8
                         }
                     },
-                    // Task 7.8: Enhanced tooltips with exact values
+                    // Phase 10: Enhanced tooltips with design system styling
                     tooltip: {
                         enabled: true,
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        backgroundColor: isDarkMode() 
+                            ? 'rgba(30, 41, 59, 0.95)' 
+                            : 'rgba(255, 255, 255, 0.95)',
+                        titleColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim(),
+                        bodyColor: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim(),
+                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--border').trim(),
                         borderWidth: 1,
                         padding: 12,
+                        cornerRadius: 8,
                         displayColors: true,
+                        titleFont: {
+                            size: 14,
+                            weight: 600
+                        },
+                        bodyFont: {
+                            size: 13,
+                            weight: 400
+                        },
                         callbacks: {
                             label: function(context) {
                                 const label = context.dataset.label || '';
@@ -662,16 +680,27 @@
                     legend: {
                         display: false
                     },
-                    // Task 7.8: Enhanced tooltips with exact values
+                    // Phase 10: Enhanced tooltips with design system styling
                     tooltip: {
                         enabled: true,
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        backgroundColor: isDarkMode() 
+                            ? 'rgba(30, 41, 59, 0.95)' 
+                            : 'rgba(255, 255, 255, 0.95)',
+                        titleColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim(),
+                        bodyColor: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim(),
+                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--border').trim(),
                         borderWidth: 1,
                         padding: 12,
+                        cornerRadius: 8,
                         displayColors: true,
+                        titleFont: {
+                            size: 14,
+                            weight: 600
+                        },
+                        bodyFont: {
+                            size: 13,
+                            weight: 400
+                        },
                         callbacks: {
                             title: function(context) {
                                 return context[0].label || '';
@@ -893,7 +922,7 @@
             return;
         }
         try {
-            new Notification("Office Wi-Fi Tracker", {
+            new Notification("DailyFour", {
                 body: "4-hour target reached (including buffer). You're all set!",
             });
         } catch (err) {
@@ -1187,7 +1216,7 @@
 
         // Completion celebration
         if (completed) {
-            dom.contextualMessage.textContent = "Target completed! 🎉 Great work today";
+            dom.contextualMessage.textContent = "Target completed! Great work today.";
             dom.contextualMessage.classList.add("celebration");
             state.lastMilestoneShown = "completed";
             return;
@@ -1198,13 +1227,13 @@
         let milestone = null;
 
         if (progressValue >= 90) {
-            message = "Final stretch! 💯 Just a bit more";
+            message = "Final stretch. Just a bit more.";
             milestone = "90";
         } else if (progressValue >= 75) {
-            message = "Three quarters done! 🚀 Almost there";
+            message = "Three quarters done. Almost there.";
             milestone = "75";
         } else if (progressValue >= 50) {
-            message = "Halfway there! 🎯 You're doing great";
+            message = "Halfway there. You're doing great.";
             milestone = "50";
         } else {
             // Time-of-day contextual greeting
@@ -1216,11 +1245,11 @@
                 const etaMinutes = Math.ceil(remainingSeconds / 60);
                 const etaTime = new Date(now.getTime() + etaMinutes * 60000);
                 const etaStr = etaTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                message = `Good morning! 🌅 At this pace, you'll reach your goal by ${etaStr}`;
+                message = `Good morning. At this pace, you'll reach your goal by ${etaStr}.`;
             } else if (hour < 17) {
-                message = "Afternoon progress! Keep it up 💪";
+                message = "Afternoon progress. Keep it up.";
             } else {
-                message = "Evening session! Stay focused 🌙";
+                message = "Evening session. Stay focused.";
             }
             milestone = "greeting";
         }
@@ -1252,12 +1281,12 @@
             const achievementEl = dom.achievementsGrid.querySelector(`[data-achievement-id="${achievement.id}"]`);
             if (!achievementEl) return;
 
-            const iconEl = achievementEl.querySelector('.achievement-icon');
+            const badgeEl = achievementEl.querySelector('.achievement-badge');
             const statusEl = achievementEl.querySelector('.achievement-status');
 
             if (achievement.earned) {
                 achievementEl.classList.add('earned');
-                if (iconEl) iconEl.classList.remove('locked');
+                if (badgeEl) badgeEl.classList.remove('locked');
                 if (statusEl) {
                     statusEl.classList.remove('locked');
                     statusEl.textContent = '✓';
@@ -1265,10 +1294,10 @@
                 }
             } else {
                 achievementEl.classList.remove('earned');
-                if (iconEl) iconEl.classList.add('locked');
+                if (badgeEl) badgeEl.classList.add('locked');
                 if (statusEl) {
                     statusEl.classList.add('locked');
-                    statusEl.textContent = '🔒';
+                    statusEl.textContent = '';
                     statusEl.setAttribute('aria-label', 'Locked');
                 }
             }
