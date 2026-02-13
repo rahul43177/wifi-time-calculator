@@ -51,6 +51,18 @@
         prevMonthBtn: null,
         nextMonthBtn: null,
         monthlyChartCanvas: null,
+        // Task 7.2: Status cards
+        cardConnection: null,
+        cardConnectionIcon: null,
+        cardConnectionValue: null,
+        cardConnectionDetail: null,
+        cardSessionValue: null,
+        cardSessionDetail: null,
+        cardTodayValue: null,
+        cardTodayDetail: null,
+        cardTarget: null,
+        cardTargetValue: null,
+        cardTargetDetail: null,
     };
 
     const state = {
@@ -116,6 +128,19 @@
         dom.prevMonthBtn = document.getElementById("prev-month");
         dom.nextMonthBtn = document.getElementById("next-month");
         dom.monthlyChartCanvas = document.getElementById("monthly-chart");
+
+        // Task 7.2: Status cards
+        dom.cardConnection = document.getElementById("card-connection");
+        dom.cardConnectionIcon = document.getElementById("connection-icon");
+        dom.cardConnectionValue = document.getElementById("card-connection-value");
+        dom.cardConnectionDetail = document.getElementById("card-connection-detail");
+        dom.cardSessionValue = document.getElementById("card-session-value");
+        dom.cardSessionDetail = document.getElementById("card-session-detail");
+        dom.cardTodayValue = document.getElementById("card-today-value");
+        dom.cardTodayDetail = document.getElementById("card-today-detail");
+        dom.cardTarget = document.getElementById("card-target");
+        dom.cardTargetValue = document.getElementById("card-target-value");
+        dom.cardTargetDetail = document.getElementById("card-target-detail");
     }
 
     function hasRequiredDom() {
@@ -654,11 +679,82 @@
         const isConnected = Boolean(state.status.connected);
         const ssid = state.status.ssid || "-";
 
-        dom.connectionStatus.classList.toggle("connected", isConnected);
-        dom.connectionStatus.classList.toggle("disconnected", !isConnected);
+        // Legacy status line (kept for backward compatibility)
+        if (dom.connectionStatus) {
+            dom.connectionStatus.classList.toggle("connected", isConnected);
+            dom.connectionStatus.classList.toggle("disconnected", !isConnected);
+        }
+        if (dom.connectionLabel) {
+            dom.connectionLabel.textContent = isConnected ? "Connected to" : "Disconnected";
+        }
+        if (dom.currentSsid) {
+            dom.currentSsid.textContent = ssid;
+        }
+    }
 
-        dom.connectionLabel.textContent = isConnected ? "Connected to" : "Disconnected";
-        dom.currentSsid.textContent = ssid;
+    // Task 7.2: Render status cards
+    function renderStatusCards() {
+        if (!state.status) {
+            return;
+        }
+
+        const isConnected = Boolean(state.status.connected);
+        const ssid = state.status.ssid || "-";
+        const sessionActive = Boolean(state.status.session_active);
+        const elapsedSeconds = getLiveElapsedSeconds();
+        const remainingSeconds = getLiveRemainingSeconds(elapsedSeconds);
+        const completed = Boolean(state.status.completed_4h) || remainingSeconds <= 0;
+        const progressValue = getLiveProgressPercent(elapsedSeconds, completed);
+        const targetDisplay = state.status.target_display || "4h 10m";
+
+        // Card 1: Connection Status
+        if (dom.cardConnection && dom.cardConnectionIcon && dom.cardConnectionValue && dom.cardConnectionDetail) {
+            dom.cardConnection.classList.toggle("connected", isConnected);
+            dom.cardConnection.classList.toggle("disconnected", !isConnected);
+            dom.cardConnectionIcon.textContent = isConnected ? "🌐" : "⚠️";
+            dom.cardConnectionValue.textContent = isConnected ? "Connected" : "Disconnected";
+            dom.cardConnectionDetail.textContent = ssid;
+        }
+
+        // Card 2: Session Details
+        if (dom.cardSessionValue && dom.cardSessionDetail) {
+            if (sessionActive) {
+                dom.cardSessionValue.textContent = state.status.start_time || "--:--:--";
+                dom.cardSessionDetail.textContent = `${formatSecondsToHM(elapsedSeconds)} elapsed`;
+            } else {
+                dom.cardSessionValue.textContent = "--:--:--";
+                dom.cardSessionDetail.textContent = "No active session";
+            }
+        }
+
+        // Card 3: Today's Total
+        if (dom.cardTodayValue && dom.cardTodayDetail) {
+            const todayTotal = state.today ? state.today.total_display : "0h 00m";
+            const sessionCount = state.today && Array.isArray(state.today.sessions) ? state.today.sessions.length : 0;
+            dom.cardTodayValue.textContent = todayTotal;
+            dom.cardTodayDetail.textContent = sessionCount === 1 ? "1 session" : `${sessionCount} sessions`;
+        }
+
+        // Card 4: Target Progress
+        if (dom.cardTarget && dom.cardTargetValue && dom.cardTargetDetail) {
+            dom.cardTargetValue.textContent = formatPercent(progressValue);
+
+            // Apply color class based on Task 7.1 thresholds
+            dom.cardTarget.classList.remove("progress-low", "progress-medium", "progress-high", "progress-complete");
+            if (completed) {
+                dom.cardTarget.classList.add("progress-complete");
+                dom.cardTargetDetail.textContent = "Target completed!";
+            } else if (progressValue > 80) {
+                dom.cardTarget.classList.add("progress-high");
+                dom.cardTargetDetail.textContent = `${formatHHMMSS(Math.max(0, remainingSeconds))} remaining`;
+            } else if (progressValue >= 50) {
+                dom.cardTarget.classList.add("progress-medium");
+                dom.cardTargetDetail.textContent = `${formatHHMMSS(Math.max(0, remainingSeconds))} remaining`;
+            } else {
+                dom.cardTarget.classList.add("progress-low");
+                dom.cardTargetDetail.textContent = `${targetDisplay} remaining`;
+            }
+        }
     }
 
     function renderStartTime() {
@@ -764,6 +860,9 @@
         // Apply color coding
         updateProgressClasses(progressValue, completed);
         updateElapsedDisplayColor(progressValue, completed);
+
+        // Task 7.2: Update status cards as part of timer tick
+        renderStatusCards();
     }
 
     function getSessionStatusText(session) {
@@ -845,6 +944,7 @@
         renderStartTime();
         renderTimer();
         renderTodaySessions();
+        renderStatusCards(); // Task 7.2
     }
 
     async function syncFromBackend() {

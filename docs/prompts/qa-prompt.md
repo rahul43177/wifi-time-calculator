@@ -4,17 +4,17 @@ Audit ONLY Phase mentioned below  :
 
 ---
 
-### Task 7.2: Status Cards with Icons
-**Description:** Rich visual status indicators with icons
+### Task 7.3: Improved Color Scheme & Gradients
+**Description:** Modern color palette with subtle gradients
 **Dependencies:** Task 7.1
 **Acceptance Criteria:**
-- [ ] Connection status with icon (🌐 Connected / ⚠️ Disconnected)
-- [ ] Session details card with timer icon (⏱️)
-- [ ] Today's total card with chart icon (📊)
-- [ ] Target progress card with goal icon (🎯)
-- [ ] Grid layout (2x2 on desktop, stacked on mobile)
+- [ ] Blue primary (#4F46E5) for brand elements
+- [ ] Green (#22C55E) for success states
+- [ ] Yellow (#EAB308) for warnings
+- [ ] Subtle gradients on hero sections
+- [ ] Better contrast ratios (WCAG AA)
 
-**Files:** `templates/index.html`, `static/style.css`
+**File:** `static/style.css`
 
 ---
 
@@ -112,6 +112,6 @@ FINAL OUTPUT FORMAT
    - ❌ REJECTED  
 
 Be strict, concise, and UX-focused.  
-Do NOT move to Task 7.2.
+Do NOT move to other task , one sub phase at a time.
 
 Begin QA audit now.

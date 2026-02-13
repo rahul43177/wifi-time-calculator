@@ -23,7 +23,8 @@
     </section>
 
     <div id="tab-live" class="tab-content">
-        <section class="card">
+        <!-- Legacy connection status (hidden, kept for backward compatibility with tests) -->
+        <section class="card legacy-status hidden">
             <div id="connection-status" class="status-line connected">
                 <span class="status-dot" aria-hidden="true"></span>
                 <span>
@@ -32,10 +33,63 @@
                 </span>
             </div>
             <p class="muted" id="session-started-at">Started at <span id="start-time">--:--:--</span></p>
-            <p id="sync-status" class="muted sync-status hidden" aria-live="polite"></p>
         </section>
 
-        <section class="card">
+        <!-- Status Cards Grid (Task 7.2) -->
+        <div class="status-cards-grid">
+            <!-- Card 1: Connection Status -->
+            <section class="status-card" id="card-connection">
+                <div class="status-card-icon">
+                    <span id="connection-icon" aria-hidden="true">🌐</span>
+                </div>
+                <div class="status-card-content">
+                    <div class="status-card-label">Connection</div>
+                    <div id="card-connection-value" class="status-card-value">Connected</div>
+                    <div id="card-connection-detail" class="status-card-detail">{{ office_wifi_name }}</div>
+                </div>
+            </section>
+
+            <!-- Card 2: Session Details -->
+            <section class="status-card" id="card-session">
+                <div class="status-card-icon">
+                    <span aria-hidden="true">⏱️</span>
+                </div>
+                <div class="status-card-content">
+                    <div class="status-card-label">Session</div>
+                    <div id="card-session-value" class="status-card-value">--:--:--</div>
+                    <div id="card-session-detail" class="status-card-detail">Elapsed time</div>
+                </div>
+            </section>
+
+            <!-- Card 3: Today's Total -->
+            <section class="status-card" id="card-today">
+                <div class="status-card-icon">
+                    <span aria-hidden="true">📊</span>
+                </div>
+                <div class="status-card-content">
+                    <div class="status-card-label">Today's Total</div>
+                    <div id="card-today-value" class="status-card-value">0h 00m</div>
+                    <div id="card-today-detail" class="status-card-detail">0 sessions</div>
+                </div>
+            </section>
+
+            <!-- Card 4: Target Progress -->
+            <section class="status-card" id="card-target">
+                <div class="status-card-icon">
+                    <span aria-hidden="true">🎯</span>
+                </div>
+                <div class="status-card-content">
+                    <div class="status-card-label">Target Progress</div>
+                    <div id="card-target-value" class="status-card-value">0%</div>
+                    <div id="card-target-detail" class="status-card-detail">{{ target_display }} remaining</div>
+                </div>
+            </section>
+        </div>
+
+        <p id="sync-status" class="muted sync-status hidden" aria-live="polite"></p>
+
+        <!-- Timer Display Section (Task 7.1) -->
+        <section class="card timer-section">
             <p class="muted" id="timer-mode-label">Session Progress</p>
             <div id="elapsed-display" class="elapsed-display">
                 <span id="elapsed-time">0h 00m</span>

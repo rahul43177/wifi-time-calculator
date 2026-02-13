@@ -39,17 +39,17 @@ PHASE :
 
 ---
 
-### Task 7.2: Status Cards with Icons
-**Description:** Rich visual status indicators with icons
+### Task 7.3: Improved Color Scheme & Gradients
+**Description:** Modern color palette with subtle gradients
 **Dependencies:** Task 7.1
 **Acceptance Criteria:**
-- [ ] Connection status with icon (🌐 Connected / ⚠️ Disconnected)
-- [ ] Session details card with timer icon (⏱️)
-- [ ] Today's total card with chart icon (📊)
-- [ ] Target progress card with goal icon (🎯)
-- [ ] Grid layout (2x2 on desktop, stacked on mobile)
+- [ ] Blue primary (#4F46E5) for brand elements
+- [ ] Green (#22C55E) for success states
+- [ ] Yellow (#EAB308) for warnings
+- [ ] Subtle gradients on hero sections
+- [ ] Better contrast ratios (WCAG AA)
 
-**Files:** `templates/index.html`, `static/style.css`
+**File:** `static/style.css`
 
 ---
 > Local-first • Offline-safe • Minimal • Deterministic • No new dependencies
@@ -123,6 +123,7 @@ Respond in this exact order:
 7. Validation vs Acceptance Criteria  
 8. Regression Safety Confirmation  
 
-Do NOT proceed to Task 7.2.
+Do NOT proceed to Task , only focus on current task.
+NOTE : The current implementation should not break the existing countdown timer or any other functionality.
 
 Begin implementation now.
