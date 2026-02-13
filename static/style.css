@@ -186,7 +186,72 @@ body {
     color: var(--red);
 }
 
-/* --- Timer display --- */
+/* --- Elapsed/Target display (Task 7.1) --- */
+.elapsed-display {
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    font-weight: 700;
+    text-align: center;
+    margin: 12px 0 16px;
+    color: var(--text);
+    transition: color 0.3s;
+    line-height: 1.2;
+}
+
+.elapsed-separator {
+    margin: 0 8px;
+    color: var(--muted);
+    font-weight: 400;
+}
+
+.elapsed-percent {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 0.85em;
+    color: var(--muted);
+}
+
+/* Progress-based color coding */
+.elapsed-display.progress-low {
+    color: #2563eb; /* Blue: <50% */
+}
+
+.elapsed-display.progress-medium {
+    color: #eab308; /* Yellow: 50-80% inclusive */
+}
+
+.elapsed-display.progress-high {
+    color: #22c55e; /* Green: >80% (strictly greater than) */
+}
+
+.elapsed-display.progress-complete {
+    color: var(--green);
+}
+
+/* --- Countdown display --- */
+.countdown-section {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.countdown-label {
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.timer-countdown {
+    font-family: "SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
+    font-size: clamp(1.4rem, 5vw, 1.8rem);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text);
+}
+
+/* Legacy timer class (keeping for backward compatibility) */
 .timer {
     font-family: "SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
     font-size: clamp(2.2rem, 8vw, 3.6rem);
@@ -208,7 +273,8 @@ body {
 
 /* --- Progress bar --- */
 .progress-wrap {
-    margin-top: 12px;
+    margin-top: 0;
+    margin-bottom: 12px;
 }
 
 .progress-label {
@@ -222,7 +288,7 @@ body {
 
 .progress-track {
     width: 100%;
-    height: 12px;
+    height: 10px;
     border-radius: 999px;
     background: var(--progress-bg);
     overflow: hidden;
@@ -236,6 +302,7 @@ body {
     transition: width 0.5s ease, background-color 0.3s;
 }
 
+/* Task 7.1 threshold model: <50% blue, 50-80% yellow, >80% green */
 .progress-fill.warning {
     background: var(--progress-warning);
 }
@@ -417,6 +484,19 @@ tbody tr:last-child td {
         white-space: nowrap;
         font-size: 0.8rem;
         padding: 5px 10px;
+    }
+
+    .elapsed-display {
+        font-size: clamp(1.2rem, 6vw, 1.6rem);
+        margin: 8px 0 12px;
+    }
+
+    .countdown-section {
+        margin-top: 8px;
+    }
+
+    .timer-countdown {
+        font-size: clamp(1.2rem, 6vw, 1.5rem);
     }
 
     .timer {

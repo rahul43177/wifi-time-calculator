@@ -7,6 +7,8 @@ You MUST strictly follow:
 - docs/action-plan.md
 - docs/dev-context.md
 
+**See detailed proposal:** `docs/ui-enhancement-proposal.md`
+
 These are the SINGLE SOURCE OF TRUTH.
 
 ---------------------------------------------------------------------
@@ -34,31 +36,22 @@ If any rule is violated → implementation is INVALID.
 CURRENT PHASE CONTEXT
 
 PHASE : 
+
 ---
 
-### Task 7.1: Dual Timer Display (Elapsed + Countdown) ⚡ PRIORITY
-**Description:** Add clear elapsed/target display alongside countdown timer
-**Dependencies:** Phase 4 complete
+### Task 7.2: Status Cards with Icons
+**Description:** Rich visual status indicators with icons
+**Dependencies:** Task 7.1
 **Acceptance Criteria:**
-- [ ] Display elapsed/target ratio: "2h 30m / 4h 10m"
-- [ ] Keep existing countdown timer visible
-- [ ] Color-code based on progress (blue <50%, yellow 50-80%, green >80%)
-- [ ] Large, prominent display
-- [ ] Works on all screen sizes
+- [ ] Connection status with icon (🌐 Connected / ⚠️ Disconnected)
+- [ ] Session details card with timer icon (⏱️)
+- [ ] Today's total card with chart icon (📊)
+- [ ] Target progress card with goal icon (🎯)
+- [ ] Grid layout (2x2 on desktop, stacked on mobile)
 
-**File:** `templates/index.html`, `static/app.js`, `static/style.css`
-
-**Proposed Layout:**
-```
-┌─────────────────────────────────┐
-│  Elapsed: 2h 30m / 4h 10m (60%) │
-│  ━━━━━━━━━━━━━━░░░░░░░          │
-│  Countdown: 01:44:30            │
-└─────────────────────────────────┘
-```
+**Files:** `templates/index.html`, `static/style.css`
 
 ---
-
 > Local-first • Offline-safe • Minimal • Deterministic • No new dependencies
 
 ---------------------------------------------------------------------

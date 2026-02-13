@@ -36,16 +36,21 @@
         </section>
 
         <section class="card">
-            <p class="muted" id="timer-mode-label">Remaining (target: <span id="target-display">{{ target_display }}</span>)</p>
-            <div id="timer-display" class="timer">00:00:00</div>
+            <p class="muted" id="timer-mode-label">Session Progress</p>
+            <div id="elapsed-display" class="elapsed-display">
+                <span id="elapsed-time">0h 00m</span>
+                <span class="elapsed-separator">/</span>
+                <span id="target-display">{{ target_display }}</span>
+                <span id="elapsed-percent" class="elapsed-percent">(0%)</span>
+            </div>
             <div class="progress-wrap">
-                <div class="progress-label">
-                    <span>Progress</span>
-                    <span id="progress-percent">0%</span>
-                </div>
                 <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                     <div id="progress-fill" class="progress-fill"></div>
                 </div>
+            </div>
+            <div class="countdown-section">
+                <span class="countdown-label">Countdown:</span>
+                <span id="timer-display" class="timer-countdown">00:00:00</span>
             </div>
             <p id="completion-banner" class="completion hidden">Completed! Total: <span id="completed-total">00:00:00</span></p>
         </section>

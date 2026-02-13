@@ -19,6 +19,10 @@
         syncStatus: null,
         timerModeLabel: null,
         timerDisplay: null,
+        elapsedDisplay: null,
+        elapsedTime: null,
+        targetDisplay: null,
+        elapsedPercent: null,
         progressPercent: null,
         progressTrack: null,
         progressFill: null,
@@ -77,6 +81,10 @@
         dom.syncStatus = document.getElementById("sync-status");
         dom.timerModeLabel = document.getElementById("timer-mode-label");
         dom.timerDisplay = document.getElementById("timer-display");
+        dom.elapsedDisplay = document.getElementById("elapsed-display");
+        dom.elapsedTime = document.getElementById("elapsed-time");
+        dom.targetDisplay = document.getElementById("target-display");
+        dom.elapsedPercent = document.getElementById("elapsed-percent");
         dom.progressPercent = document.getElementById("progress-percent");
         dom.progressFill = document.getElementById("progress-fill");
         dom.progressTrack = document.querySelector(".progress-track");
@@ -85,11 +93,11 @@
         dom.todaySessionsBody = document.getElementById("today-sessions-body");
         dom.todayTotalDisplay = document.getElementById("today-total-display");
         dom.notificationBadge = document.getElementById("notification-status-badge");
-        
+
         dom.tabLive = document.getElementById("tab-live");
         dom.tabToday = document.getElementById("tab-today");
         dom.tabWeekly = document.getElementById("tab-weekly");
-        
+
         dom.weeklyTableBody = document.getElementById("weekly-table-body");
         dom.weeklyTotalHours = document.getElementById("weekly-total-hours");
         dom.weeklyAvgHours = document.getElementById("weekly-avg-hours");
@@ -117,7 +125,10 @@
             dom.startTime &&
             dom.timerModeLabel &&
             dom.timerDisplay &&
-            dom.progressPercent &&
+            dom.elapsedDisplay &&
+            dom.elapsedTime &&
+            dom.targetDisplay &&
+            dom.elapsedPercent &&
             dom.progressFill &&
             dom.completionBanner &&
             dom.completedTotal &&
@@ -453,6 +464,14 @@
         return `${hours}h ${String(minutes).padStart(2, "0")}m`;
     }
 
+    function formatSecondsToHM(totalSeconds) {
+        const safeSeconds = Math.max(0, toInt(totalSeconds, 0));
+        const totalMinutes = Math.floor(safeSeconds / 60);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+    }
+
     function formatPercent(value) {
         const clamped = clamp(Number(value) || 0, 0, 100);
         if (Number.isInteger(clamped)) {
@@ -654,11 +673,28 @@
     }
 
     function updateProgressClasses(progressValue, completed) {
-        const warning = !completed && progressValue >= 75;
-        dom.timerDisplay.classList.toggle("warning", warning);
-        dom.timerDisplay.classList.toggle("completed", completed);
+        // Align with Task 7.1 threshold model: <50% blue, 50-80% yellow, >80% green
+        const warning = !completed && progressValue >= 50 && progressValue <= 80;
+        const complete = completed || progressValue > 80;
         dom.progressFill.classList.toggle("warning", warning);
-        dom.progressFill.classList.toggle("complete", completed);
+        dom.progressFill.classList.toggle("complete", complete);
+    }
+
+    function updateElapsedDisplayColor(progressValue, completed) {
+        if (!dom.elapsedDisplay) return;
+
+        // Remove all color classes
+        dom.elapsedDisplay.classList.remove("progress-low", "progress-medium", "progress-high", "progress-complete");
+
+        if (completed) {
+            dom.elapsedDisplay.classList.add("progress-complete");
+        } else if (progressValue > 80) {
+            dom.elapsedDisplay.classList.add("progress-high");
+        } else if (progressValue >= 50) {
+            dom.elapsedDisplay.classList.add("progress-medium");
+        } else {
+            dom.elapsedDisplay.classList.add("progress-low");
+        }
     }
 
     function renderTimer() {
@@ -667,16 +703,26 @@
         }
 
         if (!state.status.session_active) {
-            const targetDisplay = state.status.target_display || "--";
-            dom.timerModeLabel.textContent = `Waiting for office session (target: ${targetDisplay})`;
+            const targetDisplay = state.status.target_display || "4h 10m";
+            dom.timerModeLabel.textContent = "Session Progress";
+
+            // Elapsed display
+            if (dom.elapsedTime) dom.elapsedTime.textContent = "0h 00m";
+            if (dom.targetDisplay) dom.targetDisplay.textContent = targetDisplay;
+            if (dom.elapsedPercent) dom.elapsedPercent.textContent = "(0%)";
+
+            // Countdown display
             dom.timerDisplay.textContent = "00:00:00";
-            dom.progressPercent.textContent = "0%";
+
+            // Progress bar
             dom.progressFill.style.width = "0%";
             if (dom.progressTrack) {
                 dom.progressTrack.setAttribute("aria-valuenow", "0");
             }
+
             dom.completionBanner.classList.add("hidden");
             updateProgressClasses(0, false);
+            updateElapsedDisplayColor(0, false);
             return;
         }
 
@@ -684,25 +730,40 @@
         const remainingSeconds = getLiveRemainingSeconds(elapsedSeconds);
         const completed = Boolean(state.status.completed_4h) || remainingSeconds <= 0;
         const progressValue = getLiveProgressPercent(elapsedSeconds, completed);
-        const targetDisplay = state.status.target_display || "--";
+        const targetDisplay = state.status.target_display || "4h 10m";
 
+        // Update elapsed display (Task 7.1)
+        if (dom.elapsedTime) {
+            dom.elapsedTime.textContent = formatSecondsToHM(elapsedSeconds);
+        }
+        if (dom.targetDisplay) {
+            dom.targetDisplay.textContent = targetDisplay;
+        }
+        if (dom.elapsedPercent) {
+            dom.elapsedPercent.textContent = `(${formatPercent(progressValue)})`;
+        }
+
+        // Update timer mode label and countdown display
         if (completed) {
             dom.timerModeLabel.textContent = `Completed (target: ${targetDisplay})`;
-            dom.timerDisplay.textContent = formatHHMMSS(elapsedSeconds);
+            dom.timerDisplay.textContent = "00:00:00";
             dom.completedTotal.textContent = formatHHMMSS(elapsedSeconds);
             dom.completionBanner.classList.remove("hidden");
         } else {
-            dom.timerModeLabel.textContent = `Remaining (target: ${targetDisplay})`;
+            dom.timerModeLabel.textContent = "Session Progress";
             dom.timerDisplay.textContent = formatHHMMSS(Math.max(0, remainingSeconds));
             dom.completionBanner.classList.add("hidden");
         }
 
-        dom.progressPercent.textContent = formatPercent(progressValue);
+        // Update progress bar
         dom.progressFill.style.width = `${clamp(progressValue, 0, 100)}%`;
         if (dom.progressTrack) {
             dom.progressTrack.setAttribute("aria-valuenow", String(Math.round(progressValue)));
         }
+
+        // Apply color coding
         updateProgressClasses(progressValue, completed);
+        updateElapsedDisplayColor(progressValue, completed);
     }
 
     function getSessionStatusText(session) {

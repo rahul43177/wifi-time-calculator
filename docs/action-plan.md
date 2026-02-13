@@ -1173,17 +1173,23 @@ TEST_DURATION_MINUTES=2
 
 ---
 
-### Task 7.1: Dual Timer Display (Elapsed + Countdown) ⚡ PRIORITY
+### Task 7.1: Dual Timer Display (Elapsed + Countdown) ⚡ PRIORITY ✅ DONE
 **Description:** Add clear elapsed/target display alongside countdown timer
 **Dependencies:** Phase 4 complete
 **Acceptance Criteria:**
-- [ ] Display elapsed/target ratio: "2h 30m / 4h 10m"
-- [ ] Keep existing countdown timer visible
-- [ ] Color-code based on progress (blue <50%, yellow 50-80%, green >80%)
-- [ ] Large, prominent display
-- [ ] Works on all screen sizes
+- [x] Display elapsed/target ratio: "2h 30m / 4h 10m"
+- [x] Keep existing countdown timer visible
+- [x] Color-code based on progress (blue <50%, yellow 50-80%, green >80%)
+- [x] Large, prominent display
+- [x] Works on all screen sizes
+- [x] Progress bar color thresholds aligned with elapsed display (QA fix)
 
 **File:** `templates/index.html`, `static/app.js`, `static/style.css`
+
+**QA Notes:**
+- Fixed progress bar threshold inconsistency (Feb 13, 2026)
+- Changed from 75% threshold to 50/80 threshold model
+- Ensured visual consistency between progress bar and elapsed display colors
 
 **Proposed Layout:**
 ```

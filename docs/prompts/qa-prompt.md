@@ -1,10 +1,28 @@
-You are acting as a **Senior Production QA Engineer**
-auditing Phase-6 of a local macOS application.
+You are acting as a **Senior UI/UX QA Engineer**
 
-Audit ONLY the specified Phase-6 task.
+Audit ONLY Phase mentioned below  :
+
+---
+
+### Task 7.2: Status Cards with Icons
+**Description:** Rich visual status indicators with icons
+**Dependencies:** Task 7.1
+**Acceptance Criteria:**
+- [ ] Connection status with icon (🌐 Connected / ⚠️ Disconnected)
+- [ ] Session details card with timer icon (⏱️)
+- [ ] Today's total card with chart icon (📊)
+- [ ] Target progress card with goal icon (🎯)
+- [ ] Grid layout (2x2 on desktop, stacked on mobile)
+
+**Files:** `templates/index.html`, `static/style.css`
+
+---
+
+
+Do NOT review other Phase 7 tasks.  
 Do NOT implement new features.
 
-If the audit is large → break into smaller verification steps.
+Think sequentially and break the audit into clear steps.
 
 ---------------------------------------------------------------------
 
@@ -16,35 +34,10 @@ You MUST align with:
 - docs/action-plan.md
 - docs/dev-context.md
 
+**See detailed proposal:** `docs/ui-enhancement-proposal.md`
+
+
 These are the single source of truth.
-
----------------------------------------------------------------------
-
-PHASE UNDER AUDIT : Just the phase below and then once this is done -- please test all the previous test cases which are already done implementing. 
-Don't test the forward phases until we reach them in the audit.
-
----
-
-### Task 6.5: Create Install/Uninstall Scripts + Documentation ✅ DONE
-**Description:** Easy install, uninstall, and README
-**Dependencies:** All previous tasks
-**Acceptance Criteria:**
-- [x] `scripts/install-autostart.sh` — copies plist, loads agent
-- [x] `scripts/uninstall-autostart.sh` — unloads agent, removes plist
-- [x] Documentation with setup, config, troubleshooting, uninstall
-
-**Files:** `scripts/install-autostart.sh`, `scripts/uninstall-autostart.sh`, `docs/PHASE_6_AUTO_START_GUIDE.md`
-
-> **Implementation Note:** Created comprehensive auto-start management:
-> - **Install script:** validates environment, copies plist, loads service
-> - **Uninstall script:** stops service, removes plist, verifies removal
-> - **Documentation:** 400+ line guide covering installation, troubleshooting, FAQ
-> - Both scripts tested: install → service runs → uninstall → service removed
-
-> **Tests:** `tests/test_phase_6_1.py` (3 tests) — plist file existence, semantic
-> validation with plistlib, and macOS plutil syntax check — all passing.
-
----
 
 ---------------------------------------------------------------------
 
@@ -52,41 +45,45 @@ QA RESPONSIBILITIES
 
 You must verify:
 
-1. Auto-start reliability on macOS boot.
-2. No corruption of session data during shutdown/restart.
-3. launchd plist correctness and safety.
-4. Install/uninstall scripts behave safely and idempotently.
-5. Acceptance criteria completeness.
-6. No regression in Phases 1-5.
-7. Adequate test coverage for backend changes.
+1. Dual timer display correctness and clarity.
+2. Countdown timer remains unchanged.
+3. Color-coding thresholds behave correctly.
+4. Responsive layout across screen sizes.
+5. No regression from Phases 1-6.
+6. No console errors or rendering glitches.
+7. Accessibility and readability preserved.
 
 ---------------------------------------------------------------------
 
-PRODUCTION RELIABILITY CHECKS
+UI-SPECIFIC CHECKS
 
 Confirm:
 
-- App starts automatically after reboot.
-- Dashboard reachable at http://localhost:8787.
-- Active session resumes safely.
-- Logs confirm clean startup/shutdown.
-- Missing paths or permissions handled safely.
-- Multiple installs/uninstalls do not break system.
+- Elapsed/target ratio displays accurate values.
+- Percentage calculation visually matches progress bar.
+- Color transitions occur at:
+  - <50% → blue
+  - 50-80% → yellow
+  - >80% → green
+- Layout remains stable on:
+  - mobile width (~320px)
+  - tablet
+  - desktop.
+- Works correctly for:
+  - active session
+  - completed session
+  - no session state.
 
 ---------------------------------------------------------------------
 
-TEST & REGRESSION CHECK
-
-Simulate:
-
-pytest tests/ -v
+REGRESSION CHECK
 
 Ensure:
 
-- All previous tests pass.
-- Phase-6 tests cover shutdown/restart logic.
-- No warnings.
-- No regressions.
+- Countdown timer logic unchanged.
+- Analytics views unaffected.
+- Backend APIs untouched.
+- Previous tests still logically valid.
 
 ---------------------------------------------------------------------
 
@@ -94,30 +91,27 @@ DEFINITION OF DONE VALIDATION
 
 Task is DONE only if:
 
-- Acceptance criteria satisfied. 
-- Tests written and passing (if applicable)
-- No warnings
-- No regressions
-- Manual boot test successful
-- QA verdict = APPROVED
+- All acceptance criteria satisfied.
+- No visual or functional regression.
+- UI verified manually.
+- QA verdict = APPROVED.
 
 ---------------------------------------------------------------------
 
 FINAL OUTPUT FORMAT
 
 1. Requirements Compliance  
-2. Startup/Shutdown Reliability Audit  
-3. Script & Plist Safety Review  
-4. Code Quality Findings  
-5. Test Coverage Evaluation  
-6. Regression Result  
-7. Definition of Done Validation  
-8. FINAL VERDICT  
+2. Visual & UX Audit  
+3. Responsiveness Check  
+4. Regression Analysis  
+5. Code Quality Notes  
+6. Definition of Done Validation  
+7. FINAL VERDICT  
    - ✅ APPROVED  
    - ⚠️ MINOR ISSUES  
    - ❌ REJECTED  
 
-Be strict, concise, and production-focused.  
-Do NOT move to next task.
+Be strict, concise, and UX-focused.  
+Do NOT move to Task 7.2.
 
 Begin QA audit now.
