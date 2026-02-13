@@ -973,25 +973,35 @@ TEST_DURATION_MINUTES=2
 
 **Files:** `templates/index.html`, `static/app.js`
 
+> **Implementation Note:** Implemented the Weekly Analytics UI with:
+> - Tab-based navigation (Live, Today, Weekly, Monthly).
+> - Chart.js bar chart with color-coded bars (green for target met, red otherwise).
+> - **Horizontal reference line** for 4h target using a composite line dataset.
+> - Day-by-day table with duration formatting and target status.
+> - Previous/Next week navigation with ISO 8601 week arithmetic.
+> - Responsive CSS grid for stats summary.
+
 ---
 
-### Task 5.4: Monthly Analytics UI View
+### Task 5.4: Monthly Analytics UI View ✅ DONE
 **Description:** Monthly tab/section with week-by-week table and chart
 **Dependencies:** Task 5.2, Task 5.3
 **Acceptance Criteria:**
-- [ ] Week-by-week table: Week | Total Hours | Days Present | Avg Daily
-- [ ] Bar/line chart showing weekly totals across the month
-- [ ] Month selector (prev/next arrows)
-- [ ] Monthly summary stats (total hours, days present, overall average)
+- [x] Week-by-week table: Week | Total Hours | Days Present | Avg Daily
+- [x] Bar/line chart showing weekly totals across the month
+- [x] Month selector (prev/next arrows)
+- [x] Monthly summary stats (total hours, days present, overall average)
 
 **Files:** `templates/index.html`, `static/app.js`
+
+> **Implementation Note:** Implemented the Monthly tab with a trend line chart (Chart.js), comprehensive stats grid, and week-by-week data table. Added month navigation logic and integrated with the backend `/api/monthly` endpoint.
 
 ---
 
 ### ✅ Phase 5 Definition of Done
 
 - [x] Weekly view shows day-by-day breakdown with bar chart
-- [ ] Monthly view shows week-by-week breakdown with chart
+- [x] Monthly view shows week-by-week breakdown with chart
 - [x] Charts render via Chart.js (no build tools)
 - [x] Navigation between Today / Weekly / Monthly works
 - [x] Week and month selectors allow browsing history
@@ -1532,6 +1542,6 @@ Before considering MVP complete:
 
 ---
 
-**Current State:** ✅ **Phase 5.1, 5.2 & 5.3 COMPLETE** — Weekly + monthly aggregation APIs and weekly UI visualization implemented. 221 tests passing, 0 warnings. Next: Task 5.4 (Monthly UI).
+**Current State:** ✅ **Phase 5 COMPLETE** — Weekly and Monthly aggregation APIs and UI visualizations implemented. 223 tests passing, 0 warnings. Next: Phase 6 (Auto-Start).
 
 **Remember:** Build incrementally, test each phase before moving forward, and keep it simple!

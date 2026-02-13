@@ -17,7 +17,7 @@
                 <span class="tab active" data-tab="live">Live</span>
                 <span class="tab" data-tab="today">Today</span>
                 <span class="tab" data-tab="weekly">Weekly</span>
-                <span class="tab" data-tab="monthly">Monthly (Soon)</span>
+                <span class="tab" data-tab="monthly">Monthly</span>
             </nav>
         </div>
     </section>
@@ -114,6 +114,53 @@
                 </tr>
                 </thead>
                 <tbody id="weekly-table-body">
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <div id="tab-monthly" class="tab-content hidden">
+        <section class="card">
+            <div class="section-header">
+                <h2>Monthly Analytics</h2>
+                <div class="selector">
+                    <button id="prev-month" class="btn-secondary">&larr;</button>
+                    <span id="current-month-label">YYYY-MM</span>
+                    <button id="next-month" class="btn-secondary">&rarr;</button>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="monthly-chart"></canvas>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Total Hours</span>
+                    <span id="monthly-total-hours" class="stat-value">0h 00m</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Days Present</span>
+                    <span id="monthly-total-days" class="stat-value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Daily Average</span>
+                    <span id="monthly-avg-hours" class="stat-value">0h 00m</span>
+                </div>
+            </div>
+
+            <table id="monthly-table" class="mt-16">
+                <thead>
+                <tr>
+                    <th>Week</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Hours</th>
+                    <th>Days</th>
+                    <th>Avg</th>
+                </tr>
+                </thead>
+                <tbody id="monthly-table-body">
                 </tbody>
             </table>
         </section>

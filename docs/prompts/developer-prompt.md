@@ -39,16 +39,18 @@ CURRENT SUB PHASE :
 
 ---
 
-### Task 5.2: Monthly Data Aggregation API
-**Description:** Backend endpoint that aggregates weekly data into monthly view
-**Dependencies:** Task 5.1
+### Task 5.3: Weekly Analytics UI View ✅ DONE
+**Description:** Weekly tab/section with day-by-day table and bar chart
+**Dependencies:** Task 5.1, Phase 4 UI
 **Acceptance Criteria:**
-- [ ] `GET /api/monthly?month=2026-02` returns week-by-week breakdown
-- [ ] Defaults to current month if no query param
-- [ ] Each week: total_minutes, days_present, avg_daily_minutes
-- [ ] Includes month totals
+- [x] Tab navigation: "Today" | "Weekly" | "Monthly"
+- [x] Day-by-day table: Date | Day | Hours | Sessions | Target Met
+- [x] Bar chart (Chart.js): days on X-axis, hours on Y-axis
+- [x] 4h target line drawn as horizontal reference
+- [x] Green bars for days >= target, red for < target
+- [x] Week selector (prev/next arrows)
 
-**File:** `app/main.py` (or `app/analytics.py`)
+**Files:** `templates/index.html`, `static/app.js`
 
 ---
 

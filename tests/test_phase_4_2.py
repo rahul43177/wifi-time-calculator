@@ -70,7 +70,7 @@ async def test_root_includes_weekly_monthly_tab_placeholders() -> None:
 
     assert response.status_code == 200
     assert "Weekly" in response.text
-    assert "Monthly (Soon)" in response.text
+    assert "Monthly" in response.text
 
 
 @pytest.mark.asyncio

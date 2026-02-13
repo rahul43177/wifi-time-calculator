@@ -38,12 +38,22 @@
         prevWeekBtn: null,
         nextWeekBtn: null,
         weeklyChartCanvas: null,
+        tabMonthly: null,
+        monthlyTableBody: null,
+        monthlyTotalHours: null,
+        monthlyTotalDays: null,
+        monthlyAvgHours: null,
+        currentMonthLabel: null,
+        prevMonthBtn: null,
+        nextMonthBtn: null,
+        monthlyChartCanvas: null,
     };
 
     const state = {
         status: null,
         today: null,
         weekly: null,
+        monthly: null,
         syncAtMs: null,
         sessionStartMs: null,
         baseElapsedSeconds: 0,
@@ -52,8 +62,10 @@
         lastCompleted4h: null,
         activeTab: "live",
         selectedWeek: null, // YYYY-Www
+        selectedMonth: null, // YYYY-MM
         charts: {
-            weekly: null
+            weekly: null,
+            monthly: null
         }
     };
 
@@ -86,6 +98,16 @@
         dom.prevWeekBtn = document.getElementById("prev-week");
         dom.nextWeekBtn = document.getElementById("next-week");
         dom.weeklyChartCanvas = document.getElementById("weekly-chart");
+
+        dom.tabMonthly = document.getElementById("tab-monthly");
+        dom.monthlyTableBody = document.getElementById("monthly-table-body");
+        dom.monthlyTotalHours = document.getElementById("monthly-total-hours");
+        dom.monthlyTotalDays = document.getElementById("monthly-total-days");
+        dom.monthlyAvgHours = document.getElementById("monthly-avg-hours");
+        dom.currentMonthLabel = document.getElementById("current-month-label");
+        dom.prevMonthBtn = document.getElementById("prev-month");
+        dom.nextMonthBtn = document.getElementById("next-month");
+        dom.monthlyChartCanvas = document.getElementById("monthly-chart");
     }
 
     function hasRequiredDom() {
@@ -103,7 +125,8 @@
             dom.todayTotalDisplay &&
             dom.tabLive &&
             dom.tabToday &&
-            dom.tabWeekly
+            dom.tabWeekly &&
+            dom.tabMonthly
         );
     }
 
@@ -133,6 +156,14 @@
         return getISOWeek(targetThurs);
     }
 
+    function addMonths(monthStr, n) {
+        const [year, month] = monthStr.split("-").map(Number);
+        const date = new Date(year, month - 1 + n, 1);
+        const newYear = date.getFullYear();
+        const newMonth = String(date.getMonth() + 1).padStart(2, "0");
+        return `${newYear}-${newMonth}`;
+    }
+
     // --- Tab Management ---
 
     function switchTab(tabId) {
@@ -147,12 +178,19 @@
         dom.tabLive.classList.toggle("hidden", tabId !== "live");
         dom.tabToday.classList.toggle("hidden", tabId !== "today");
         dom.tabWeekly.classList.toggle("hidden", tabId !== "weekly");
+        dom.tabMonthly.classList.toggle("hidden", tabId !== "monthly");
         
         if (tabId === "weekly") {
             if (!state.selectedWeek) {
                 state.selectedWeek = getISOWeek(new Date());
             }
             void syncWeekly();
+        } else if (tabId === "monthly") {
+            if (!state.selectedMonth) {
+                const now = new Date();
+                state.selectedMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+            }
+            void syncMonthly();
         }
     }
 
@@ -214,12 +252,26 @@
             type: "bar",
             data: {
                 labels: labels,
-                datasets: [{
-                    label: "Hours Worked",
-                    data: data,
-                    backgroundColor: colors,
-                    borderRadius: 4
-                }]
+                datasets: [
+                    {
+                        label: "Hours Worked",
+                        data: data,
+                        backgroundColor: colors,
+                        borderRadius: 4,
+                        order: 2
+                    },
+                    {
+                        label: `Target (${formatMinutes(Math.round(targetHours * 60))})`,
+                        data: Array(7).fill(targetHours),
+                        type: "line",
+                        borderColor: "#f59e0b",
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        order: 1
+                    }
+                ]
             },
             options: {
                 responsive: true,
@@ -231,16 +283,19 @@
                             display: true,
                             text: "Hours"
                         },
-                        suggestedMax: 6
+                        suggestedMax: Math.max(6, targetHours + 1)
                     }
                 },
                 plugins: {
-                    annotation: { // Note: standard chart.js doesn't include annotation plugin by default, 
-                                 // we'll use a simple horizontal line if we wanted, 
-                                 // but for now let's just use standard bar chart.
-                    },
                     legend: {
-                        display: false
+                        display: true,
+                        position: "top",
+                        align: "end",
+                        labels: {
+                            boxWidth: 12,
+                            usePointStyle: true,
+                            pointStyle: "circle"
+                        }
                     }
                 }
             }
@@ -259,6 +314,108 @@
         } catch (error) {
             console.warn("Weekly sync failed:", error);
             showSyncError("Failed to load weekly analytics.");
+        }
+    }
+
+    function renderMonthlyTable() {
+        if (!state.monthly || !dom.monthlyTableBody) return;
+        
+        dom.monthlyTableBody.innerHTML = "";
+        state.monthly.weeks.forEach(week => {
+            const row = document.createElement("tr");
+            
+            const weekCell = document.createElement("td");
+            weekCell.textContent = week.week;
+            
+            const startCell = document.createElement("td");
+            startCell.textContent = week.start_date;
+            
+            const endCell = document.createElement("td");
+            endCell.textContent = week.end_date;
+            
+            const hoursCell = document.createElement("td");
+            hoursCell.textContent = formatMinutes(week.total_minutes);
+            
+            const daysCell = document.createElement("td");
+            daysCell.textContent = week.days_present;
+            
+            const avgCell = document.createElement("td");
+            avgCell.textContent = formatMinutes(Math.round(week.avg_daily_minutes));
+            
+            row.appendChild(weekCell);
+            row.appendChild(startCell);
+            row.appendChild(endCell);
+            row.appendChild(hoursCell);
+            row.appendChild(daysCell);
+            row.appendChild(avgCell);
+            dom.monthlyTableBody.appendChild(row);
+        });
+        
+        dom.monthlyTotalHours.textContent = formatMinutes(state.monthly.total_minutes);
+        dom.monthlyTotalDays.textContent = state.monthly.total_days_present;
+        dom.monthlyAvgHours.textContent = formatMinutes(Math.round(state.monthly.avg_daily_minutes));
+        dom.currentMonthLabel.textContent = state.monthly.month;
+    }
+
+    function renderMonthlyChart() {
+        if (!state.monthly || !dom.monthlyChartCanvas) return;
+        
+        const ctx = dom.monthlyChartCanvas.getContext("2d");
+        const labels = state.monthly.weeks.map(w => w.week);
+        const data = state.monthly.weeks.map(w => w.total_minutes / 60);
+
+        if (state.charts.monthly) {
+            state.charts.monthly.destroy();
+        }
+
+        state.charts.monthly = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Hours Worked",
+                    data: data,
+                    borderColor: "#4f46e5",
+                    backgroundColor: "rgba(79, 70, 229, 0.1)",
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointBackgroundColor: "#4f46e5"
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Hours"
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    async function syncMonthly() {
+        try {
+            const url = `/api/monthly${state.selectedMonth ? `?month=${state.selectedMonth}` : ""}`;
+            const data = await fetchJson(url);
+            state.monthly = data;
+            state.selectedMonth = data.month;
+            renderMonthlyTable();
+            renderMonthlyChart();
+            clearSyncError();
+        } catch (error) {
+            console.warn("Monthly sync failed:", error);
+            showSyncError("Failed to load monthly analytics.");
         }
     }
 
@@ -676,6 +833,20 @@
             });
         }
 
+        // Month selector wiring
+        if (dom.prevMonthBtn) {
+            dom.prevMonthBtn.addEventListener("click", () => {
+                state.selectedMonth = addMonths(state.selectedMonth, -1);
+                void syncMonthly();
+            });
+        }
+        if (dom.nextMonthBtn) {
+            dom.nextMonthBtn.addEventListener("click", () => {
+                state.selectedMonth = addMonths(state.selectedMonth, 1);
+                void syncMonthly();
+            });
+        }
+
         requestNotificationPermission();
         updateNotificationBadge();
         void syncFromBackend();
@@ -684,6 +855,8 @@
             void syncFromBackend();
             if (state.activeTab === "weekly") {
                 void syncWeekly();
+            } else if (state.activeTab === "monthly") {
+                void syncMonthly();
             }
         }, SYNC_INTERVAL_MS);
     }
