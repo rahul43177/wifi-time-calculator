@@ -277,18 +277,18 @@ body,
 /* --- Layout --- */
 .dashboard {
     max-width: var(--max-width);
-    margin: 24px auto;
-    padding: 0 16px;
+    margin: 32px auto; /* More top breathing */
+    padding: 0 20px;
 }
 
 .card {
-    background: var(--surface);
+    background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: 12px;
     padding: var(--padding-lg);
-    margin-bottom: var(--space-4);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    transition: all 0.2s ease-in-out;
+    margin-bottom: var(--space-6); /* Consistent spacing */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); /* Softer shadow */
+    transition: all 0.2s ease;
 }
 
 .card:hover {
@@ -296,33 +296,32 @@ body,
 }
 
 [data-theme="dark"] .card {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-/* --- Header (Task 7.3: Gradient background) --- */
+/* --- Header (Refined: Flat background) --- */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
-    background: var(--gradient-header);
+    background: var(--card-bg); /* Flat background */
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: var(--padding-lg);
+    margin-bottom: var(--space-6);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     position: relative;
 }
 
+/* Remove decorative gradient bar */
 .header::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--gradient-primary);
-    opacity: 0.6;
+    display: none;
 }
 
 .header-left {
@@ -414,18 +413,12 @@ body,
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
-    letter-spacing: -0.01em;
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-[data-theme="dark"] .title {
-    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    /* Remove gradient effect for cleaner look */
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: unset;
 }
 
 /* --- Tabs --- */
@@ -477,81 +470,73 @@ body,
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--gap-md);
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-6); /* Increased breathing room */
 }
 
 .status-card {
-    border: none;
-    border-radius: 16px;
+    /* Flat matte surface - no gradient */
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
     padding: 24px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* Remove blob overflow */
+
+    /* Subtle elevation instead of glow */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* Remove decorative blob */
 .status-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 120px;
-    height: 120px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 50%;
-    transform: translate(40%, -40%);
-    z-index: 0;
+    display: none;
 }
 
+/* Subtle hover elevation - no transform scale */
 .status-card:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border-color: rgba(99, 102, 241, 0.3);
 }
 
-/* Color theory: Each card gets its own gradient */
+/* Color-coded left accent border instead of full gradient */
 #card-connection {
-    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); /* Blue - Connectivity */
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-#card-connection:hover {
-    box-shadow: 0 12px 24px rgba(59, 130, 246, 0.4);
+    border-left: 3px solid #3b82f6; /* Blue */
 }
 
 #card-session {
-    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); /* Purple - Active session */
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-}
-
-#card-session:hover {
-    box-shadow: 0 12px 24px rgba(139, 92, 246, 0.4);
+    border-left: 3px solid #8b5cf6; /* Purple */
 }
 
 #card-today {
-    background: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%); /* Teal - Accumulation */
-    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
-}
-
-#card-today:hover {
-    box-shadow: 0 12px 24px rgba(20, 184, 166, 0.4);
+    border-left: 3px solid #14b8a6; /* Teal */
 }
 
 #card-target {
-    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); /* Amber - Goals */
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    border-left: 3px solid #f59e0b; /* Amber */
 }
 
-#card-target:hover {
-    box-shadow: 0 12px 24px rgba(245, 158, 11, 0.4);
+/* Connection states - just change border color */
+#card-connection.disconnected {
+    border-left-color: #dc2626; /* Red */
 }
 
-/* When target is complete, change to green */
+/* Target states - dynamic border color */
 #card-target.progress-complete {
-    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    border-left-color: #059669; /* Green */
 }
 
-#card-target.progress-complete:hover {
-    box-shadow: 0 12px 24px rgba(5, 150, 105, 0.4);
+#card-target.progress-low {
+    border-left-color: #2563eb; /* Blue */
+}
+
+#card-target.progress-medium {
+    border-left-color: #f59e0b; /* Amber */
+}
+
+#card-target.progress-high,
+#card-target.progress-complete {
+    border-left-color: #059669; /* Green */
 }
 
 .status-card-icon {
@@ -571,75 +556,38 @@ body,
 }
 
 .status-card-label {
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
     margin-bottom: var(--space-2);
 }
 
 .status-card-value {
-    font-size: var(--text-2xl);
+    font-size: 2rem; /* More balanced */
     font-weight: var(--font-bold);
-    color: #ffffff;
+    color: var(--text);
     margin-bottom: var(--space-1);
     line-height: var(--leading-tight);
+    font-family: var(--font-mono); /* Numbers in monospace */
+    font-variant-numeric: tabular-nums;
 }
 
 .status-card-detail {
     font-size: var(--text-sm);
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text-secondary);
     line-height: var(--leading-normal);
 }
 
-/* Connection card states - Now gradient changes instead of text color */
-#card-connection.connected {
-    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-}
-
-#card-connection.disconnected {
-    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-}
-
-#card-connection.disconnected:hover {
-    box-shadow: 0 12px 24px rgba(220, 38, 38, 0.4);
-}
-
-/* Target progress card - Dynamic gradient based on progress */
-#card-target.progress-low {
-    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-}
-
-#card-target.progress-low:hover {
-    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4);
-}
-
-#card-target.progress-medium {
-    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-}
-
-#card-target.progress-medium:hover {
-    box-shadow: 0 12px 24px rgba(245, 158, 11, 0.4);
-}
-
-#card-target.progress-high,
-#card-target.progress-complete {
-    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
-}
-
-#card-target.progress-high:hover,
-#card-target.progress-complete:hover {
-    box-shadow: 0 12px 24px rgba(5, 150, 105, 0.4);
-}
-
-/* All status card values are now white for contrast */
+/* Remove color overrides - let text use theme colors */
 .status-card-value {
-    color: #ffffff !important;
+    color: var(--text) !important;
+}
+
+.status-card-label,
+.status-card-detail {
+    color: var(--text-secondary) !important;
 }
 
 /* Legacy connection status (kept for backward compatibility, Task 7.3: WCAG AA) */
@@ -692,23 +640,26 @@ body,
     color: var(--red);
 }
 
-/* Task 7.3: Timer section gradient (hero element) */
+/* Refined: Timer section - Subtle gradient, strong typography */
 .timer-section {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    /* More subtle gradient - professional not flashy */
+    background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
     border: none;
-    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 2px 8px rgba(67, 56, 202, 0.15); /* Softer shadow */
     position: relative;
     overflow: hidden;
+    border-radius: 12px;
 }
 
+/* Smaller, subtler decorative element */
 .timer-section::before {
     content: '';
     position: absolute;
-    top: -50%;
-    right: -10%;
-    width: 200px;
-    height: 200px;
-    background: rgba(255, 255, 255, 0.1);
+    top: -30%;
+    right: -5%;
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.06); /* Very subtle */
     border-radius: 50%;
     z-index: 0;
 }
@@ -718,21 +669,21 @@ body,
     z-index: 1;
 }
 
-/* --- Elapsed/Target display (Task 7.1) --- */
+/* --- Elapsed/Target display - Typography as hero element --- */
 .elapsed-display {
-    font-family: var(--font-sans);
-    font-size: 2.5rem;
-    font-weight: var(--font-bold);
+    font-family: var(--font-mono);
+    font-size: 3rem; /* Increased from 2.5rem */
+    font-weight: 800; /* Extra bold for numbers */
     text-align: center;
-    margin: var(--space-4) 0;
+    margin: var(--space-6) 0 var(--space-4); /* More top breathing */
     color: #ffffff;
     display: flex;
     align-items: baseline;
     justify-content: center;
-    gap: var(--space-2);
-    transition: all 0.3s ease;
-    line-height: var(--leading-tight);
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    gap: var(--space-3);
+    line-height: 1;
+    letter-spacing: -0.02em; /* Tighter for monospace */
+    text-shadow: none; /* Remove text shadow for cleaner look */
 }
 
 .elapsed-time {
@@ -749,11 +700,12 @@ body,
 .elapsed-percent {
     display: inline-block;
     margin-left: var(--space-2);
-    font-size: 0.85em;
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(255, 255, 255, 0.2);
-    padding: 4px 12px;
-    border-radius: 999px;
+    font-size: 0.4em; /* Smaller, less prominent */
+    font-weight: var(--font-semibold);
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 12px;
+    border-radius: 6px;
 }
 
 /* Progress-based styling - all white text with gradient background */
@@ -764,31 +716,34 @@ body,
     color: #ffffff;
 }
 
-/* --- Countdown display --- */
+/* --- Countdown display - secondary, less prominent --- */
 .countdown-section {
     display: flex;
     justify-content: center;
     align-items: baseline;
     gap: var(--space-2);
-    margin-top: var(--space-4);
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-4);
 }
 
 .countdown-label {
-    font-size: var(--text-sm);
-    color: rgba(255, 255, 255, 0.9);
+    font-size: var(--text-xs);
+    color: rgba(255, 255, 255, 0.7);
     font-weight: var(--font-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .timer-countdown {
     font-family: var(--font-mono);
-    font-size: var(--text-xl);
+    font-size: var(--text-lg);
     font-weight: var(--font-semibold);
-    letter-spacing: 0.04em;
-    color: rgba(255, 255, 255, 0.95);
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.9);
     font-variant-numeric: tabular-nums;
-    background: rgba(255, 255, 255, 0.15);
-    padding: 8px 16px;
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 6px;
 }
 
 /* Legacy timer class (keeping for backward compatibility, Task 7.3: WCAG AA) */
@@ -812,11 +767,7 @@ body,
     color: var(--yellow-dark);
 }
 
-/* --- Progress bar --- */
-.progress-fill {
-    transition: width 0.3s ease, background-color 0.3s ease;
-}
-
+/* --- Progress bar - cleaner track --- */
 .progress-wrap {
     margin-top: 0;
     margin-bottom: 12px;
@@ -833,20 +784,20 @@ body,
 
 .progress-track {
     width: 100%;
-    height: 10px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 999px;
-    background: var(--progress-bg);
     overflow: hidden;
+    position: relative;
+    margin: var(--space-4) 0;
 }
 
 .progress-fill {
     width: 0%;
     height: 100%;
-    background: var(--progress);
     border-radius: 999px;
-    /* Task 7.4: Smooth animation using cubic-bezier for natural feel */
-    /* Task 7.6: Added theme transition for background-color */
-    transition: width 0.8s cubic-bezier(0.4, 0.0, 0.2, 1), background-color 0.2s ease-in-out;
+    transition: width 0.4s cubic-bezier(0.4, 0.0, 0.2, 1), background-color 0.3s ease;
+    background: rgba(255, 255, 255, 0.95);
 }
 
 /* Task 7.1 threshold model: <50% blue, 50-80% yellow, >80% green */
@@ -871,18 +822,17 @@ body,
     border-left: 4px solid var(--green);
 }
 
-/* --- Contextual Message (Task 7.5) --- */
+/* --- Contextual Message - less prominent, cleaner --- */
 .contextual-message {
-    margin-top: 12px;
-    padding: 8px 12px;
-    background: var(--bg);
-    color: var(--muted);
-    font-size: 0.9rem;
-    border-radius: var(--radius-sm);
+    margin-top: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: var(--text-sm);
+    border-radius: 8px;
     text-align: center;
-    line-height: 1.4;
-    min-height: 1.4rem;
-    transition: opacity 0.3s ease;
+    line-height: var(--leading-relaxed);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .contextual-message:empty {
@@ -938,7 +888,7 @@ tbody tr {
 }
 
 tbody tr:hover {
-    background: rgba(99, 102, 241, 0.05);
+    background: rgba(99, 102, 241, 0.04); /* More subtle */
 }
 
 tbody td {
@@ -952,6 +902,21 @@ tbody tr:last-child {
 
 [data-theme="dark"] tbody tr:hover {
     background: rgba(99, 102, 241, 0.1);
+}
+
+/* Dark mode adjustments for refined design */
+[data-theme="dark"] .status-card,
+[data-theme="dark"] .achievement,
+[data-theme="dark"] .streak-item,
+[data-theme="dark"] .stat-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .status-card:hover,
+[data-theme="dark"] .achievement:hover,
+[data-theme="dark"] .streak-item:hover,
+[data-theme="dark"] .stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .total {
@@ -1045,79 +1010,57 @@ tbody tr:last-child {
     margin-bottom: var(--space-6);
 }
 
+/* Stat cards - flat design with accent borders */
 .stat-card {
-    background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
-    border: none;
-    border-radius: 12px;
-    padding: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: 10px;
+    padding: var(--padding-lg);
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
-    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
+/* Remove decorative blob */
 .stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 100px;
-    height: 100px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    transform: translate(30%, -30%);
+    display: none;
 }
 
 .stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-left-color: var(--primary-hover);
 }
 
-/* Color variations using color theory */
-.stat-card:nth-child(1) {
-    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-}
-
+/* Color-coded left borders for variety */
 .stat-card:nth-child(2) {
-    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
-}
-
-.stat-card:nth-child(2):hover {
-    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.3);
+    border-left-color: #059669;
 }
 
 .stat-card:nth-child(3) {
-    background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
-    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
-}
-
-.stat-card:nth-child(3):hover {
-    box-shadow: 0 8px 20px rgba(217, 119, 6, 0.3);
+    border-left-color: #d97706;
 }
 
 .stat-label {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.9);
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    position: relative;
-    z-index: 1;
 }
 
 .stat-value {
     font-size: 2rem;
-    font-weight: 700;
-    color: #ffffff;
+    font-weight: 800;
+    color: var(--text);
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     line-height: 1;
-    position: relative;
-    z-index: 1;
 }
 
 .mt-16 {
@@ -1309,195 +1252,193 @@ button:focus-visible,
     }
 }
 
-/* --- Task 7.7: Gamification Section --- */
+/* --- Gamification - Calm, structured achievement system --- */
 .gamification-section {
-    margin-top: 20px;
+    margin-top: var(--space-8); /* More separation */
 }
 
 .gamification-section h2 {
-    margin-bottom: 16px;
-    font-size: 1.4rem;
+    margin-bottom: var(--space-6);
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
     color: var(--text);
 }
 
-/* Streak Display */
+/* Streak Display - Flat cards with subtle borders */
 .streak-display {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: var(--gap-md);
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-8);
 }
 
 .streak-item {
-    padding: var(--padding-md);
+    padding: var(--padding-lg);
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 10px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .streak-item:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.streak-icon {
-    font-size: 2rem;
-    line-height: 1;
-}
-
-.streak-content {
-    flex: 1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
 }
 
 .streak-label {
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-bottom: 4px;
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .streak-value {
-    font-size: 1.8rem;
-    font-weight: 700;
+    font-size: 2.5rem;
+    font-weight: 800;
     color: var(--primary);
     line-height: 1;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
 }
 
 .streak-sublabel {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-top: 2px;
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    margin-top: var(--space-1);
 }
 
-/* Achievements Grid */
+/* Achievements - Flat badges with subtle color coding */
 .achievements-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: var(--gap-md);
 }
 
 .achievement {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    padding: var(--padding-md);
+    gap: var(--space-4);
+    padding: var(--padding-lg);
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    transition: all 0.3s ease;
+    border-radius: 10px;
+    transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
 }
 
+/* Subtle left accent - no full gradient */
 .achievement::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
-    width: 4px;
+    width: 3px;
     height: 100%;
     background: var(--border);
     transition: background 0.3s ease;
 }
 
 .achievement.earned::before {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    opacity: 0.8;
+    background: var(--primary);
 }
 
 .achievement.earned {
-    border: 1px solid rgba(79, 70, 229, 0.2);
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(124, 58, 237, 0.05) 100%);
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
+    border-color: rgba(99, 102, 241, 0.2);
+    background: var(--card-bg); /* Keep flat, no gradient */
 }
 
 .achievement:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
 }
 
+/* Flat badge system - no gradients */
 .achievement-badge {
     width: 56px;
     height: 56px;
-    border-radius: 12px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 1.1rem;
-    background: rgba(148, 163, 184, 0.2);
-    border: none;
+    font-size: 1rem;
+    background: var(--card-bg);
+    border: 2px solid var(--border);
     color: var(--text-secondary);
     transition: all 0.3s ease;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: none; /* Remove shadow */
 }
 
 .achievement-badge.locked {
-    opacity: 0.4;
+    opacity: 0.3;
     filter: grayscale(1);
 }
 
-/* Unique gradient for each achievement type */
+/* Earned badges - subtle color accents, no gradients */
 .achievement.earned .achievement-badge[data-badge="EB"] {
-    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    background: var(--card-bg);
+    border-color: #f59e0b;
+    color: #f59e0b;
 }
 
 .achievement.earned .achievement-badge[data-badge="MR"] {
-    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+    background: var(--card-bg);
+    border-color: #dc2626;
+    color: #dc2626;
 }
 
 .achievement.earned .achievement-badge[data-badge="CS"] {
-    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+    background: var(--card-bg);
+    border-color: #059669;
+    color: #059669;
 }
 
 .achievement.earned .achievement-badge[data-badge="DD"] {
-    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+    background: var(--card-bg);
+    border-color: #4f46e5;
+    color: #4f46e5;
 }
 
 .achievement.earned .achievement-badge {
     opacity: 1;
-    transform: scale(1.1);
+    transform: scale(1);
     filter: grayscale(0);
-}
-
-.achievement-content {
-    flex: 1;
 }
 
 .achievement-name {
     font-weight: 600;
-    font-size: 1rem;
+    font-size: var(--text-base);
     color: var(--text);
-    margin-bottom: 4px;
+    margin-bottom: var(--space-1);
 }
 
 .achievement-description {
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.3;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    line-height: var(--leading-normal);
 }
 
 .achievement-status {
-    font-size: 1.2rem;
+    font-size: var(--text-lg);
     opacity: 0.5;
     transition: opacity 0.3s ease;
+    margin-left: auto;
 }
 
 .achievement-status.locked {
-    opacity: 0.3;
+    opacity: 0;
 }
 
 .achievement.earned .achievement-status {
-    opacity: 0;
+    opacity: 1;
+    color: var(--primary);
 }
 
 /* --- Responsive --- */
@@ -1549,8 +1490,16 @@ button:focus-visible,
     }
 
     .elapsed-display {
-        font-size: clamp(1.2rem, 6vw, 1.6rem);
-        margin: 8px 0 12px;
+        font-size: 2rem; /* Scale down on mobile */
+        gap: var(--space-2);
+    }
+
+    .status-card-value {
+        font-size: 1.5rem;
+    }
+
+    .streak-value {
+        font-size: 2rem;
     }
 
     .countdown-section {
