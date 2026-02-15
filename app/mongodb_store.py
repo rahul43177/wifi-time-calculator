@@ -11,11 +11,12 @@ This module replaces the file-based storage system with MongoDB for:
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ReturnDocument
 import certifi
+from app.timezone_utils import now_utc
 
 logger = logging.getLogger(__name__)
 
@@ -123,10 +124,10 @@ class MongoDBStore:
                     "grace_period_start": None,
                     "has_network_access": True,
                     "paused_at": None,
-                    "created_at": datetime.utcnow()
+                    "created_at": now_utc()
                 },
                 "$set": {
-                    "updated_at": datetime.utcnow()
+                    "updated_at": now_utc()
                 }
             },
             upsert=True,
@@ -160,7 +161,7 @@ class MongoDBStore:
                     "last_activity": start_time,
                     "grace_period_start": None,  # Clear any grace period
                     "has_network_access": True,
-                    "updated_at": datetime.utcnow()
+                    "updated_at": now_utc()
                 },
                 "$inc": {"sessions_count": 1},
                 "$setOnInsert": {
@@ -194,8 +195,8 @@ class MongoDBStore:
             {
                 "$set": {
                     "total_minutes": current_total_minutes,
-                    "last_activity": datetime.utcnow(),
-                    "updated_at": datetime.utcnow()
+                    "last_activity": now_utc(),
+                    "updated_at": now_utc()
                 }
             }
         )
@@ -228,7 +229,7 @@ class MongoDBStore:
                     "last_session_end": end_time.strftime("%H:%M:%S"),
                     "last_activity": end_time,
                     "grace_period_start": None,  # Clear grace period
-                    "updated_at": datetime.utcnow()
+                    "updated_at": now_utc()
                 }
             }
         )
@@ -262,7 +263,7 @@ class MongoDBStore:
             {
                 "$set": {
                     "grace_period_start": grace_start,
-                    "updated_at": datetime.utcnow()
+                    "updated_at": now_utc()
                 }
             }
         )
@@ -297,9 +298,10 @@ class MongoDBStore:
         if not doc:
             return {"active": False}
 
-        grace_start = doc["grace_period_start"]
+        # MongoDB returns offset-naive datetimes, so add UTC timezone
+        grace_start = doc["grace_period_start"].replace(tzinfo=UTC)
         grace_minutes = doc.get("grace_period_minutes", 2)
-        elapsed = (datetime.utcnow() - grace_start).total_seconds() / 60
+        elapsed = (now_utc() - grace_start).total_seconds() / 60
 
         return {
             "active": True,
@@ -324,7 +326,7 @@ class MongoDBStore:
             {
                 "$set": {
                     "grace_period_start": None,
-                    "updated_at": datetime.utcnow()
+                    "updated_at": now_utc()
                 }
             }
         )
@@ -360,7 +362,7 @@ class MongoDBStore:
                     "has_network_access": False,
                     "paused_at": pause_time,
                     "last_connectivity_check": pause_time,
-                    "updated_at": datetime.utcnow()
+                    "updated_at": now_utc()
                 }
             }
         )
@@ -398,7 +400,9 @@ class MongoDBStore:
             return None
 
         # Calculate pause duration
-        pause_duration = (resume_time - doc["paused_at"]).total_seconds() / 60
+        # MongoDB returns offset-naive datetimes, so add UTC timezone
+        paused_at = doc["paused_at"].replace(tzinfo=UTC)
+        pause_duration = (resume_time - paused_at).total_seconds() / 60
 
         result = await self.db.daily_sessions.update_one(
             {"date": date},
@@ -407,7 +411,7 @@ class MongoDBStore:
                     "has_network_access": True,
                     "paused_at": None,
                     "last_connectivity_check": resume_time,
-                    "updated_at": datetime.utcnow()
+                    "updated_at": now_utc()
                 },
                 "$inc": {
                     "paused_duration_minutes": int(pause_duration)
@@ -442,8 +446,8 @@ class MongoDBStore:
             {
                 "$set": {
                     "has_network_access": has_access,
-                    "last_connectivity_check": datetime.utcnow(),
-                    "updated_at": datetime.utcnow()
+                    "last_connectivity_check": now_utc(),
+                    "updated_at": now_utc()
                 }
             }
         )
@@ -467,7 +471,7 @@ class MongoDBStore:
             {
                 "$set": {
                     "completed_4h": True,
-                    "updated_at": datetime.utcnow()
+                    "updated_at": now_utc()
                 }
             }
         )
@@ -552,7 +556,7 @@ class MongoDBStore:
         event = {
             "date": date,
             "event_type": event_type,
-            "timestamp": datetime.utcnow(),
+            "timestamp": now_utc(),
             "ssid": ssid,
             "metadata": metadata or {}
         }

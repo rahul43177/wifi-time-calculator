@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     # Network connectivity check (NEW)
     connectivity_check_interval_seconds: int = 30
 
+    # Timezone configuration (NEW)
+    user_timezone: str = "Asia/Kolkata"  # India Standard Time (IST = UTC+5:30)
+
     model_config = ConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
