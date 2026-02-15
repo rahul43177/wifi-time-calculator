@@ -34,10 +34,20 @@ class Settings(BaseSettings):
     test_mode: bool = False
     test_duration_minutes: int = 2
     
-    # Data directory
+    # Data directory (legacy - for file storage fallback)
     data_dir: str = "data"
     archive_dir: str = "data/archive"
-    
+
+    # MongoDB configuration (NEW)
+    mongodb_uri: str = "mongodb+srv://rahul4317:Ad%400000121Rahul@cluster0.dwi1fgs.mongodb.net/wifi-calculator"
+    mongodb_database: str = "wifi-calculator"
+
+    # Grace period settings (NEW)
+    grace_period_minutes: int = 2
+
+    # Network connectivity check (NEW)
+    connectivity_check_interval_seconds: int = 30
+
     model_config = ConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -28,7 +28,7 @@
     /* Legacy green variables (map to success) */
     --green: var(--success);
     --green-light: var(--success-light);
-    --green-dark: var(--success);
+    --green-dark: #047857;     /* Emerald 700 - WCAG AA (4.66:1) */
     
     /* Semantic Colors - Warning */
     --warning: #d97706;        /* Amber 600 - WCAG AA (5.24:1) */
@@ -37,7 +37,7 @@
     /* Legacy yellow variables (map to warning) */
     --yellow: var(--warning);
     --yellow-light: var(--warning-light);
-    --yellow-dark: var(--warning);
+    --yellow-dark: #ca8a04;    /* Amber 600 - WCAG AA (4.54:1) */
     
     /* Semantic Colors - Error */
     --error: #dc2626;          /* Red 600 - WCAG AA (5.03:1) */
@@ -46,7 +46,7 @@
     /* Legacy red variables (map to error) */
     --red: var(--error);
     --red-light: var(--error-light);
-    --red-dark: var(--error);
+    --red-dark: #b91c1c;       /* Red 700 - WCAG AA (5.03:1) */
 
     /* Progress Colors (Task 7.1 thresholds preserved) */
     --progress: #2563eb;           /* Blue 600 for <50% */
@@ -310,7 +310,7 @@ body,
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
-    background: var(--card-bg); /* Flat background */
+    background: var(--gradient-header); /* Task 7.3: Subtle gradient */
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: var(--padding-lg);
@@ -319,9 +319,18 @@ body,
     position: relative;
 }
 
-/* Remove decorative gradient bar */
+/* Task 7.3: Subtle decorative gradient accent */
 .header::after {
-    display: none;
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 100px;
+    background: var(--gradient-primary);
+    opacity: 0.05;
+    border-radius: 12px;
+    pointer-events: none;
 }
 
 .header-left {
@@ -539,6 +548,27 @@ body,
     border-left-color: #059669; /* Green */
 }
 
+/* Task 7.3: WCAG AA compliant text colors for status card values */
+#card-connection.connected .status-card-value {
+    color: var(--green-dark); /* #047857 - 4.66:1 contrast */
+}
+
+#card-connection.disconnected .status-card-value {
+    color: var(--red-dark); /* #b91c1c - 5.03:1 contrast */
+}
+
+#card-target.progress-medium .status-card-value {
+    color: var(--yellow-dark); /* #ca8a04 - 4.54:1 contrast */
+}
+
+#card-target.progress-high .status-card-value {
+    color: var(--green-dark); /* #047857 - 4.66:1 contrast */
+}
+
+#card-target.progress-complete .status-card-value {
+    color: var(--green-dark); /* #047857 - 4.66:1 contrast */
+}
+
 .status-card-icon {
     font-size: 2rem;
     line-height: 1;
@@ -709,11 +739,21 @@ body,
 }
 
 /* Progress-based styling - all white text with gradient background */
-.elapsed-display.progress-low,
-.elapsed-display.progress-medium,
-.elapsed-display.progress-high,
-.elapsed-display.progress-complete {
+/* Task 7.5: Elapsed display state-specific colors (WCAG AA compliant) */
+.elapsed-display.progress-low {
     color: #ffffff;
+}
+
+.elapsed-display.progress-medium {
+    color: var(--yellow-dark);
+}
+
+.elapsed-display.progress-high {
+    color: var(--green-dark);
+}
+
+.elapsed-display.progress-complete {
+    color: var(--green-dark);
 }
 
 /* --- Countdown display - secondary, less prominent --- */
@@ -796,8 +836,9 @@ body,
     width: 0%;
     height: 100%;
     border-radius: 999px;
-    transition: width 0.4s cubic-bezier(0.4, 0.0, 0.2, 1), background-color 0.3s ease;
-    background: rgba(255, 255, 255, 0.95);
+    /* Task 7.4: Smooth 0.8s transition with cubic-bezier for natural feel */
+    transition: width 0.8s cubic-bezier(0.4, 0.0, 0.2, 1), background-color 0.3s ease;
+    background: var(--progress);
 }
 
 /* Task 7.1 threshold model: <50% blue, 50-80% yellow, >80% green */
@@ -1252,7 +1293,7 @@ button:focus-visible,
     }
 }
 
-/* --- Gamification - Calm, structured achievement system --- */
+/* --- Gamification - Calm, structured achievement system (Task 7.7) --- */
 .gamification-section {
     margin-top: var(--space-8); /* More separation */
 }
