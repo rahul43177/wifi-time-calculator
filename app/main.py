@@ -18,7 +18,12 @@ from pydantic import BaseModel
 
 from app.config import settings
 from app.file_store import read_sessions
-from app.analytics import get_monthly_aggregation, get_weekly_aggregation
+from app.analytics import (
+    get_monthly_aggregation,
+    get_monthly_aggregation_async,
+    get_weekly_aggregation,
+    get_weekly_aggregation_async,
+)
 from app.gamification import gamification_service  # Task 7.7
 from app.session_manager import SessionState
 from app.timer_engine import (
@@ -27,8 +32,18 @@ from app.timer_engine import (
     get_elapsed_time,
     get_remaining_time,
     timer_polling_loop,
+    set_mongo_store as set_timer_mongo_store,
 )
-from app.wifi_detector import get_current_ssid, get_session_manager, wifi_polling_loop
+from app.wifi_detector import (
+    get_current_ssid,
+    get_session_manager,
+    set_session_manager,
+    wifi_polling_loop,
+)
+from app.mongodb_store import MongoDBStore
+from app.network_checker import NetworkConnectivityChecker
+from app.timezone_utils import get_today_date_ist
+from app import analytics
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 _logging_configured = False
@@ -228,26 +243,73 @@ logger = logging.getLogger(__name__)
 # Holds references to background tasks so they can be cancelled on shutdown
 _background_tasks: list[asyncio.Task] = []
 
+# Global references for MongoDB and network checking
+_mongo_store: Optional[MongoDBStore] = None
+_network_checker: Optional[NetworkConnectivityChecker] = None
+
+
+async def connectivity_polling_loop():
+    """Background loop to check network connectivity every 30 seconds."""
+    interval = settings.connectivity_check_interval_seconds
+    logger.info(f"Network connectivity monitoring started — interval: {interval}s")
+
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            manager = get_session_manager()
+            if manager:
+                await manager.check_network_connectivity()
+        except Exception:
+            logger.exception("Error during network connectivity check")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Application lifespan manager for startup and shutdown events.
     """
+    global _mongo_store, _network_checker
+
     # Startup
     logger.info("Office Wi-Fi Tracker starting up...")
     logger.info("Monitoring Wi-Fi: %s", settings.office_wifi_name)
     logger.info("Work duration: %d hours", settings.work_duration_hours)
 
-    # Recover any incomplete session from today's log before polling starts
+    # Initialize MongoDB connection
+    _mongo_store = MongoDBStore(settings.mongodb_uri, settings.mongodb_database)
+    await _mongo_store.connect()
+    logger.info("Connected to MongoDB")
+
+    # Initialize network connectivity checker
+    _network_checker = NetworkConnectivityChecker()
+    await _network_checker.initialize()
+    logger.info("Network connectivity checker initialized")
+
+    # Create SessionManager with MongoDB backend
+    from app.session_manager import SessionManager
+    manager = SessionManager(_mongo_store, _network_checker)
+    set_session_manager(manager)
+    logger.info("SessionManager initialized with MongoDB backend")
+
+    # Set MongoDB store in timer engine and analytics
+    set_timer_mongo_store(_mongo_store)
+    analytics.set_mongo_store(_mongo_store)
+    logger.info("MongoDB store configured for timer and analytics")
+
+    # Clean up any stale sessions from previous days
+    today = get_today_date_ist()
+    stale_count = await _mongo_store.close_stale_sessions(today)
+    if stale_count:
+        logger.info(f"Closed {stale_count} stale session(s) from previous days on startup")
+
+    # Recover any active session after app restart
     current_ssid = get_current_ssid()
-    manager = get_session_manager()
-    recovered = manager.recover_session(current_ssid)
+    recovered = await manager.recover_session(current_ssid)
     if recovered:
-        logger.info("Resumed incomplete session from today's log")
-    elif current_ssid == settings.office_wifi_name and manager.state == SessionState.IDLE:
+        logger.info("Resumed active session from MongoDB")
+    elif current_ssid == settings.office_wifi_name:
         # No session to recover but already on office Wi-Fi → start fresh
-        manager.start_session(current_ssid)
+        await manager.start_session(current_ssid)
         logger.info("Started new session — already connected to office Wi-Fi on startup")
 
     # Start Wi-Fi polling background task
@@ -260,6 +322,11 @@ async def lifespan(app: FastAPI):
     _background_tasks.append(timer_task)
     logger.info("Timer engine started")
 
+    # Start network connectivity monitoring background task
+    connectivity_task = asyncio.create_task(connectivity_polling_loop())
+    _background_tasks.append(connectivity_task)
+    logger.info("Network connectivity monitoring started")
+
     yield
 
     # Shutdown — cancel all background tasks
@@ -268,7 +335,17 @@ async def lifespan(app: FastAPI):
         task.cancel()
     await asyncio.gather(*_background_tasks, return_exceptions=True)
     _background_tasks.clear()
-    # Note: Session state persists immediately on every change (no shutdown flush needed)
+
+    # Cleanup network checker
+    if _network_checker:
+        await _network_checker.cleanup()
+        logger.info("Network connectivity checker cleaned up")
+
+    # Disconnect from MongoDB
+    if _mongo_store:
+        await _mongo_store.disconnect()
+        logger.info("Disconnected from MongoDB")
+
     logger.info("All background tasks stopped")
 
 
@@ -321,10 +398,9 @@ async def health_check():
 @app.get("/api/status", response_model=StatusResponse)
 async def get_status() -> StatusResponse:
     """
-    Return current connection and active-session timer status.
+    Return current connection and active-session timer status from MongoDB.
     """
     manager = get_session_manager()
-    active_session = manager.active_session
     current_ssid = get_current_ssid(use_cache=True)  # Use cached SSID for fast API response
     connected = current_ssid == settings.office_wifi_name
 
@@ -337,35 +413,33 @@ async def get_status() -> StatusResponse:
     target_duration = timedelta(hours=target_hours, minutes=target_minutes)
     target_seconds = int(target_duration.total_seconds())
 
-    elapsed = timedelta(0)
-    remaining = target_duration
-    completed_4h = False
-    start_time = None
-    session_active = active_session is not None
+    # Get current status from MongoDB
+    if manager:
+        status = await manager.get_current_status()
+        session_active = status.get("session_active", False)
+        total_minutes = status.get("total_minutes", 0)
+        completed_4h = status.get("completed_4h", False)
 
-    if active_session is not None:
-        start_time_value = getattr(active_session, "start_time", None)
-        if isinstance(start_time_value, str):
-            start_time = start_time_value
+        # Calculate elapsed and remaining
+        elapsed = timedelta(minutes=total_minutes)
+        remaining = target_duration - elapsed
 
-        completed_4h = bool(getattr(active_session, "completed_4h", False))
-        start_dt = _parse_session_datetime(
-            getattr(active_session, "date", None),
-            start_time_value,
-        )
-        if start_dt is None:
-            logger.warning("Invalid active session timestamp in /api/status")
+        # Get today's session start time for display
+        if session_active and _mongo_store:
+            date = get_today_date_ist()
+            doc = await _mongo_store.get_daily_status(date)
+            if doc and doc.get("first_session_start"):
+                start_time = doc["first_session_start"]
+            else:
+                start_time = None
         else:
-            now = _get_now(start_dt.tzinfo)
-            elapsed = get_elapsed_time(start_dt, now=now)
-            remaining = get_remaining_time(
-                start_time=start_dt,
-                target_hours=target_hours,
-                buffer_minutes=target_minutes,
-                now=now,
-            )
-            if remaining <= timedelta(0):
-                completed_4h = True
+            start_time = None
+    else:
+        session_active = False
+        elapsed = timedelta(0)
+        remaining = target_duration
+        completed_4h = False
+        start_time = None
 
     elapsed_seconds = int(elapsed.total_seconds())
     remaining_seconds = int(remaining.total_seconds())
@@ -392,56 +466,37 @@ async def get_status() -> StatusResponse:
 @app.get("/api/today", response_model=TodayResponse)
 async def get_today_data() -> TodayResponse:
     """
-    Return today's session history and total tracked minutes.
+    Return today's session history and total tracked minutes from MongoDB.
     """
-    now = _get_now()
-    today_token = now.strftime("%d-%m-%Y")
-    manager = get_session_manager()
-    active_session = manager.active_session
+    date = get_today_date_ist()  # DD-MM-YYYY in IST
 
-    raw_sessions = read_sessions(now)
-    session_map: dict[tuple[str, str, str], TodaySessionResponse] = {}
+    # Get today's data from MongoDB
+    if _mongo_store:
+        doc = await _mongo_store.get_daily_status(date)
 
-    for entry in raw_sessions:
-        if not isinstance(entry, dict):
-            continue
-        entry_date = entry.get("date")
-        start_time = entry.get("start_time")
-        if entry_date != today_token or not isinstance(start_time, str) or not start_time:
-            continue
+        if doc:
+            # MongoDB stores cumulative daily tracking
+            # Create a single session entry representing all office time today
+            sessions = []
+            if doc.get("first_session_start"):
+                sessions.append(TodaySessionResponse(
+                    start_time=doc["first_session_start"],
+                    end_time=doc.get("last_session_end"),
+                    duration_minutes=doc.get("total_minutes", 0),
+                    completed_4h=doc.get("completed_4h", False),
+                ))
 
-        session_key = (entry_date, start_time, str(entry.get("ssid", "")))
-        session_map[session_key] = TodaySessionResponse(
-            start_time=start_time,
-            end_time=entry.get("end_time") if isinstance(entry.get("end_time"), str) else None,
-            duration_minutes=_safe_duration_minutes(entry.get("duration_minutes")),
-            completed_4h=bool(entry.get("completed_4h", False)),
-        )
-
-    if active_session is not None and getattr(active_session, "date", None) == today_token:
-        active_start = getattr(active_session, "start_time", None)
-        if isinstance(active_start, str) and active_start:
-            active_duration = _safe_duration_minutes(getattr(active_session, "duration_minutes", None))
-            active_start_dt = _parse_session_datetime(today_token, active_start)
-            if active_start_dt is not None:
-                active_now = _get_now(active_start_dt.tzinfo)
-                active_duration = int(
-                    get_elapsed_time(active_start_dt, now=active_now).total_seconds() // 60
-                )
-
-            active_key = (today_token, active_start, str(getattr(active_session, "ssid", "")))
-            session_map[active_key] = TodaySessionResponse(
-                start_time=active_start,
-                end_time=None,
-                duration_minutes=active_duration,
-                completed_4h=bool(getattr(active_session, "completed_4h", False)),
-            )
-
-    sessions = sorted(session_map.values(), key=lambda session: session.start_time)
-    total_minutes = sum(session.duration_minutes or 0 for session in sessions)
+            total_minutes = doc.get("total_minutes", 0)
+        else:
+            sessions = []
+            total_minutes = 0
+    else:
+        # Fallback if MongoDB not initialized
+        sessions = []
+        total_minutes = 0
 
     return TodayResponse(
-        date=today_token,
+        date=date,
         sessions=sessions,
         total_minutes=total_minutes,
         total_display=_format_total_display(total_minutes),
@@ -451,17 +506,19 @@ async def get_today_data() -> TodayResponse:
 @app.get("/api/weekly", response_model=WeeklyResponse)
 async def get_weekly_data(week: Optional[str] = None) -> WeeklyResponse:
     """
-    Return weekly session aggregation.
+    Return weekly session aggregation from MongoDB.
     """
-    return WeeklyResponse(**get_weekly_aggregation(week))
+    data = await get_weekly_aggregation_async(week)
+    return WeeklyResponse(**data)
 
 
 @app.get("/api/monthly", response_model=MonthlyResponse)
 async def get_monthly_data(month: Optional[str] = None) -> MonthlyResponse:
     """
-    Return monthly week-by-week session aggregation.
+    Return monthly week-by-week session aggregation from MongoDB.
     """
-    return MonthlyResponse(**get_monthly_aggregation(month))
+    data = await get_monthly_aggregation_async(month)
+    return MonthlyResponse(**data)
 
 
 # Task 7.7: Gamification endpoint

@@ -120,6 +120,8 @@ class MongoDBStore:
                     "is_active": False,
                     "sessions_count": 0,
                     "paused_duration_minutes": 0,
+                    "session_start_total_minutes": 0,
+                    "session_start_paused_minutes": 0,
                     "grace_period_minutes": 2,  # Default grace period
                     "grace_period_start": None,
                     "has_network_access": True,
@@ -152,22 +154,31 @@ class MongoDBStore:
         Returns:
             UpdateResult
         """
+        first_session_start = start_time.strftime("%H:%M:%S")
         result = await self.db.daily_sessions.update_one(
             {"date": date},
-            {
-                "$set": {
-                    "is_active": True,
-                    "current_session_start": start_time,
-                    "last_activity": start_time,
-                    "grace_period_start": None,  # Clear any grace period
-                    "has_network_access": True,
-                    "updated_at": now_utc()
+            [
+                {
+                    "$set": {
+                        "ssid": ssid,
+                        "is_active": True,
+                        "current_session_start": start_time,
+                        "session_start_total_minutes": {"$ifNull": ["$total_minutes", 0]},
+                        "session_start_paused_minutes": {"$ifNull": ["$paused_duration_minutes", 0]},
+                        "first_session_start": {"$ifNull": ["$first_session_start", first_session_start]},
+                        "last_activity": start_time,
+                        "grace_period_start": None,  # Clear any grace period
+                        "has_network_access": True,
+                        "paused_at": None,
+                        "updated_at": now_utc(),
+                    }
                 },
-                "$inc": {"sessions_count": 1},
-                "$setOnInsert": {
-                    "first_session_start": start_time.strftime("%H:%M:%S")
-                }
-            }
+                {
+                    "$set": {
+                        "sessions_count": {"$add": [{"$ifNull": ["$sessions_count", 0]}, 1]}
+                    }
+                },
+            ],
         )
 
         if result.modified_count > 0:
@@ -227,8 +238,13 @@ class MongoDBStore:
                     "is_active": False,
                     "total_minutes": final_minutes,
                     "last_session_end": end_time.strftime("%H:%M:%S"),
+                    "current_session_start": None,
+                    "session_start_total_minutes": None,
+                    "session_start_paused_minutes": None,
                     "last_activity": end_time,
                     "grace_period_start": None,  # Clear grace period
+                    "paused_at": None,
+                    "has_network_access": True,
                     "updated_at": now_utc()
                 }
             }
@@ -505,6 +521,37 @@ class MongoDBStore:
             Active session document or None
         """
         return await self.db.daily_sessions.find_one({"is_active": True})
+
+    async def close_stale_sessions(self, today_date: str) -> int:
+        """
+        Close any active sessions that are NOT from today.
+        Called on startup to clean up sessions that were left open
+        (e.g., app crashed or was killed without proper shutdown).
+
+        Args:
+            today_date: DD-MM-YYYY format for today
+
+        Returns:
+            Number of stale sessions closed
+        """
+        result = await self.db.daily_sessions.update_many(
+            {"is_active": True, "date": {"$ne": today_date}},
+            {
+                "$set": {
+                    "is_active": False,
+                    "current_session_start": None,
+                    "session_start_total_minutes": None,
+                    "session_start_paused_minutes": None,
+                    "paused_at": None,
+                    "last_activity": now_utc(),
+                    "updated_at": now_utc()
+                }
+            }
+        )
+        count = result.modified_count
+        if count > 0:
+            logger.info(f"Closed {count} stale session(s) from previous days")
+        return count
 
     async def get_sessions_in_range(
         self,

@@ -1,5 +1,5 @@
 """
-Analytics module for aggregating session data.
+Analytics module for aggregating session data with MongoDB support.
 """
 
 import asyncio
@@ -10,8 +10,23 @@ from typing import Any, Dict, List, Optional
 from app.config import settings
 from app.file_store import read_sessions
 from app.timer_engine import _resolve_target_components
+from app.mongodb_store import MongoDBStore
 
 logger = logging.getLogger(__name__)
+
+# Global reference to MongoDB store (set by main.py)
+_mongo_store: Optional[MongoDBStore] = None
+
+
+def set_mongo_store(store: MongoDBStore):
+    """Set the global MongoDB store instance."""
+    global _mongo_store
+    _mongo_store = store
+
+
+def get_mongo_store() -> Optional[MongoDBStore]:
+    """Get the global MongoDB store instance."""
+    return _mongo_store
 
 
 def get_week_range(week_str: Optional[str] = None) -> tuple[datetime, datetime, str]:
@@ -39,12 +54,12 @@ def get_week_range(week_str: Optional[str] = None) -> tuple[datetime, datetime, 
     return start_date, end_date, effective_week_str
 
 
-def get_weekly_aggregation(week_str: Optional[str] = None) -> Dict[str, Any]:
+async def get_weekly_aggregation_async(week_str: Optional[str] = None) -> Dict[str, Any]:
     """
-    Aggregate daily data for the specified week.
+    Aggregate daily data for the specified week using MongoDB.
     """
     start_date, end_date, effective_week_str = get_week_range(week_str)
-    
+
     target_hours, target_minutes = _resolve_target_components(
         test_mode=getattr(settings, "test_mode", False),
         test_duration_minutes=getattr(settings, "test_duration_minutes", 2),
@@ -57,46 +72,77 @@ def get_weekly_aggregation(week_str: Optional[str] = None) -> Dict[str, Any]:
     total_week_minutes = 0
     days_target_met = 0
 
-    current_day = start_date
-    while current_day <= end_date:
-        sessions = read_sessions(current_day)
-        
-        day_minutes = 0
-        session_count = 0
-        
-        # Deduplicate and aggregate
-        seen_sessions = set()
-        for s in sessions:
-            if not isinstance(s, dict):
-                continue
-            
-            # Use (start_time, ssid) as a simple key to avoid double-counting rotated log parts
-            # although read_sessions already handles most of this.
-            key = (s.get("start_time"), s.get("ssid"))
-            if key in seen_sessions:
-                continue
-            seen_sessions.add(key)
-            
-            duration = s.get("duration_minutes")
-            if duration is not None:
-                day_minutes += max(0, int(duration))
-            session_count += 1
+    # Use MongoDB if available, otherwise fallback to file-based
+    store = get_mongo_store()
+    if store:
+        # MongoDB aggregation pipeline
+        current_day = start_date
+        while current_day <= end_date:
+            date_str = current_day.strftime("%d-%m-%Y")
+            doc = await store.get_daily_status(date_str)
 
-        target_met = day_minutes >= target_total_minutes
-        
-        days_data.append({
-            "date": current_day.strftime("%d-%m-%Y"),
-            "day": current_day.strftime("%a"),
-            "total_minutes": day_minutes,
-            "session_count": session_count,
-            "target_met": target_met
-        })
-        
-        total_week_minutes += day_minutes
-        if target_met:
-            days_target_met += 1
-            
-        current_day += timedelta(days=1)
+            if doc:
+                day_minutes = doc.get("total_minutes", 0)
+                session_count = doc.get("sessions_count", 0)
+            else:
+                day_minutes = 0
+                session_count = 0
+
+            target_met = day_minutes >= target_total_minutes
+
+            days_data.append({
+                "date": date_str,
+                "day": current_day.strftime("%a"),
+                "total_minutes": day_minutes,
+                "session_count": session_count,
+                "target_met": target_met
+            })
+
+            total_week_minutes += day_minutes
+            if target_met:
+                days_target_met += 1
+
+            current_day += timedelta(days=1)
+    else:
+        # Fallback to file-based (legacy)
+        current_day = start_date
+        while current_day <= end_date:
+            sessions = read_sessions(current_day)
+
+            day_minutes = 0
+            session_count = 0
+
+            # Deduplicate and aggregate
+            seen_sessions = set()
+            for s in sessions:
+                if not isinstance(s, dict):
+                    continue
+
+                key = (s.get("start_time"), s.get("ssid"))
+                if key in seen_sessions:
+                    continue
+                seen_sessions.add(key)
+
+                duration = s.get("duration_minutes")
+                if duration is not None:
+                    day_minutes += max(0, int(duration))
+                session_count += 1
+
+            target_met = day_minutes >= target_total_minutes
+
+            days_data.append({
+                "date": current_day.strftime("%d-%m-%Y"),
+                "day": current_day.strftime("%a"),
+                "total_minutes": day_minutes,
+                "session_count": session_count,
+                "target_met": target_met
+            })
+
+            total_week_minutes += day_minutes
+            if target_met:
+                days_target_met += 1
+
+            current_day += timedelta(days=1)
 
     avg_minutes = total_week_minutes / 7
 
@@ -107,6 +153,13 @@ def get_weekly_aggregation(week_str: Optional[str] = None) -> Dict[str, Any]:
         "avg_minutes_per_day": round(avg_minutes, 1),
         "days_target_met": days_target_met
     }
+
+
+def get_weekly_aggregation(week_str: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Synchronous wrapper for get_weekly_aggregation_async (for backward compatibility).
+    """
+    return asyncio.run(get_weekly_aggregation_async(week_str))
 
 
 def get_month_range(month_str: Optional[str] = None) -> tuple[datetime, datetime, str]:
@@ -163,15 +216,18 @@ def _aggregate_day_minutes(sessions: Any) -> int:
     return day_minutes
 
 
-def get_monthly_aggregation(month_str: Optional[str] = None) -> Dict[str, Any]:
+async def get_monthly_aggregation_async(month_str: Optional[str] = None) -> Dict[str, Any]:
     """
-    Aggregate month data into week-sized buckets starting from day 1.
+    Aggregate month data into week-sized buckets using MongoDB.
     """
     month_start, month_end, effective_month_str = get_month_range(month_str)
 
     weeks_data = []
     month_total_minutes = 0
     month_days_present = 0
+
+    # Use MongoDB if available, otherwise fallback to file-based
+    store = get_mongo_store()
 
     week_index = 1
     week_start = month_start
@@ -183,12 +239,24 @@ def get_monthly_aggregation(month_str: Optional[str] = None) -> Dict[str, Any]:
 
         current_day = week_start
         while current_day <= week_end:
-            try:
-                sessions = read_sessions(current_day)
-            except Exception:
-                logger.warning("Failed to read sessions for %s during monthly aggregation", current_day)
-                sessions = []
-            day_minutes = _aggregate_day_minutes(sessions)
+            if store:
+                # MongoDB query
+                date_str = current_day.strftime("%d-%m-%Y")
+                try:
+                    doc = await store.get_daily_status(date_str)
+                    day_minutes = doc.get("total_minutes", 0) if doc else 0
+                except Exception:
+                    logger.warning("Failed to get MongoDB status for %s", date_str)
+                    day_minutes = 0
+            else:
+                # Fallback to file-based (legacy)
+                try:
+                    sessions = read_sessions(current_day)
+                except Exception:
+                    logger.warning("Failed to read sessions for %s during monthly aggregation", current_day)
+                    sessions = []
+                day_minutes = _aggregate_day_minutes(sessions)
+
             week_total_minutes += day_minutes
             if day_minutes > 0:
                 week_days_present += 1
@@ -225,3 +293,10 @@ def get_monthly_aggregation(month_str: Optional[str] = None) -> Dict[str, Any]:
         "total_days_present": month_days_present,
         "avg_daily_minutes": month_avg_daily_minutes,
     }
+
+
+def get_monthly_aggregation(month_str: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Synchronous wrapper for get_monthly_aggregation_async (for backward compatibility).
+    """
+    return asyncio.run(get_monthly_aggregation_async(month_str))

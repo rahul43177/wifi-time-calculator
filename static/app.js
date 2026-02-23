@@ -938,9 +938,6 @@
         if (!state.status || !state.status.session_active) {
             return 0;
         }
-        if (state.sessionStartMs !== null) {
-            return Math.max(0, Math.floor((Date.now() - state.sessionStartMs) / 1000));
-        }
         if (state.syncAtMs === null) {
             return Math.max(0, state.baseElapsedSeconds);
         }
@@ -1206,7 +1203,7 @@
                 dom.contextualMessage.textContent = `Last session ended at ${endTime} (${state.today.total_display} today)`;
                 dom.contextualMessage.classList.add("disconnected");
             } else {
-                dom.contextualMessage.textContent = "No active session. Connect to OfficeWifi to start tracking";
+                dom.contextualMessage.textContent = `No active session. Connect to ${window.OFFICE_WIFI_NAME || "office WiFi"} to start tracking`;
                 dom.contextualMessage.classList.add("disconnected");
             }
             return;
