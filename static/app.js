@@ -1268,8 +1268,15 @@
         dom.contextualMessage.className = "contextual-message";
 
         if (!isConnected || !sessionActive) {
-            // Disconnected state
-            if (state.today && state.today.total_display && state.today.total_display !== "0h 00m") {
+            const currentSsid = state.status && state.status.ssid;
+            const officeWifi = window.OFFICE_WIFI_NAME || "";
+            const onDifferentWifi = currentSsid && currentSsid !== officeWifi;
+
+            if (onDifferentWifi) {
+                // Connected to a different WiFi (home, cafe, etc.) — app is resting
+                dom.contextualMessage.textContent = `Out of office — connected to "${currentSsid}"`;
+                dom.contextualMessage.classList.add("disconnected");
+            } else if (state.today && state.today.total_display && state.today.total_display !== "0h 00m") {
                 const lastSession = state.today.sessions && state.today.sessions.length > 0
                     ? state.today.sessions[state.today.sessions.length - 1]
                     : null;
@@ -1277,7 +1284,7 @@
                 dom.contextualMessage.textContent = `Last session ended at ${endTime} (${state.today.total_display} today)`;
                 dom.contextualMessage.classList.add("disconnected");
             } else {
-                dom.contextualMessage.textContent = `No active session. Connect to ${window.OFFICE_WIFI_NAME || "office WiFi"} to start tracking`;
+                dom.contextualMessage.textContent = `No active session. Connect to ${officeWifi || "office WiFi"} to start tracking`;
                 dom.contextualMessage.classList.add("disconnected");
             }
             return;

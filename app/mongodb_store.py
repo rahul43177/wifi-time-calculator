@@ -430,7 +430,7 @@ class MongoDBStore:
                     "updated_at": now_utc()
                 },
                 "$inc": {
-                    "paused_duration_minutes": int(pause_duration)
+                    "paused_duration_minutes": round(pause_duration)
                 }
             }
         )

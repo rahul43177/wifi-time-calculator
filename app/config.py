@@ -39,7 +39,8 @@ class Settings(BaseSettings):
     archive_dir: str = "data/archive"
 
     # MongoDB configuration (NEW)
-    mongodb_uri: str = "mongodb+srv://rahul4317:Ad%400000121Rahul@cluster0.dwi1fgs.mongodb.net/wifi-calculator"
+    # URI must be set in .env — never hardcode credentials here
+    mongodb_uri: str = ""
     mongodb_database: str = "wifi-calculator"
 
     # Grace period settings (NEW)

@@ -84,10 +84,10 @@ async def process_ssid_change(old_ssid: Optional[str], new_ssid: Optional[str]) 
             await manager.start_session(settings.office_wifi_name)
             logger.info(f"Connected to office WiFi: {settings.office_wifi_name}")
 
-        # Office WiFi disconnected - end session immediately
+        # Office WiFi disconnected - start grace period before ending session
         elif is_office_ssid(old_ssid) and not is_office_ssid(new_ssid):
-            await manager.end_session()
-            logger.info("Disconnected from office WiFi - session ended")
+            await manager.handle_disconnect()
+            logger.info("Disconnected from office WiFi - grace period started")
 
     except Exception:
         logger.exception("Failed to process session transition for SSID change")
@@ -241,17 +241,6 @@ async def wifi_polling_loop(
             current_ssid = get_current_ssid()
             manager = get_session_manager()
 
-            # Self-heal: if already on office WiFi but session is not active, start it.
-            if manager is not None and is_office_ssid(current_ssid):
-                status = await manager.get_current_status()
-                if not status.get("session_active", False):
-                    started = await manager.start_session(settings.office_wifi_name)
-                    if started:
-                        logger.info(
-                            "Auto-healed missing session while connected to office WiFi (%s)",
-                            settings.office_wifi_name,
-                        )
-
             if current_ssid != _previous_ssid:
                 logger.info(
                     f"SSID changed: {_previous_ssid or '(none)'} -> {current_ssid or '(none)'}"
@@ -265,6 +254,19 @@ async def wifi_polling_loop(
                     on_change(_previous_ssid, current_ssid)
 
                 _previous_ssid = current_ssid
+
+            elif manager is not None and is_office_ssid(current_ssid):
+                # Self-heal: SSID unchanged but session somehow dropped — restart it.
+                # This only runs when SSID hasn't changed this cycle to avoid
+                # double-calling start_session alongside process_ssid_change.
+                status = await manager.get_current_status()
+                if not status.get("session_active", False):
+                    started = await manager.start_session(settings.office_wifi_name)
+                    if started:
+                        logger.info(
+                            "Auto-healed missing session while connected to office WiFi (%s)",
+                            settings.office_wifi_name,
+                        )
 
         except Exception:
             logger.exception("Error during Wi-Fi poll")
