@@ -1,5 +1,5 @@
 """
-Main FastAPI application for Office Wi-Fi Tracker.
+Main FastAPI application for DailyFour.
 """
 
 import asyncio
@@ -37,6 +37,7 @@ from app.timer_engine import (
 from app.wifi_detector import (
     get_current_ssid,
     get_session_manager,
+    is_office_ssid,
     set_session_manager,
     wifi_polling_loop,
 )
@@ -256,6 +257,9 @@ async def connectivity_polling_loop():
     while True:
         await asyncio.sleep(interval)
         try:
+            current_ssid = get_current_ssid(use_cache=True)
+            if not is_office_ssid(current_ssid):
+                continue
             manager = get_session_manager()
             if manager:
                 await manager.check_network_connectivity()
@@ -271,7 +275,7 @@ async def lifespan(app: FastAPI):
     global _mongo_store, _network_checker
 
     # Startup
-    logger.info("Office Wi-Fi Tracker starting up...")
+    logger.info("DailyFour starting up...")
     logger.info("Monitoring Wi-Fi: %s", settings.office_wifi_name)
     logger.info("Work duration: %d hours", settings.work_duration_hours)
 
@@ -307,9 +311,9 @@ async def lifespan(app: FastAPI):
     recovered = await manager.recover_session(current_ssid)
     if recovered:
         logger.info("Resumed active session from MongoDB")
-    elif current_ssid == settings.office_wifi_name:
+    elif is_office_ssid(current_ssid):
         # No session to recover but already on office Wi-Fi → start fresh
-        await manager.start_session(current_ssid)
+        await manager.start_session(settings.office_wifi_name)
         logger.info("Started new session — already connected to office Wi-Fi on startup")
 
     # Start Wi-Fi polling background task
@@ -330,7 +334,7 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown — cancel all background tasks
-    logger.info("Office Wi-Fi Tracker shutting down...")
+    logger.info("DailyFour shutting down...")
     for task in _background_tasks:
         task.cancel()
     await asyncio.gather(*_background_tasks, return_exceptions=True)
@@ -402,7 +406,7 @@ async def get_status() -> StatusResponse:
     """
     manager = get_session_manager()
     current_ssid = get_current_ssid(use_cache=True)  # Use cached SSID for fast API response
-    connected = current_ssid == settings.office_wifi_name
+    connected = is_office_ssid(current_ssid)
 
     target_hours, target_minutes = _resolve_target_components(
         test_mode=getattr(settings, "test_mode", False),
@@ -413,12 +417,19 @@ async def get_status() -> StatusResponse:
     target_duration = timedelta(hours=target_hours, minutes=target_minutes)
     target_seconds = int(target_duration.total_seconds())
 
-    # Get current status from MongoDB
-    if manager:
+    # Default: no active timer when not connected to configured office SSID.
+    session_active = False
+    elapsed = timedelta(0)
+    remaining = target_duration
+    completed_4h = False
+    start_time = None
+
+    # Only read live session state while connected to office Wi-Fi.
+    if manager and connected:
         status = await manager.get_current_status()
-        session_active = status.get("session_active", False)
+        session_active = bool(status.get("session_active", False))
         total_minutes = status.get("total_minutes", 0)
-        completed_4h = status.get("completed_4h", False)
+        completed_4h = bool(status.get("completed_4h", False))
 
         # Calculate elapsed and remaining
         elapsed = timedelta(minutes=total_minutes)
@@ -432,14 +443,6 @@ async def get_status() -> StatusResponse:
                 start_time = doc["first_session_start"]
             else:
                 start_time = None
-        else:
-            start_time = None
-    else:
-        session_active = False
-        elapsed = timedelta(0)
-        remaining = target_duration
-        completed_4h = False
-        start_time = None
 
     elapsed_seconds = int(elapsed.total_seconds())
     remaining_seconds = int(remaining.total_seconds())

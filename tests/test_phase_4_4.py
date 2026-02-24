@@ -87,7 +87,7 @@ async def test_js_syncs_status_and_today_endpoints() -> None:
 
 @pytest.mark.asyncio
 async def test_js_uses_start_time_for_client_side_elapsed_calculation() -> None:
-    """Client-side elapsed time should be derived from parsed session start timestamp."""
+    """Client-side elapsed time should use synced elapsed baseline plus drift."""
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -96,7 +96,7 @@ async def test_js_uses_start_time_for_client_side_elapsed_calculation() -> None:
     body = response.text
     assert "function parseSessionStartMs(" in body
     assert "state.sessionStartMs = parseSessionStartMs" in body
-    assert "Date.now() - state.sessionStartMs" in body
+    assert "state.baseElapsedSeconds + driftSeconds" in body
 
 
 @pytest.mark.asyncio

@@ -18,7 +18,7 @@
         <div class="header-right">
             <span id="notification-status-badge" class="badge hidden" title="Notification Status"></span>
             <button id="theme-toggle" class="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
-                <span id="theme-icon" aria-hidden="true">🌙</span>
+                <span id="theme-icon" class="theme-icon theme-icon-moon" data-icon="moon" aria-hidden="true"></span>
             </button>
             <nav class="tabs" aria-label="Dashboard sections">
                 <button id="live-tab" class="tab active" data-tab="live" role="tab" aria-selected="true" aria-controls="tab-live" tabindex="0">Live</button>
@@ -87,7 +87,7 @@
         <section class="card timer-section">
             <p class="muted" id="timer-mode-label">Session Progress</p>
             <div id="elapsed-display" class="elapsed-display">
-                <span id="elapsed-time">0h 00m</span>
+                <span id="elapsed-time">00:00:00</span>
                 <span class="elapsed-separator">/</span>
                 <span id="target-display">{{ target_display }}</span>
                 <span id="elapsed-percent" class="elapsed-percent">(0%)</span>
@@ -140,7 +140,10 @@
             <div class="achievements-grid" role="list" aria-label="Achievements">
                 <div class="achievement" data-achievement-id="early_bird" role="listitem">
                     <div class="achievement-badge locked" data-badge="EB" aria-hidden="true">
-                        <span>EB</span>
+                        <svg class="achievement-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="4"></circle>
+                            <path d="M12 2v3M12 19v3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M2 12h3M19 12h3M4.9 19.1l2.2-2.2M16.9 7.1l2.2-2.2"></path>
+                        </svg>
                     </div>
                     <div class="achievement-content">
                         <div class="achievement-name">Early Bird</div>
@@ -150,7 +153,11 @@
                 </div>
                 <div class="achievement" data-achievement-id="marathon_runner" role="listitem">
                     <div class="achievement-badge locked" data-badge="MR" aria-hidden="true">
-                        <span>MR</span>
+                        <svg class="achievement-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 19l4-6 3 2 5-7"></path>
+                            <path d="M9 8a2 2 0 1 0 0.01 0"></path>
+                            <path d="M3 19h18"></path>
+                        </svg>
                     </div>
                     <div class="achievement-content">
                         <div class="achievement-name">Marathon Runner</div>
@@ -160,7 +167,10 @@
                 </div>
                 <div class="achievement" data-achievement-id="consistent" role="listitem">
                     <div class="achievement-badge locked" data-badge="CS" aria-hidden="true">
-                        <span>CS</span>
+                        <svg class="achievement-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M7 12l3 3 7-7"></path>
+                            <path d="M4 12a8 8 0 1 0 16 0"></path>
+                        </svg>
                     </div>
                     <div class="achievement-content">
                         <div class="achievement-name">Consistent</div>
@@ -170,7 +180,9 @@
                 </div>
                 <div class="achievement" data-achievement-id="dedicated" role="listitem">
                     <div class="achievement-badge locked" data-badge="DD" aria-hidden="true">
-                        <span>DD</span>
+                        <svg class="achievement-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3l2.3 4.7 5.2.8-3.8 3.7.9 5.2L12 15l-4.6 2.4.9-5.2-3.8-3.7 5.2-.8z"></path>
+                        </svg>
                     </div>
                     <div class="achievement-content">
                         <div class="achievement-name">Dedicated</div>

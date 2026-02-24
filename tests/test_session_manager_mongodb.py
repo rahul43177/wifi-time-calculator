@@ -273,7 +273,9 @@ async def test_recover_session_active(session_manager, mongo_store, test_date):
 
     import app.session_manager as sm_module
     original_get_date = sm_module.get_today_date_ist
+    original_office_wifi_name = sm_module.settings.office_wifi_name
     sm_module.get_today_date_ist = lambda: test_date
+    sm_module.settings.office_wifi_name = ssid
 
     try:
         # Create active session in MongoDB
@@ -296,6 +298,7 @@ async def test_recover_session_active(session_manager, mongo_store, test_date):
 
     finally:
         sm_module.get_today_date_ist = original_get_date
+        sm_module.settings.office_wifi_name = original_office_wifi_name
 
 
 @pytest.mark.asyncio

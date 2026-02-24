@@ -3,13 +3,13 @@
 **Track Your Daily 4-Hour Work Goal**
 
 DailyFour is a local-first FastAPI application that tracks office presence by detecting Wi-Fi connectivity, managing office sessions, and calculating target completion time (work duration + buffer).  
-It uses JSON Lines files for persistence and includes a browser dashboard for live status and analytics.
+It uses MongoDB-backed daily aggregation with a browser dashboard for live status and analytics.
 
 ## Current Status
 
 **✅ Production Ready - All Core Features Implemented**
 
-Phases 1-6 Complete:
+Phases 1-12 Complete:
 - ✅ Wi-Fi detection with dual fallback (networksetup → system_profiler)
 - ✅ Session lifecycle management with state machine
 - ✅ Timer engine with configurable buffer and test mode
@@ -18,10 +18,12 @@ Phases 1-6 Complete:
 - ✅ Weekly analytics with Chart.js visualization
 - ✅ Monthly analytics with Chart.js visualization
 - ✅ **Auto-start on login (launchd integration)**
+- ✅ Professional UI polish (emoji-free interface, dark-mode contrast fixes, refined chart/table/card styling)
+- ✅ Documented design system (`docs/DESIGN_SYSTEM.md`)
 
-**Test Coverage:** 226 tests, 100% passing
+**Current Test Baseline:** 520 passed, 101 skipped (`venv/bin/python -m pytest -q`)
 
-**Next:** Phase 7 (UI Enhancements) - optional polish
+**Next:** Optional product enhancements (exports, mobile, advanced reporting)
 
 For exact phase/task status, see `docs/action-plan.md`.
 
@@ -32,7 +34,7 @@ For exact phase/task status, see `docs/action-plan.md`.
 - Timer tracking with configurable buffer and optional short test mode
 - Single dashboard with live status, today’s sessions, and weekly analytics
 - Browser and macOS notification support
-- File-based storage only (no database)
+- MongoDB-backed daily session tracking (no SQL database)
 
 ## Tech Stack
 

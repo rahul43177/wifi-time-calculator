@@ -248,6 +248,16 @@ async def timer_polling_loop() -> None:
     while True:
         await asyncio.sleep(interval)
         try:
+            # Hard gate: never run timer math for non-office Wi-Fi.
+            # This avoids unnecessary DB operations while away from office.
+            from app.wifi_detector import get_current_ssid, is_office_ssid
+
+            current_ssid = get_current_ssid(use_cache=True)
+            if not is_office_ssid(current_ssid):
+                notified_date = None
+                logger.debug("Timer check skipped: not on configured office Wi-Fi")
+                continue
+
             store = get_mongo_store()
             if store is None:
                 logger.debug("Timer check skipped: MongoDB store not initialized")

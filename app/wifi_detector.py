@@ -22,6 +22,11 @@ _previous_ssid: Optional[str] = None
 _session_manager: Optional[SessionManager] = None
 _cached_ssid: Optional[str] = None  # Cached SSID to avoid blocking subprocess calls
 
+_AIRPORT_PATH = (
+    "/System/Library/PrivateFrameworks/Apple80211.framework/"
+    "Versions/Current/Resources/airport"
+)
+
 
 def set_session_manager(manager: SessionManager) -> None:
     """
@@ -44,19 +49,29 @@ def get_session_manager() -> Optional[SessionManager]:
     return _session_manager
 
 
+def _normalize_ssid(ssid: Optional[str]) -> str:
+    """Normalize SSID for reliable comparisons."""
+    raw = (ssid or "").strip().casefold()
+    return "".join(ch for ch in raw if ch.isalnum())
+
+
+def is_office_ssid(ssid: Optional[str]) -> bool:
+    """Return True when SSID matches configured office SSID."""
+    return _normalize_ssid(ssid) == _normalize_ssid(settings.office_wifi_name)
+
+
 async def process_ssid_change(old_ssid: Optional[str], new_ssid: Optional[str]) -> None:
     """
     Route Wi-Fi SSID transitions to the session state machine (async).
 
-    Transition rules with grace period:
-    - Non-office -> office: start/resume session (cancels grace period)
-    - Office -> non-office: start grace period (session continues for 2 min)
+    Transition rules:
+    - Non-office -> office: start/resume session
+    - Office -> non-office: end session immediately
 
     Args:
         old_ssid: Previous Wi-Fi SSID.
         new_ssid: Newly detected Wi-Fi SSID.
     """
-    office_ssid = settings.office_wifi_name
     manager = get_session_manager()
 
     if manager is None:
@@ -65,14 +80,14 @@ async def process_ssid_change(old_ssid: Optional[str], new_ssid: Optional[str]) 
 
     try:
         # Office WiFi connected
-        if new_ssid == office_ssid and old_ssid != office_ssid:
-            await manager.start_session(office_ssid)
-            logger.info(f"Connected to office WiFi: {office_ssid}")
+        if is_office_ssid(new_ssid) and not is_office_ssid(old_ssid):
+            await manager.start_session(settings.office_wifi_name)
+            logger.info(f"Connected to office WiFi: {settings.office_wifi_name}")
 
-        # Office WiFi disconnected - start grace period
-        elif old_ssid == office_ssid and new_ssid != office_ssid:
-            await manager.handle_disconnect()
-            logger.info(f"Disconnected from office WiFi - grace period started")
+        # Office WiFi disconnected - end session immediately
+        elif is_office_ssid(old_ssid) and not is_office_ssid(new_ssid):
+            await manager.end_session()
+            logger.info("Disconnected from office WiFi - session ended")
 
     except Exception:
         logger.exception("Failed to process session transition for SSID change")
@@ -82,8 +97,8 @@ def get_current_ssid(use_cache: bool = False) -> Optional[str]:
     """
     Get the currently connected Wi-Fi SSID on macOS.
 
-    Uses `networksetup -getairportnetwork en0` as primary method,
-    falls back to parsing `system_profiler SPAirPortDataType`.
+    Uses `airport -I` as primary method (more reliable for background agents),
+    then `networksetup` fallback on likely interfaces, then `system_profiler`.
 
     Args:
         use_cache: If True, return cached SSID (fast, no subprocess). If False, query system (slow, accurate).
@@ -97,6 +112,11 @@ def get_current_ssid(use_cache: bool = False) -> Optional[str]:
     if use_cache and _cached_ssid is not None:
         return _cached_ssid
 
+    ssid = _get_ssid_via_airport()
+    if ssid is not None:
+        _cached_ssid = ssid
+        return ssid
+
     ssid = _get_ssid_via_networksetup()
     if ssid is not None:
         _cached_ssid = ssid
@@ -107,24 +127,49 @@ def get_current_ssid(use_cache: bool = False) -> Optional[str]:
     return ssid
 
 
-def _get_ssid_via_networksetup() -> Optional[str]:
-    """Primary method: fast (~0.1s)."""
+def _get_ssid_via_airport() -> Optional[str]:
+    """Primary method for macOS background services."""
     try:
         result = subprocess.run(
-            ["networksetup", "-getairportnetwork", "en0"],
+            [_AIRPORT_PATH, "-I"],
             capture_output=True,
             text=True,
             timeout=5,
         )
-        output = result.stdout.strip()
-        # Output format: "Current Wi-Fi Network: <SSID>"
-        if result.returncode == 0 and "Current Wi-Fi Network:" in output:
-            ssid = output.split("Current Wi-Fi Network:")[1].strip()
-            return ssid
+        if result.returncode != 0:
+            return None
+
+        for line in result.stdout.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("SSID:"):
+                ssid = stripped.split("SSID:", 1)[1].strip()
+                if ssid:
+                    return ssid
         return None
     except Exception:
-        logger.debug("networksetup command failed or timed out")
+        logger.debug("airport command failed or timed out")
         return None
+
+
+def _get_ssid_via_networksetup() -> Optional[str]:
+    """Fallback method: try common Wi-Fi interfaces."""
+    for iface in ("en0", "en1"):
+        try:
+            result = subprocess.run(
+                ["networksetup", "-getairportnetwork", iface],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            output = result.stdout.strip()
+            # Output format: "Current Wi-Fi Network: <SSID>"
+            if result.returncode == 0 and "Current Wi-Fi Network:" in output:
+                ssid = output.split("Current Wi-Fi Network:")[1].strip()
+                if ssid:
+                    return ssid
+        except Exception:
+            logger.debug("networksetup command failed or timed out for %s", iface)
+    return None
 
 
 def _get_ssid_via_system_profiler() -> Optional[str]:
@@ -194,6 +239,18 @@ async def wifi_polling_loop(
         await asyncio.sleep(interval)
         try:
             current_ssid = get_current_ssid()
+            manager = get_session_manager()
+
+            # Self-heal: if already on office WiFi but session is not active, start it.
+            if manager is not None and is_office_ssid(current_ssid):
+                status = await manager.get_current_status()
+                if not status.get("session_active", False):
+                    started = await manager.start_session(settings.office_wifi_name)
+                    if started:
+                        logger.info(
+                            "Auto-healed missing session while connected to office WiFi (%s)",
+                            settings.office_wifi_name,
+                        )
 
             if current_ssid != _previous_ssid:
                 logger.info(

@@ -414,8 +414,27 @@ class SessionManager:
                 logger.debug("recover_session: today's session is not active")
                 return False
 
-            # Check if still connected to the same WiFi
-            if current_ssid != doc.get("ssid"):
+            # Check if still connected to the same WiFi and current configured office SSID.
+            # This prevents stale sessions from being resumed after OFFICE_WIFI_NAME changes.
+            def _normalize_ssid(value: Optional[str]) -> str:
+                raw = (value or "").strip().casefold()
+                return "".join(ch for ch in raw if ch.isalnum())
+
+            normalized_current_ssid = _normalize_ssid(current_ssid)
+            normalized_session_ssid = _normalize_ssid(doc.get("ssid"))
+            normalized_configured_ssid = _normalize_ssid(settings.office_wifi_name)
+            configured_ssid_is_placeholder = normalized_configured_ssid in {
+                "",
+                "yourofficewifiname",
+            }
+
+            same_session_ssid = normalized_current_ssid == normalized_session_ssid
+            on_configured_office_ssid = normalized_current_ssid == normalized_configured_ssid
+
+            if (
+                not same_session_ssid
+                or (not configured_ssid_is_placeholder and not on_configured_office_ssid)
+            ):
                 # Disconnected - end the stale session
                 # Set current_date temporarily so end_session works
                 self._current_date = date
@@ -425,7 +444,7 @@ class SessionManager:
                 await self.end_session(final_minutes)
                 logger.info(
                     f"Session recovered: closed stale {doc.get('ssid')} session "
-                    f"(current SSID: {current_ssid})"
+                    f"(current SSID: {current_ssid}, configured office SSID: {settings.office_wifi_name})"
                 )
                 return False
 

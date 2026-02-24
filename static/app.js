@@ -80,7 +80,6 @@
         monthlyChartCanvas: null,
         // Task 7.2: Status cards
         cardConnection: null,
-        cardConnectionIcon: null,
         cardConnectionValue: null,
         cardConnectionDetail: null,
         cardSessionValue: null,
@@ -169,7 +168,6 @@
 
         // Task 7.2: Status cards
         dom.cardConnection = document.getElementById("card-connection");
-        dom.cardConnectionIcon = document.getElementById("connection-icon");
         dom.cardConnectionValue = document.getElementById("card-connection-value");
         dom.cardConnectionDetail = document.getElementById("card-connection-detail");
         dom.cardSessionValue = document.getElementById("card-session-value");
@@ -360,7 +358,10 @@
 
     function updateThemeIcon(theme) {
         if (!dom.themeIcon) return;
-        dom.themeIcon.textContent = theme === "dark" ? "☀️" : "🌙";
+        const isDark = theme === "dark";
+        dom.themeIcon.dataset.icon = isDark ? "sun" : "moon";
+        dom.themeIcon.classList.toggle("theme-icon-sun", isDark);
+        dom.themeIcon.classList.toggle("theme-icon-moon", !isDark);
     }
 
     function toggleTheme() {
@@ -434,8 +435,8 @@
             sessionsCell.textContent = day.session_count;
             
             const statusCell = document.createElement("td");
-            statusCell.textContent = day.target_met ? "✅ Met" : "❌ No";
-            statusCell.className = day.target_met ? "connected" : "muted";
+            statusCell.textContent = day.target_met ? "Met" : "Not Met";
+            statusCell.className = day.target_met ? "status-met" : "status-missed";
             
             row.appendChild(dateCell);
             row.appendChild(dayCell);
@@ -455,9 +456,18 @@
         if (!state.weekly || !dom.weeklyChartCanvas) return;
         
         const ctx = dom.weeklyChartCanvas.getContext("2d");
+        const rootStyles = getComputedStyle(document.documentElement);
+        const textColor = rootStyles.getPropertyValue("--text").trim() || "#0f172a";
+        const textSecondaryColor = rootStyles.getPropertyValue("--text-secondary").trim() || "#475569";
+        const borderColor = rootStyles.getPropertyValue("--border").trim() || "#e2e8f0";
+        const successColor = rootStyles.getPropertyValue("--success").trim() || "#10b981";
+        const errorColor = rootStyles.getPropertyValue("--error").trim() || "#ef4444";
+        const warningColor = rootStyles.getPropertyValue("--warning").trim() || "#f59e0b";
+        const fontSans = rootStyles.getPropertyValue("--font-sans").trim() ||
+            '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
         const labels = state.weekly.days.map(d => d.day);
         const data = state.weekly.days.map(d => d.total_minutes / 60);
-        const colors = state.weekly.days.map(d => d.target_met ? "#22c55e" : "#ef4444");
+        const colors = state.weekly.days.map(d => d.target_met ? successColor : errorColor);
 
         if (state.charts.weekly) {
             state.charts.weekly.destroy();
@@ -482,7 +492,7 @@
                         label: `Target (${formatMinutes(Math.round(targetHours * 60))})`,
                         data: Array(7).fill(targetHours),
                         type: "line",
-                        borderColor: "#f59e0b",
+                        borderColor: warningColor,
                         borderWidth: 2,
                         borderDash: [5, 5],
                         pointRadius: 0,
@@ -502,11 +512,26 @@
                 scales: {
                     y: {
                         beginAtZero: true,
+                        grid: {
+                            color: isDarkMode() ? "rgba(148, 163, 184, 0.16)" : "rgba(148, 163, 184, 0.22)"
+                        },
+                        ticks: {
+                            color: textSecondaryColor
+                        },
                         title: {
                             display: true,
-                            text: "Hours"
+                            text: "Hours",
+                            color: textSecondaryColor
                         },
                         suggestedMax: Math.max(6, targetHours + 1)
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: textSecondaryColor
+                        }
                     }
                 },
                 plugins: {
@@ -519,23 +544,30 @@
                             usePointStyle: true,
                             pointStyle: "circle",
                             font: {
-                                family: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                                family: fontSans,
                                 size: 14,
                                 weight: 500
                             },
-                            color: isDarkMode() ? '#f1f5f9' : '#0f172a',
-                            padding: 8
+                            color: textColor,
+                            padding: 8,
+                            generateLabels(chart) {
+                                const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                labels.forEach(label => {
+                                    label.text = label.text.replace(/[\u{1F300}-\u{1FAFF}]/gu, "").trim();
+                                });
+                                return labels;
+                            }
                         }
                     },
                     // Phase 10: Enhanced tooltips with design system styling
                     tooltip: {
                         enabled: true,
-                        backgroundColor: isDarkMode() 
-                            ? 'rgba(30, 41, 59, 0.95)' 
-                            : 'rgba(255, 255, 255, 0.95)',
-                        titleColor: isDarkMode() ? '#f1f5f9' : '#0f172a',
-                        bodyColor: isDarkMode() ? '#cbd5e1' : '#475569',
-                        borderColor: isDarkMode() ? '#334155' : '#e2e8f0',
+                        backgroundColor: isDarkMode()
+                            ? "rgba(30, 41, 59, 0.95)"
+                            : "rgba(255, 255, 255, 0.95)",
+                        titleColor: textColor,
+                        bodyColor: textSecondaryColor,
+                        borderColor: borderColor,
                         borderWidth: 1,
                         padding: 12,
                         cornerRadius: 8,
@@ -636,6 +668,13 @@
         if (!state.monthly || !dom.monthlyChartCanvas) return;
         
         const ctx = dom.monthlyChartCanvas.getContext("2d");
+        const rootStyles = getComputedStyle(document.documentElement);
+        const textColor = rootStyles.getPropertyValue("--text").trim() || "#0f172a";
+        const textSecondaryColor = rootStyles.getPropertyValue("--text-secondary").trim() || "#475569";
+        const borderColor = rootStyles.getPropertyValue("--border").trim() || "#e2e8f0";
+        const primaryColor = rootStyles.getPropertyValue("--primary").trim() || "#4f46e5";
+        const fontSans = rootStyles.getPropertyValue("--font-sans").trim() ||
+            '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
         const labels = state.monthly.weeks.map(w => w.week);
         const data = state.monthly.weeks.map(w => w.total_minutes / 60);
 
@@ -650,15 +689,15 @@
                 datasets: [{
                     label: "Hours Worked",
                     data: data,
-                    borderColor: "#4f46e5",
-                    backgroundColor: "rgba(79, 70, 229, 0.1)",
+                    borderColor: primaryColor,
+                    backgroundColor: isDarkMode() ? "rgba(99, 102, 241, 0.25)" : "rgba(79, 70, 229, 0.12)",
                     fill: true,
                     tension: 0.3,
                     pointRadius: 5,
-                    pointBackgroundColor: "#4f46e5",
+                    pointBackgroundColor: primaryColor,
                     // Task 7.8: Point hover effects
                     pointHoverRadius: 7,
-                    pointHoverBackgroundColor: "#6366f1",
+                    pointHoverBackgroundColor: primaryColor,
                     pointHoverBorderColor: "#fff",
                     pointHoverBorderWidth: 2
                 }]
@@ -674,25 +713,61 @@
                 scales: {
                     y: {
                         beginAtZero: true,
+                        grid: {
+                            color: isDarkMode() ? "rgba(148, 163, 184, 0.16)" : "rgba(148, 163, 184, 0.22)"
+                        },
+                        ticks: {
+                            color: textSecondaryColor
+                        },
                         title: {
                             display: true,
-                            text: "Hours"
+                            text: "Hours",
+                            color: textSecondaryColor
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: textSecondaryColor
                         }
                     }
                 },
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        position: "top",
+                        align: "end",
+                        labels: {
+                            boxWidth: 12,
+                            usePointStyle: true,
+                            pointStyle: "circle",
+                            font: {
+                                family: fontSans,
+                                size: 14,
+                                weight: 500
+                            },
+                            color: textColor,
+                            padding: 8,
+                            generateLabels(chart) {
+                                const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                labels.forEach(label => {
+                                    label.text = label.text.replace(/[\u{1F300}-\u{1FAFF}]/gu, "").trim();
+                                });
+                                return labels;
+                            }
+                        }
                     },
                     // Phase 10: Enhanced tooltips with design system styling
                     tooltip: {
                         enabled: true,
-                        backgroundColor: isDarkMode() 
-                            ? 'rgba(30, 41, 59, 0.95)' 
-                            : 'rgba(255, 255, 255, 0.95)',
-                        titleColor: isDarkMode() ? '#f1f5f9' : '#0f172a',
-                        bodyColor: isDarkMode() ? '#cbd5e1' : '#475569',
-                        borderColor: isDarkMode() ? '#334155' : '#e2e8f0',
+                        backgroundColor: isDarkMode()
+                            ? "rgba(30, 41, 59, 0.95)"
+                            : "rgba(255, 255, 255, 0.95)",
+                        titleColor: textColor,
+                        bodyColor: textSecondaryColor,
+                        borderColor: borderColor,
                         borderWidth: 1,
                         padding: 12,
                         cornerRadius: 8,
@@ -1011,10 +1086,9 @@
         const targetDisplay = state.status.target_display || "4h 10m";
 
         // Card 1: Connection Status
-        if (dom.cardConnection && dom.cardConnectionIcon && dom.cardConnectionValue && dom.cardConnectionDetail) {
+        if (dom.cardConnection && dom.cardConnectionValue && dom.cardConnectionDetail) {
             dom.cardConnection.classList.toggle("connected", isConnected);
             dom.cardConnection.classList.toggle("disconnected", !isConnected);
-            dom.cardConnectionIcon.textContent = isConnected ? "🌐" : "⚠️";
             dom.cardConnectionValue.textContent = isConnected ? "Connected" : "Disconnected";
             dom.cardConnectionDetail.textContent = ssid;
         }
@@ -1106,7 +1180,7 @@
             dom.timerModeLabel.textContent = "Session Progress";
 
             // Elapsed display
-            if (dom.elapsedTime) dom.elapsedTime.textContent = "0h 00m";
+            if (dom.elapsedTime) dom.elapsedTime.textContent = "00:00:00";
             if (dom.targetDisplay) dom.targetDisplay.textContent = targetDisplay;
             if (dom.elapsedPercent) dom.elapsedPercent.textContent = "(0%)";
 
@@ -1142,7 +1216,7 @@
 
         // Update elapsed display (Task 7.1)
         if (dom.elapsedTime) {
-            dom.elapsedTime.textContent = formatSecondsToHM(elapsedSeconds);
+            dom.elapsedTime.textContent = formatHHMMSS(elapsedSeconds);
         }
         if (dom.targetDisplay) {
             dom.targetDisplay.textContent = targetDisplay;

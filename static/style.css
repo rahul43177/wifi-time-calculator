@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Office Wi-Fi Tracker — Dashboard Stylesheet
+   DailyFour — Dashboard Stylesheet
    Task 4.3: Clean, modern, minimalist CSS
    ========================================================================== */
 
@@ -366,8 +366,9 @@ body,
     background: transparent;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    font-size: 1.1rem;
+    width: 40px;
+    height: 40px;
+    padding: 0;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -385,9 +386,60 @@ body,
     transform: scale(0.95);
 }
 
-.theme-toggle #theme-icon {
+#theme-icon {
+    position: relative;
+    width: 18px;
+    height: 18px;
     display: block;
     transition: transform 0.3s ease-in-out;
+}
+
+#theme-icon::before,
+#theme-icon::after {
+    content: "";
+    position: absolute;
+}
+
+#theme-icon.theme-icon-moon::before {
+    inset: 0;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.9;
+}
+
+#theme-icon.theme-icon-moon::after {
+    width: 14px;
+    height: 14px;
+    top: -1px;
+    left: 7px;
+    border-radius: 50%;
+    background: var(--card-bg);
+}
+
+#theme-icon.theme-icon-sun::before {
+    width: 12px;
+    height: 12px;
+    top: 3px;
+    left: 3px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+}
+
+#theme-icon.theme-icon-sun::after {
+    width: 2px;
+    height: 2px;
+    top: 8px;
+    left: 8px;
+    border-radius: 50%;
+    box-shadow:
+        0 -10px 0 0 currentColor,
+        0 10px 0 0 currentColor,
+        10px 0 0 0 currentColor,
+        -10px 0 0 0 currentColor,
+        7px 7px 0 0 currentColor,
+        -7px 7px 0 0 currentColor,
+        7px -7px 0 0 currentColor,
+        -7px -7px 0 0 currentColor;
 }
 
 .theme-toggle:active #theme-icon {
@@ -420,8 +472,8 @@ body,
 
 .title {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
     letter-spacing: -0.02em;
     color: var(--text);
     /* Remove gradient effect for cleaner look */
@@ -437,10 +489,10 @@ body,
 }
 
 .tab {
-    padding: 10px 20px;
+    padding: var(--space-2) var(--space-5);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
     color: var(--text);
     background: var(--card-bg);
     cursor: pointer;
@@ -504,48 +556,48 @@ body,
 /* Subtle hover elevation - no transform scale */
 .status-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    border-color: rgba(79, 70, 229, 0.35);
 }
 
 /* Color-coded left accent border instead of full gradient */
 #card-connection {
-    border-left: 3px solid #3b82f6; /* Blue */
+    border-left: 3px solid var(--progress); /* Blue */
 }
 
 #card-session {
-    border-left: 3px solid #8b5cf6; /* Purple */
+    border-left: 3px solid var(--primary); /* Indigo */
 }
 
 #card-today {
-    border-left: 3px solid #14b8a6; /* Teal */
+    border-left: 3px solid var(--success); /* Green */
 }
 
 #card-target {
-    border-left: 3px solid #f59e0b; /* Amber */
+    border-left: 3px solid var(--warning); /* Amber */
 }
 
 /* Connection states - just change border color */
 #card-connection.disconnected {
-    border-left-color: #dc2626; /* Red */
+    border-left-color: var(--error); /* Red */
 }
 
 /* Target states - dynamic border color */
 #card-target.progress-complete {
-    border-left-color: #059669; /* Green */
+    border-left-color: var(--success); /* Green */
 }
 
 #card-target.progress-low {
-    border-left-color: #2563eb; /* Blue */
+    border-left-color: var(--progress); /* Blue */
 }
 
 #card-target.progress-medium {
-    border-left-color: #f59e0b; /* Amber */
+    border-left-color: var(--warning); /* Amber */
 }
 
 #card-target.progress-high,
 #card-target.progress-complete {
-    border-left-color: #059669; /* Green */
+    border-left-color: var(--success); /* Green */
 }
 
 /* Task 7.3: WCAG AA compliant text colors for status card values */
@@ -595,7 +647,7 @@ body,
 }
 
 .status-card-value {
-    font-size: 2rem; /* More balanced */
+    font-size: var(--text-2xl);
     font-weight: var(--font-bold);
     color: var(--text);
     margin-bottom: var(--space-1);
@@ -608,16 +660,6 @@ body,
     font-size: var(--text-sm);
     color: var(--text-secondary);
     line-height: var(--leading-normal);
-}
-
-/* Remove color overrides - let text use theme colors */
-.status-card-value {
-    color: var(--text) !important;
-}
-
-.status-card-label,
-.status-card-detail {
-    color: var(--text-secondary) !important;
 }
 
 /* Legacy connection status (kept for backward compatibility, Task 7.3: WCAG AA) */
@@ -659,11 +701,11 @@ body,
 
 .muted {
     color: var(--muted);
-    font-size: 0.92rem;
+    font-size: var(--text-sm);
 }
 
 .sync-status {
-    margin-top: 8px;
+    margin-top: var(--space-2);
 }
 
 .sync-status.error {
@@ -674,7 +716,7 @@ body,
 .timer-section {
     /* More subtle gradient - professional not flashy */
     background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 2px 8px rgba(67, 56, 202, 0.15); /* Softer shadow */
     position: relative;
     overflow: hidden;
@@ -702,8 +744,8 @@ body,
 /* --- Elapsed/Target display - Typography as hero element --- */
 .elapsed-display {
     font-family: var(--font-mono);
-    font-size: 3rem; /* Increased from 2.5rem */
-    font-weight: 800; /* Extra bold for numbers */
+    font-size: clamp(2.2rem, 4.8vw, 3rem);
+    font-weight: var(--font-bold);
     text-align: center;
     margin: var(--space-6) 0 var(--space-4); /* More top breathing */
     color: #ffffff;
@@ -810,7 +852,7 @@ body,
 /* --- Progress bar - cleaner track --- */
 .progress-wrap {
     margin-top: 0;
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
 }
 
 .progress-label {
@@ -852,8 +894,8 @@ body,
 
 /* --- Completion banner (Task 7.3: Enhanced styling) --- */
 .completion {
-    margin-top: 12px;
-    padding: 10px 14px;
+    margin-top: var(--space-3);
+    padding: var(--space-3) var(--space-4);
     background: var(--green-light);
     color: var(--green-dark);
     font-weight: 700;
@@ -910,6 +952,7 @@ table {
     border-spacing: 0;
     margin-top: var(--space-2);
     font-size: var(--text-sm);
+    table-layout: fixed;
 }
 
 thead th {
@@ -932,9 +975,23 @@ tbody tr:hover {
     background: rgba(99, 102, 241, 0.04); /* More subtle */
 }
 
+tbody tr:nth-child(even) {
+    background: rgba(15, 23, 42, 0.02);
+}
+
 tbody td {
     padding: var(--space-3) var(--space-4);
     font-size: var(--text-sm);
+}
+
+td.status-met {
+    color: var(--green-dark);
+    font-weight: var(--font-semibold);
+}
+
+td.status-missed {
+    color: var(--red-dark);
+    font-weight: var(--font-medium);
 }
 
 tbody tr:last-child {
@@ -943,6 +1000,10 @@ tbody tr:last-child {
 
 [data-theme="dark"] tbody tr:hover {
     background: rgba(99, 102, 241, 0.1);
+}
+
+[data-theme="dark"] tbody tr:nth-child(even) {
+    background: rgba(15, 23, 42, 0.22);
 }
 
 /* Dark mode adjustments for refined design */
@@ -1564,3 +1625,347 @@ button:focus-visible,
         padding: 8px 6px;
     }
 }
+
+/* --- Phase 13: Ultra-Minimal Visual Pass (Apple/Notion-inspired) --- */
+:root {
+    --bg: #f5f5f7;
+    --card-bg: #ffffff;
+    --surface-muted: #f3f4f6;
+    --text: #111827;
+    --text-secondary: #6b7280;
+    --border: #e5e7eb;
+    --border-strong: #d1d5db;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-dark: var(--primary-hover);
+    --primary-light: #dbeafe;
+    --progress: var(--primary);
+    --progress-warning: var(--primary);
+    --progress-complete: var(--primary);
+}
+
+[data-theme="dark"] {
+    --bg: #0f1115;
+    --card-bg: #151922;
+    --surface-muted: #1a2030;
+    --text: #f3f4f6;
+    --text-secondary: #a8b0bd;
+    --border: #2a3140;
+    --border-strong: #3a4355;
+    --primary: #60a5fa;
+    --primary-hover: #93c5fd;
+    --primary-dark: var(--primary-hover);
+    --primary-light: #1e3a5f;
+    --progress: var(--primary);
+    --progress-warning: var(--primary);
+    --progress-complete: var(--primary);
+}
+
+body {
+    background:
+        radial-gradient(1100px 600px at 10% -10%, rgba(15, 23, 42, 0.06), transparent 55%),
+        var(--bg);
+}
+
+[data-theme="dark"] body {
+    background:
+        radial-gradient(900px 540px at 12% -12%, rgba(255, 255, 255, 0.04), transparent 52%),
+        var(--bg);
+}
+
+.dashboard {
+    max-width: 1080px;
+}
+
+.card {
+    border-radius: 18px;
+    border-color: var(--border);
+    box-shadow: 0 8px 26px rgba(15, 23, 42, 0.04);
+}
+
+.card:hover {
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme="dark"] .card {
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+[data-theme="dark"] .card:hover {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+    background: var(--card-bg);
+    border-radius: 22px;
+}
+
+.header::after {
+    display: none;
+}
+
+.tabs {
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-muted);
+}
+
+.tab {
+    min-height: 34px;
+    border: none;
+    border-radius: 999px;
+    color: var(--text-secondary);
+    background: transparent;
+    padding: 0.45rem 0.95rem;
+}
+
+.tab:hover {
+    transform: none;
+    color: var(--text);
+    border-color: transparent;
+    background: rgba(17, 24, 39, 0.06);
+}
+
+[data-theme="dark"] .tab:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tab.active {
+    color: var(--text);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .tab.active {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.status-card {
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: none;
+}
+
+.status-card:hover {
+    transform: none;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    border-color: var(--border-strong);
+}
+
+#card-connection,
+#card-session,
+#card-today,
+#card-target,
+#card-connection.disconnected,
+#card-target.progress-low,
+#card-target.progress-medium,
+#card-target.progress-high,
+#card-target.progress-complete {
+    border-left: 1px solid var(--border);
+}
+
+.status-card-value {
+    font-weight: var(--font-semibold);
+}
+
+.timer-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: none;
+}
+
+.timer-section::before {
+    display: none;
+}
+
+#timer-mode-label {
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: var(--font-semibold);
+}
+
+.elapsed-display {
+    color: var(--text);
+    font-weight: var(--font-medium);
+    letter-spacing: -0.01em;
+    margin: var(--space-5) 0 var(--space-4);
+}
+
+.elapsed-separator {
+    color: var(--text-secondary);
+}
+
+.elapsed-percent {
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-weight: var(--font-medium);
+}
+
+.elapsed-display.progress-low,
+.elapsed-display.progress-medium,
+.elapsed-display.progress-high {
+    color: var(--text);
+}
+
+.elapsed-display.progress-complete {
+    color: var(--primary);
+}
+
+.countdown-label {
+    color: var(--text-secondary);
+}
+
+.timer-countdown {
+    color: var(--text);
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+}
+
+.progress-track {
+    height: 2px;
+    margin: var(--space-5) 0 var(--space-6);
+    background: var(--border);
+}
+
+.progress-fill,
+.progress-fill.warning,
+.progress-fill.complete {
+    background: var(--primary);
+}
+
+.contextual-message {
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.contextual-message.milestone,
+.contextual-message.celebration {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.contextual-message.disconnected {
+    background: rgba(220, 38, 38, 0.08);
+    color: var(--error);
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
+.btn-secondary {
+    border-radius: 999px;
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+}
+
+.stat-card {
+    border-radius: 16px;
+    border-left: 1px solid var(--border);
+    box-shadow: none;
+}
+
+.stat-card:hover {
+    transform: none;
+    border-left-color: var(--border-strong);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.stat-card:nth-child(2),
+.stat-card:nth-child(3) {
+    border-left-color: var(--border);
+}
+
+.streak-item {
+    border-radius: 16px;
+    box-shadow: none;
+}
+
+.streak-value {
+    color: var(--text);
+}
+
+.achievement {
+    border-radius: 16px;
+}
+
+.achievement::before {
+    display: none;
+}
+
+.achievement-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.achievement-badge.locked {
+    opacity: 0.2;
+    filter: none;
+}
+
+.achievement-icon {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.achievement.earned {
+    border-color: rgba(37, 99, 235, 0.24);
+}
+
+.achievement.earned .achievement-badge,
+.achievement.earned .achievement-badge[data-badge="EB"],
+.achievement.earned .achievement-badge[data-badge="MR"],
+.achievement.earned .achievement-badge[data-badge="CS"],
+.achievement.earned .achievement-badge[data-badge="DD"] {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.achievement-status {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.achievement.earned .achievement-status {
+    color: var(--primary);
+}
+
+.status-card,
+.streak-item,
+.achievement,
+.stat-card {
+    animation: none;
+}
+
+@media (max-width: 600px) {
+    .tabs {
+        width: 100%;
+        justify-content: space-between;
+        overflow-x: auto;
+    }
+
+    .tab {
+        flex: 1 0 auto;
+        min-width: max-content;
+    }
+
+    .timer-section {
+        border-radius: 18px;
+    }
+}
+
