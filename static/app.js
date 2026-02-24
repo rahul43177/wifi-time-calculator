@@ -36,7 +36,6 @@
     const SYNC_INTERVAL_MS = 30000;
     const STATUS_ENDPOINT = "/api/status";
     const TODAY_ENDPOINT = "/api/today";
-    const GAMIFICATION_ENDPOINT = "/api/gamification"; // Task 7.7
 
     const dom = {
         connectionStatus: null,
@@ -52,9 +51,9 @@
         elapsedPercent: null,
         freeAtLabel: null,
         freeAtTime: null,
-        progressPercent: null,
         progressTrack: null,
         progressFill: null,
+        progressRingFill: null,
         completionBanner: null,
         completedTotal: null,
         todaySessionsBody: null,
@@ -103,12 +102,14 @@
         today: null,
         weekly: null,
         monthly: null,
-        gamification: null, // Task 7.7: Gamification data
-        syncAtMs: null,
-        sessionStartMs: null,
+        // Epoch milliseconds when the latest /api/status payload was synced.
+        // We always compute live duration from this anchor + Date.now() drift.
+        // This makes elapsed time timezone-safe because epoch math is absolute.
+        syncEpochMs: null,
         baseElapsedSeconds: 0,
         baseRemainingSeconds: 0,
         targetSeconds: null,
+        progressRingCircumference: 0,
         // Task 7.4: Track completion state for celebration animation
         wasCompleted: false,
         // Task 7.5: Track which milestone message was last shown
@@ -137,9 +138,9 @@
         dom.elapsedPercent = document.getElementById("elapsed-percent");
         dom.freeAtLabel = document.getElementById("free-at-label");
         dom.freeAtTime = document.getElementById("free-at-time");
-        dom.progressPercent = document.getElementById("progress-percent");
         dom.progressFill = document.getElementById("progress-fill");
         dom.progressTrack = document.querySelector(".progress-track");
+        dom.progressRingFill = document.getElementById("progress-ring-fill");
         dom.completionBanner = document.getElementById("completion-banner");
         dom.completedTotal = document.getElementById("completed-total");
         dom.contextualMessage = document.getElementById("contextual-message"); // Task 7.5
@@ -191,12 +192,6 @@
 
         // Task 7.9: Screen reader announcements
         dom.timerAnnouncements = document.getElementById("timer-announcements");
-
-        // Task 7.7: Gamification elements
-        dom.currentStreak = document.getElementById("current-streak");
-        dom.longestStreak = document.getElementById("longest-streak");
-        dom.totalDaysMet = document.getElementById("total-days-met");
-        dom.achievementsGrid = document.querySelector(".achievements-grid");
     }
 
     function hasRequiredDom() {
@@ -869,14 +864,6 @@
         return `${hours}h ${String(minutes).padStart(2, "0")}m`;
     }
 
-    function formatSecondsToHM(totalSeconds) {
-        const safeSeconds = Math.max(0, toInt(totalSeconds, 0));
-        const totalMinutes = Math.floor(safeSeconds / 60);
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        return `${hours}h ${String(minutes).padStart(2, "0")}m`;
-    }
-
     function formatPercent(value) {
         const clamped = clamp(Number(value) || 0, 0, 100);
         if (Number.isInteger(clamped)) {
@@ -899,26 +886,23 @@
         return `${formatted} IST`;
     }
 
-    function parseSessionStartMs(dateToken, startTime) {
-        if (typeof dateToken !== "string" || typeof startTime !== "string") {
-            return null;
+    function initializeProgressRing() {
+        if (!dom.progressRingFill) {
+            return;
         }
-        const dateMatch = dateToken.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-        const timeMatch = startTime.match(/^(\d{2}):(\d{2}):(\d{2})$/);
-        if (!dateMatch || !timeMatch) {
-            return null;
+        const radius = Number(dom.progressRingFill.getAttribute("r")) || 96;
+        state.progressRingCircumference = 2 * Math.PI * radius;
+        dom.progressRingFill.style.strokeDasharray = `${state.progressRingCircumference}`;
+        dom.progressRingFill.style.strokeDashoffset = `${state.progressRingCircumference}`;
+    }
+
+    function updateProgressRing(progressValue) {
+        if (!dom.progressRingFill || state.progressRingCircumference <= 0) {
+            return;
         }
-        const day = Number(dateMatch[1]);
-        const month = Number(dateMatch[2]) - 1;
-        const year = Number(dateMatch[3]);
-        const hour = Number(timeMatch[1]);
-        const minute = Number(timeMatch[2]);
-        const second = Number(timeMatch[3]);
-        const timestamp = new Date(year, month, day, hour, minute, second).getTime();
-        if (!Number.isFinite(timestamp)) {
-            return null;
-        }
-        return timestamp;
+        const clampedPercent = clamp(progressValue, 0, 100);
+        const offset = state.progressRingCircumference * (1 - clampedPercent / 100);
+        dom.progressRingFill.style.strokeDashoffset = `${offset}`;
     }
 
     function renderTargetCompletionTime(remainingSeconds, sessionActive, completed) {
@@ -951,14 +935,6 @@
         dom.freeAtTime.textContent = formatIst12HourTime(completionTime);
     }
 
-    function getLocalDateToken() {
-        const now = new Date();
-        const day = String(now.getDate()).padStart(2, "0");
-        const month = String(now.getMonth() + 1).padStart(2, "0");
-        const year = String(now.getFullYear());
-        return `${day}-${month}-${year}`;
-    }
-
     function applyStatus(statusPayload) {
         const newCompleted4h = Boolean(statusPayload.completed_4h);
 
@@ -969,27 +945,16 @@
 
         state.lastCompleted4h = newCompleted4h;
         state.status = statusPayload;
-        state.syncAtMs = Date.now();
+        state.syncEpochMs = Date.now();
         state.baseElapsedSeconds = toInt(statusPayload.elapsed_seconds, 0);
         state.baseRemainingSeconds = toInt(statusPayload.remaining_seconds, 0);
 
         const derivedTarget = state.baseElapsedSeconds + state.baseRemainingSeconds;
         state.targetSeconds = derivedTarget > 0 ? derivedTarget : null;
-
-        const sessionDate =
-            state.today && typeof state.today.date === "string"
-                ? state.today.date
-                : getLocalDateToken();
-        state.sessionStartMs = parseSessionStartMs(sessionDate, statusPayload.start_time);
     }
 
     function applyToday(todayPayload) {
         state.today = todayPayload;
-    }
-
-    // Task 7.7: Apply gamification data to state
-    function applyGamification(gamificationPayload) {
-        state.gamification = gamificationPayload;
     }
 
     function updateNotificationBadge() {
@@ -1061,10 +1026,12 @@
         if (!state.status || !state.status.session_active) {
             return 0;
         }
-        if (state.syncAtMs === null) {
+        if (state.syncEpochMs === null) {
             return Math.max(0, state.baseElapsedSeconds);
         }
-        const driftSeconds = Math.floor((Date.now() - state.syncAtMs) / 1000);
+        // Timezone-safe duration math:
+        // server gives elapsed_seconds baseline, client advances it using epoch ms drift.
+        const driftSeconds = Math.floor((Date.now() - state.syncEpochMs) / 1000);
         return Math.max(0, state.baseElapsedSeconds + driftSeconds);
     }
 
@@ -1078,10 +1045,10 @@
         if (state.targetSeconds !== null) {
             return state.targetSeconds - elapsedSeconds;
         }
-        if (state.syncAtMs === null) {
+        if (state.syncEpochMs === null) {
             return state.baseRemainingSeconds;
         }
-        const driftSeconds = Math.floor((Date.now() - state.syncAtMs) / 1000);
+        const driftSeconds = Math.floor((Date.now() - state.syncEpochMs) / 1000);
         return state.baseRemainingSeconds - driftSeconds;
     }
 
@@ -1144,10 +1111,11 @@
         // Card 2: Session Details
         if (dom.cardSessionValue && dom.cardSessionDetail) {
             if (sessionActive) {
-                dom.cardSessionValue.textContent = state.status.start_time || "--:--:--";
-                dom.cardSessionDetail.textContent = `${formatSecondsToHM(elapsedSeconds)} elapsed`;
+                dom.cardSessionValue.textContent = formatHHMMSS(elapsedSeconds);
+                const startedAt = state.status.start_time || "--:--:--";
+                dom.cardSessionDetail.textContent = `Started ${startedAt} IST`;
             } else {
-                dom.cardSessionValue.textContent = "--:--:--";
+                dom.cardSessionValue.textContent = "00:00:00";
                 dom.cardSessionDetail.textContent = "No active session";
             }
         }
@@ -1199,6 +1167,10 @@
         const complete = completed || progressValue > 80;
         dom.progressFill.classList.toggle("warning", warning);
         dom.progressFill.classList.toggle("complete", complete);
+        if (dom.progressRingFill) {
+            dom.progressRingFill.classList.toggle("warning", warning);
+            dom.progressRingFill.classList.toggle("complete", complete);
+        }
     }
 
     function updateElapsedDisplayColor(progressValue, completed) {
@@ -1240,6 +1212,7 @@
             if (dom.progressTrack) {
                 dom.progressTrack.setAttribute("aria-valuenow", "0");
             }
+            updateProgressRing(0);
 
             dom.completionBanner.classList.add("hidden");
             updateProgressClasses(0, false);
@@ -1293,6 +1266,7 @@
         if (dom.progressTrack) {
             dom.progressTrack.setAttribute("aria-valuenow", String(Math.round(progressValue)));
         }
+        updateProgressRing(progressValue);
 
         // Apply color coding
         updateProgressClasses(progressValue, completed);
@@ -1371,8 +1345,13 @@
         } else {
             // Time-of-day contextual greeting
             const now = new Date();
-            const nowInIst = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-            const hour = nowInIst.getHours();
+            const hourParts = new Intl.DateTimeFormat("en-IN", {
+                timeZone: "Asia/Kolkata",
+                hour: "2-digit",
+                hour12: false,
+            }).formatToParts(now);
+            const hourPart = hourParts.find((part) => part.type === "hour");
+            const hour = toInt(hourPart ? hourPart.value : 0, 0);
 
             if (hour < 12) {
                 // Morning greeting with ETA
@@ -1402,46 +1381,6 @@
             }
             state.lastMilestoneShown = milestone;
         }
-    }
-
-    // Task 7.7: Render gamification data (streaks and achievements)
-    function renderGamification() {
-        if (!state.gamification) return;
-        if (!dom.currentStreak || !dom.longestStreak || !dom.totalDaysMet) return;
-
-        // Update streak counters
-        dom.currentStreak.textContent = state.gamification.current_streak || 0;
-        dom.longestStreak.textContent = state.gamification.longest_streak || 0;
-        dom.totalDaysMet.textContent = state.gamification.total_days_met_target || 0;
-
-        // Update achievements
-        if (!dom.achievementsGrid || !state.gamification.achievements) return;
-
-        state.gamification.achievements.forEach(achievement => {
-            const achievementEl = dom.achievementsGrid.querySelector(`[data-achievement-id="${achievement.id}"]`);
-            if (!achievementEl) return;
-
-            const badgeEl = achievementEl.querySelector('.achievement-badge');
-            const statusEl = achievementEl.querySelector('.achievement-status');
-
-            if (achievement.earned) {
-                achievementEl.classList.add('earned');
-                if (badgeEl) badgeEl.classList.remove('locked');
-                if (statusEl) {
-                    statusEl.classList.remove('locked');
-                    statusEl.textContent = '✓';
-                    statusEl.setAttribute('aria-label', 'Earned');
-                }
-            } else {
-                achievementEl.classList.remove('earned');
-                if (badgeEl) badgeEl.classList.add('locked');
-                if (statusEl) {
-                    statusEl.classList.add('locked');
-                    statusEl.textContent = '';
-                    statusEl.setAttribute('aria-label', 'Locked');
-                }
-            }
-        });
     }
 
     function getSessionStatusText(session) {
@@ -1525,19 +1464,16 @@
         renderTodaySessions();
         renderStatusCards(); // Task 7.2
         renderContextualMessage(); // Task 7.5
-        renderGamification(); // Task 7.7
     }
 
     async function syncFromBackend() {
         try {
-            const [statusPayload, todayPayload, gamificationPayload] = await Promise.all([
+            const [statusPayload, todayPayload] = await Promise.all([
                 fetchJson(STATUS_ENDPOINT),
                 fetchJson(TODAY_ENDPOINT),
-                fetchJson(GAMIFICATION_ENDPOINT), // Task 7.7
             ]);
             applyToday(todayPayload);
             applyStatus(statusPayload);
-            applyGamification(gamificationPayload); // Task 7.7
             clearSyncError();
             renderAll();
         } catch (error) {
@@ -1555,6 +1491,7 @@
 
         // Task 7.6: Initialize theme toggle
         initializeThemeToggle();
+        initializeProgressRing();
 
         // Tab wiring with keyboard navigation (Task 7.9)
         document.querySelectorAll(".tab").forEach(tab => {

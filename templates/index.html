@@ -83,14 +83,24 @@
 
         <p id="sync-status" class="muted sync-status hidden" aria-live="polite"></p>
 
-        <!-- Timer Display Section (Task 7.1) -->
+        <!-- Timer Display Section -->
         <section class="card timer-section">
             <p class="muted" id="timer-mode-label">Session Progress</p>
-            <div id="elapsed-display" class="elapsed-display">
-                <span id="elapsed-time">00:00:00</span>
-                <span class="elapsed-separator">/</span>
-                <span id="target-display">{{ target_display }}</span>
-                <span id="elapsed-percent" class="elapsed-percent">(0%)</span>
+            <div class="timer-ring-layout">
+                <div class="timer-ring-wrap">
+                    <svg class="progress-ring" viewBox="0 0 220 220" aria-hidden="true" focusable="false">
+                        <circle class="progress-ring-track" cx="110" cy="110" r="96"></circle>
+                        <circle id="progress-ring-fill" class="progress-ring-fill" cx="110" cy="110" r="96"></circle>
+                    </svg>
+                    <div id="elapsed-display" class="elapsed-display">
+                        <span id="elapsed-time">00:00:00</span>
+                        <span class="elapsed-target">
+                            <span class="elapsed-separator">/</span>
+                            <span id="target-display">{{ target_display }}</span>
+                        </span>
+                        <span id="elapsed-percent" class="elapsed-percent">(0%)</span>
+                    </div>
+                </div>
             </div>
             <div class="progress-wrap">
                 <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -109,92 +119,6 @@
             <!-- Task 7.5: Contextual Insights & Messaging -->
             <p id="contextual-message" class="contextual-message"></p>
             <p id="completion-banner" class="completion hidden">Completed! Total: <span id="completed-total">00:00:00</span></p>
-        </section>
-
-        <!-- Task 7.7: Gamification Section -->
-        <section class="card gamification-section">
-            <h2>Progress & Achievements</h2>
-
-            <!-- Streak Counter -->
-            <div class="streak-display">
-                <div class="streak-item">
-                    <div class="streak-content">
-                        <div class="streak-label">Current Streak</div>
-                        <div id="current-streak" class="streak-value">0</div>
-                        <div class="streak-sublabel">days</div>
-                    </div>
-                </div>
-                <div class="streak-item">
-                    <div class="streak-content">
-                        <div class="streak-label">Longest Streak</div>
-                        <div id="longest-streak" class="streak-value">0</div>
-                        <div class="streak-sublabel">days</div>
-                    </div>
-                </div>
-                <div class="streak-item">
-                    <div class="streak-content">
-                        <div class="streak-label">Total Days</div>
-                        <div id="total-days-met" class="streak-value">0</div>
-                        <div class="streak-sublabel">target met</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Achievements Grid -->
-            <div class="achievements-grid" role="list" aria-label="Achievements">
-                <div class="achievement" data-achievement-id="early_bird" role="listitem">
-                    <div class="achievement-badge locked" data-badge="EB" aria-hidden="true">
-                        <svg class="achievement-icon" viewBox="0 0 24 24" aria-hidden="true">
-                            <circle cx="12" cy="12" r="4"></circle>
-                            <path d="M12 2v3M12 19v3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M2 12h3M19 12h3M4.9 19.1l2.2-2.2M16.9 7.1l2.2-2.2"></path>
-                        </svg>
-                    </div>
-                    <div class="achievement-content">
-                        <div class="achievement-name">Early Bird</div>
-                        <div class="achievement-description">Started work before 9 AM</div>
-                    </div>
-                    <div class="achievement-status locked" aria-label="Locked"></div>
-                </div>
-                <div class="achievement" data-achievement-id="marathon_runner" role="listitem">
-                    <div class="achievement-badge locked" data-badge="MR" aria-hidden="true">
-                        <svg class="achievement-icon" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M6 19l4-6 3 2 5-7"></path>
-                            <path d="M9 8a2 2 0 1 0 0.01 0"></path>
-                            <path d="M3 19h18"></path>
-                        </svg>
-                    </div>
-                    <div class="achievement-content">
-                        <div class="achievement-name">Marathon Runner</div>
-                        <div class="achievement-description">Worked 5+ hours in one session</div>
-                    </div>
-                    <div class="achievement-status locked" aria-label="Locked"></div>
-                </div>
-                <div class="achievement" data-achievement-id="consistent" role="listitem">
-                    <div class="achievement-badge locked" data-badge="CS" aria-hidden="true">
-                        <svg class="achievement-icon" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M7 12l3 3 7-7"></path>
-                            <path d="M4 12a8 8 0 1 0 16 0"></path>
-                        </svg>
-                    </div>
-                    <div class="achievement-content">
-                        <div class="achievement-name">Consistent</div>
-                        <div class="achievement-description">Met target 5 days in a row</div>
-                    </div>
-                    <div class="achievement-status locked" aria-label="Locked"></div>
-                </div>
-                <div class="achievement" data-achievement-id="dedicated" role="listitem">
-                    <div class="achievement-badge locked" data-badge="DD" aria-hidden="true">
-                        <svg class="achievement-icon" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 3l2.3 4.7 5.2.8-3.8 3.7.9 5.2L12 15l-4.6 2.4.9-5.2-3.8-3.7 5.2-.8z"></path>
-                        </svg>
-                    </div>
-                    <div class="achievement-content">
-                        <div class="achievement-name">Dedicated</div>
-                        <div class="achievement-description">Met target on 10+ different days</div>
-                    </div>
-                    <div class="achievement-status locked" aria-label="Locked"></div>
-                </div>
-            </div>
         </section>
     </div>
 
