@@ -11,12 +11,22 @@ from app.network_checker import NetworkConnectivityChecker
 from app.config import settings
 
 
+async def _connect_store_or_skip(store: MongoDBStore) -> None:
+    """Connect to MongoDB or skip test when integration environment is unavailable."""
+    if not settings.mongodb_uri:
+        pytest.skip("MongoDB integration tests skipped: mongodb_uri is not configured")
+    try:
+        await store.connect()
+    except Exception as exc:
+        pytest.skip(f"MongoDB integration tests skipped: {exc}")
+
+
 @pytest.mark.asyncio
 async def test_mongodb_connection():
     """Test basic MongoDB connection"""
     store = MongoDBStore(settings.mongodb_uri, settings.mongodb_database)
 
-    await store.connect()
+    await _connect_store_or_skip(store)
     assert store.client is not None
     assert store.db is not None
 
@@ -28,7 +38,7 @@ async def test_mongodb_connection():
 async def test_create_daily_session():
     """Test creating a new daily session"""
     store = MongoDBStore(settings.mongodb_uri, settings.mongodb_database)
-    await store.connect()
+    await _connect_store_or_skip(store)
 
     try:
         date = "15-02-2026-TEST"
@@ -57,7 +67,7 @@ async def test_create_daily_session():
 async def test_start_and_end_session():
     """Test starting and ending a session"""
     store = MongoDBStore(settings.mongodb_uri, settings.mongodb_database)
-    await store.connect()
+    await _connect_store_or_skip(store)
 
     try:
         date = "15-02-2026-TEST2"
@@ -102,7 +112,7 @@ async def test_start_and_end_session():
 async def test_grace_period():
     """Test grace period functionality"""
     store = MongoDBStore(settings.mongodb_uri, settings.mongodb_database)
-    await store.connect()
+    await _connect_store_or_skip(store)
 
     try:
         date = "15-02-2026-TEST3"
@@ -144,7 +154,7 @@ async def test_grace_period():
 async def test_network_connectivity_pause_resume():
     """Test network connectivity pause/resume"""
     store = MongoDBStore(settings.mongodb_uri, settings.mongodb_database)
-    await store.connect()
+    await _connect_store_or_skip(store)
 
     try:
         date = "15-02-2026-TEST4"
@@ -188,7 +198,7 @@ async def test_network_connectivity_pause_resume():
 async def test_mark_completed():
     """Test marking 4-hour goal as completed"""
     store = MongoDBStore(settings.mongodb_uri, settings.mongodb_database)
-    await store.connect()
+    await _connect_store_or_skip(store)
 
     try:
         date = "15-02-2026-TEST5"
@@ -240,7 +250,7 @@ async def test_cumulative_tracking_scenario():
     This is the key requirement for the new system.
     """
     store = MongoDBStore(settings.mongodb_uri, settings.mongodb_database)
-    await store.connect()
+    await _connect_store_or_skip(store)
 
     try:
         date = "15-02-2026-TEST6"

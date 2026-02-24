@@ -15,6 +15,29 @@ from httpx import ASGITransport, AsyncClient
 from app.main import app
 
 
+def _extract_js_function(js_source: str, function_signature: str) -> str:
+    """Extract a full JS function block by balancing braces."""
+    start = js_source.find(function_signature)
+    if start == -1:
+        return ""
+
+    open_brace = js_source.find("{", start)
+    if open_brace == -1:
+        return js_source[start:]
+
+    depth = 0
+    for index in range(open_brace, len(js_source)):
+        char = js_source[index]
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return js_source[start:index + 1]
+
+    return js_source[start:]
+
+
 # =============================================================================
 # HTML Structure Tests
 # =============================================================================
@@ -236,9 +259,7 @@ async def test_contextual_message_handles_disconnected_state() -> None:
 
     js = response.text
 
-    # Find renderContextualMessage function
-    func_start = js.find("function renderContextualMessage()")
-    func_section = js[func_start:func_start + 3000]
+    func_section = _extract_js_function(js, "function renderContextualMessage()")
 
     # Task 7.5: Disconnected state handling
     assert "isConnected" in func_section
@@ -256,9 +277,7 @@ async def test_contextual_message_handles_milestone_progression() -> None:
 
     js = response.text
 
-    # Find renderContextualMessage function
-    func_start = js.find("function renderContextualMessage()")
-    func_section = js[func_start:func_start + 3000]
+    func_section = _extract_js_function(js, "function renderContextualMessage()")
 
     # Task 7.5: Milestone checks
     assert "progressValue >= 90" in func_section
@@ -276,9 +295,7 @@ async def test_contextual_message_shows_completion_celebration() -> None:
 
     js = response.text
 
-    # Find renderContextualMessage function
-    func_start = js.find("function renderContextualMessage()")
-    func_section = js[func_start:func_start + 3000]
+    func_section = _extract_js_function(js, "function renderContextualMessage()")
 
     # Task 7.5: Completion celebration
     assert "Target completed" in func_section or "completed" in func_section
@@ -295,9 +312,7 @@ async def test_contextual_message_shows_morning_greeting_with_eta() -> None:
 
     js = response.text
 
-    # Find renderContextualMessage function
-    func_start = js.find("function renderContextualMessage()")
-    func_section = js[func_start:func_start + 3000]
+    func_section = _extract_js_function(js, "function renderContextualMessage()")
 
     # Task 7.5: Morning greeting with ETA calculation
     assert "hour < 12" in func_section or "morning" in func_section.lower()
@@ -315,9 +330,7 @@ async def test_contextual_message_uses_time_of_day_context() -> None:
 
     js = response.text
 
-    # Find renderContextualMessage function
-    func_start = js.find("function renderContextualMessage()")
-    func_section = js[func_start:func_start + 3000]
+    func_section = _extract_js_function(js, "function renderContextualMessage()")
 
     # Task 7.5: Time-of-day checks
     assert "hour" in func_section.lower()

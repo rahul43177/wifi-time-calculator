@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 _mongo_store: Optional[MongoDBStore] = None
 
 
-def set_mongo_store(store: MongoDBStore):
+def set_mongo_store(store: Optional[MongoDBStore]):
     """Set the global MongoDB store instance."""
     global _mongo_store
     _mongo_store = store
@@ -27,6 +27,11 @@ def set_mongo_store(store: MongoDBStore):
 def get_mongo_store() -> Optional[MongoDBStore]:
     """Get the global MongoDB store instance."""
     return _mongo_store
+
+
+def _is_mongo_store_ready(store: Optional[MongoDBStore]) -> bool:
+    """Return True only when store exists and has an initialized db handle."""
+    return bool(store and getattr(store, "db", None) is not None)
 
 
 def get_week_range(week_str: Optional[str] = None) -> tuple[datetime, datetime, str]:
@@ -74,7 +79,7 @@ async def get_weekly_aggregation_async(week_str: Optional[str] = None) -> Dict[s
 
     # Use MongoDB if available, otherwise fallback to file-based
     store = get_mongo_store()
-    if store:
+    if _is_mongo_store_ready(store):
         # MongoDB aggregation pipeline
         current_day = start_date
         while current_day <= end_date:
@@ -239,7 +244,7 @@ async def get_monthly_aggregation_async(month_str: Optional[str] = None) -> Dict
 
         current_day = week_start
         while current_day <= week_end:
-            if store:
+            if _is_mongo_store_ready(store):
                 # MongoDB query
                 date_str = current_day.strftime("%d-%m-%Y")
                 try:

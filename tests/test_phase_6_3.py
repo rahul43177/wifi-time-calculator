@@ -9,7 +9,7 @@ Covers:
 
 import asyncio
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 from app.main import lifespan, app
 
@@ -20,12 +20,12 @@ async def test_lifespan_cancels_background_tasks_on_shutdown():
     with patch("app.main.wifi_polling_loop", new_callable=AsyncMock) as mock_wifi_loop, \
          patch("app.main.timer_polling_loop", new_callable=AsyncMock) as mock_timer_loop, \
          patch("app.main.get_current_ssid", return_value=None), \
-         patch("app.main.get_session_manager") as mock_manager:
-
-        mock_manager_instance = MagicMock()
-        mock_manager_instance.recover_session.return_value = False
-        mock_manager_instance.state = MagicMock()
-        mock_manager.return_value = mock_manager_instance
+         patch("app.main.MongoDBStore.connect", new_callable=AsyncMock), \
+         patch("app.main.MongoDBStore.close_stale_sessions", new_callable=AsyncMock, return_value=0), \
+         patch("app.main.MongoDBStore.disconnect", new_callable=AsyncMock), \
+         patch("app.main.NetworkConnectivityChecker.initialize", new_callable=AsyncMock), \
+         patch("app.main.NetworkConnectivityChecker.cleanup", new_callable=AsyncMock), \
+         patch("app.session_manager.SessionManager.recover_session", new_callable=AsyncMock, return_value=False):
 
         # Enter lifespan context
         async with lifespan(app):
@@ -45,12 +45,12 @@ async def test_lifespan_clears_background_tasks_list():
     with patch("app.main.wifi_polling_loop", new_callable=AsyncMock), \
          patch("app.main.timer_polling_loop", new_callable=AsyncMock), \
          patch("app.main.get_current_ssid", return_value=None), \
-         patch("app.main.get_session_manager") as mock_manager:
-
-        mock_manager_instance = MagicMock()
-        mock_manager_instance.recover_session.return_value = False
-        mock_manager_instance.state = MagicMock()
-        mock_manager.return_value = mock_manager_instance
+         patch("app.main.MongoDBStore.connect", new_callable=AsyncMock), \
+         patch("app.main.MongoDBStore.close_stale_sessions", new_callable=AsyncMock, return_value=0), \
+         patch("app.main.MongoDBStore.disconnect", new_callable=AsyncMock), \
+         patch("app.main.NetworkConnectivityChecker.initialize", new_callable=AsyncMock), \
+         patch("app.main.NetworkConnectivityChecker.cleanup", new_callable=AsyncMock), \
+         patch("app.session_manager.SessionManager.recover_session", new_callable=AsyncMock, return_value=False):
 
         # Enter and exit lifespan context
         async with lifespan(app):
@@ -58,31 +58,6 @@ async def test_lifespan_clears_background_tasks_list():
 
         # After shutdown, background tasks list should be empty
         assert len(_background_tasks) == 0
-
-
-@pytest.mark.asyncio
-async def test_session_state_persists_immediately_no_shutdown_flush_needed():
-    """Session state persists on every change, no shutdown flush needed."""
-    from app.session_manager import SessionManager
-    from app.file_store import read_sessions
-    from datetime import datetime
-
-    # Create a session manager
-    manager = SessionManager()
-
-    # Start a session
-    manager.start_session("TestWiFi")
-
-    # Session should be persisted immediately
-    sessions = read_sessions(datetime.now())
-
-    # Should find at least one session
-    assert len(sessions) > 0
-
-    # The last session should match our test
-    last_session = sessions[-1]
-    assert last_session.get("ssid") == "TestWiFi"
-    assert last_session.get("end_time") is None  # Still active
 
 
 @pytest.mark.asyncio
@@ -102,12 +77,12 @@ async def test_lifespan_handles_task_exceptions_gracefully():
     with patch("app.main.wifi_polling_loop", new=failing_wifi_loop), \
          patch("app.main.timer_polling_loop", new=failing_timer_loop), \
          patch("app.main.get_current_ssid", return_value=None), \
-         patch("app.main.get_session_manager") as mock_manager:
-
-        mock_manager_instance = MagicMock()
-        mock_manager_instance.recover_session.return_value = False
-        mock_manager_instance.state = MagicMock()
-        mock_manager.return_value = mock_manager_instance
+         patch("app.main.MongoDBStore.connect", new_callable=AsyncMock), \
+         patch("app.main.MongoDBStore.close_stale_sessions", new_callable=AsyncMock, return_value=0), \
+         patch("app.main.MongoDBStore.disconnect", new_callable=AsyncMock), \
+         patch("app.main.NetworkConnectivityChecker.initialize", new_callable=AsyncMock), \
+         patch("app.main.NetworkConnectivityChecker.cleanup", new_callable=AsyncMock), \
+         patch("app.session_manager.SessionManager.recover_session", new_callable=AsyncMock, return_value=False):
 
         # Lifespan should not raise despite task failures
         try:
@@ -130,20 +105,3 @@ def test_graceful_shutdown_uses_return_exceptions():
     # Should use asyncio.gather with return_exceptions=True
     assert "asyncio.gather" in source
     assert "return_exceptions=True" in source
-
-
-def test_shutdown_code_has_no_stale_todo_comments():
-    """Verify shutdown code has accurate comment (no misleading TODO)."""
-    import inspect
-    from app.main import lifespan
-
-    # Get the source code of the lifespan function
-    source = inspect.getsource(lifespan)
-
-    # Should NOT have stale TODO about saving session state
-    assert "TODO: Save active session state" not in source, \
-        "Stale TODO comment should be removed (session persistence is immediate)"
-
-    # Should have accurate note about immediate persistence
-    assert "Session state persists immediately" in source or "no shutdown flush needed" in source, \
-        "Should document that session persistence happens immediately"

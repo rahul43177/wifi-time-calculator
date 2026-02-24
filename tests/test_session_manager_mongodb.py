@@ -20,8 +20,15 @@ from app.config import settings
 @pytest_asyncio.fixture
 async def mongo_store():
     """Create MongoDB store for testing"""
+    if not settings.mongodb_uri:
+        pytest.skip("MongoDB integration tests skipped: mongodb_uri is not configured")
+
     store = MongoDBStore(settings.mongodb_uri, settings.mongodb_database)
-    await store.connect()
+    try:
+        await store.connect()
+    except Exception as exc:
+        pytest.skip(f"MongoDB integration tests skipped: {exc}")
+
     yield store
     await store.disconnect()
 
