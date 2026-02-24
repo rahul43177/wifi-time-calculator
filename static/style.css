@@ -1828,6 +1828,34 @@ body {
     border: 1px solid var(--border);
 }
 
+.free-at-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-4);
+}
+
+.free-at-label {
+    color: var(--text-secondary);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: var(--font-semibold);
+}
+
+.free-at-time {
+    font-family: var(--font-mono);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: var(--text);
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-variant-numeric: tabular-nums;
+}
+
 .progress-track {
     height: 2px;
     margin: var(--space-5) 0 var(--space-6);
@@ -1967,5 +1995,9 @@ body {
     .timer-section {
         border-radius: 18px;
     }
-}
 
+    .free-at-section {
+        flex-direction: column;
+        gap: var(--space-1);
+    }
+}

@@ -50,6 +50,8 @@
         elapsedTime: null,
         targetDisplay: null,
         elapsedPercent: null,
+        freeAtLabel: null,
+        freeAtTime: null,
         progressPercent: null,
         progressTrack: null,
         progressFill: null,
@@ -133,6 +135,8 @@
         dom.elapsedTime = document.getElementById("elapsed-time");
         dom.targetDisplay = document.getElementById("target-display");
         dom.elapsedPercent = document.getElementById("elapsed-percent");
+        dom.freeAtLabel = document.getElementById("free-at-label");
+        dom.freeAtTime = document.getElementById("free-at-time");
         dom.progressPercent = document.getElementById("progress-percent");
         dom.progressFill = document.getElementById("progress-fill");
         dom.progressTrack = document.querySelector(".progress-track");
@@ -881,6 +885,20 @@
         return `${clamped.toFixed(1)}%`;
     }
 
+    function formatIst12HourTime(date) {
+        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+            return "--:--:-- -- IST";
+        }
+        const formatted = date.toLocaleTimeString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+        });
+        return `${formatted} IST`;
+    }
+
     function parseSessionStartMs(dateToken, startTime) {
         if (typeof dateToken !== "string" || typeof startTime !== "string") {
             return null;
@@ -901,6 +919,36 @@
             return null;
         }
         return timestamp;
+    }
+
+    function renderTargetCompletionTime(remainingSeconds, sessionActive, completed) {
+        if (!dom.freeAtTime || !dom.freeAtLabel) {
+            return;
+        }
+
+        if (!sessionActive) {
+            dom.freeAtLabel.textContent = "You can leave at (IST):";
+            dom.freeAtTime.textContent = "--:--:-- -- IST";
+            return;
+        }
+
+        if (completed) {
+            dom.freeAtLabel.textContent = "Target completed at (IST):";
+        } else {
+            dom.freeAtLabel.textContent = "You can leave at (IST):";
+        }
+
+        const backendTime = state.status && typeof state.status.target_completion_time_ist === "string"
+            ? state.status.target_completion_time_ist
+            : "";
+        if (backendTime.trim()) {
+            dom.freeAtTime.textContent = backendTime;
+            return;
+        }
+
+        const safeRemaining = Math.max(0, toInt(remainingSeconds, 0));
+        const completionTime = new Date(Date.now() + safeRemaining * 1000);
+        dom.freeAtTime.textContent = formatIst12HourTime(completionTime);
     }
 
     function getLocalDateToken() {
@@ -1196,6 +1244,7 @@
             dom.completionBanner.classList.add("hidden");
             updateProgressClasses(0, false);
             updateElapsedDisplayColor(0, false);
+            renderTargetCompletionTime(0, false, false);
             return;
         }
 
@@ -1236,6 +1285,8 @@
             dom.timerDisplay.textContent = formatHHMMSS(Math.max(0, remainingSeconds));
             dom.completionBanner.classList.add("hidden");
         }
+
+        renderTargetCompletionTime(remainingSeconds, true, completed);
 
         // Update progress bar
         dom.progressFill.style.width = `${clamp(progressValue, 0, 100)}%`;
@@ -1320,14 +1371,21 @@
         } else {
             // Time-of-day contextual greeting
             const now = new Date();
-            const hour = now.getHours();
+            const nowInIst = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+            const hour = nowInIst.getHours();
 
             if (hour < 12) {
                 // Morning greeting with ETA
                 const etaMinutes = Math.ceil(remainingSeconds / 60);
                 const etaTime = new Date(now.getTime() + etaMinutes * 60000);
-                const etaStr = etaTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                message = `Good morning. At this pace, you'll reach your goal by ${etaStr}.`;
+                const etaStr = etaTime.toLocaleTimeString("en-IN", {
+                    timeZone: "Asia/Kolkata",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: true,
+                });
+                message = `Good morning. At this pace, you'll reach your goal by ${etaStr} IST.`;
             } else if (hour < 17) {
                 message = "Afternoon progress. Keep it up.";
             } else {

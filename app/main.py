@@ -6,7 +6,7 @@ import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, tzinfo
+from datetime import datetime, timedelta, timezone, tzinfo
 from logging.handlers import RotatingFileHandler
 from typing import Any, Optional
 
@@ -43,7 +43,7 @@ from app.wifi_detector import (
 )
 from app.mongodb_store import MongoDBStore
 from app.network_checker import NetworkConnectivityChecker
-from app.timezone_utils import get_today_date_ist
+from app.timezone_utils import format_time_ist, get_today_date_ist, now_ist
 from app import analytics
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -96,6 +96,7 @@ class StatusResponse(BaseModel):
     completed_4h: bool
     progress_percent: float
     target_display: str
+    target_completion_time_ist: str | None
 
 
 class TodaySessionResponse(BaseModel):
@@ -222,6 +223,59 @@ def _format_total_display(total_minutes: int) -> str:
     safe_total = max(0, total_minutes)
     hours, minutes = divmod(safe_total, 60)
     return f"{hours}h {minutes:02d}m"
+
+
+def _format_ist_time_12h(dt: Optional[datetime]) -> Optional[str]:
+    """Format datetime as 12-hour IST with seconds."""
+    if dt is None:
+        return None
+    return format_time_ist(dt, "%I:%M:%S %p IST")
+
+
+def _parse_legacy_utc_datetime(session_date: str, session_time: str) -> Optional[datetime]:
+    """Parse legacy HH:MM:SS values that were stored as UTC clock time."""
+    parsed = _parse_session_datetime(session_date, session_time)
+    if parsed is None:
+        return None
+    return parsed.replace(tzinfo=timezone.utc)
+
+
+def _resolve_start_time_ist(doc: dict[str, Any], session_date: str) -> Optional[str]:
+    """Resolve session start display time in IST from MongoDB document."""
+    first_start_utc = doc.get("first_session_start_utc")
+    if isinstance(first_start_utc, datetime):
+        return _format_ist_time_12h(first_start_utc)
+
+    current_start_utc = doc.get("current_session_start")
+    if isinstance(current_start_utc, datetime):
+        return _format_ist_time_12h(current_start_utc)
+
+    legacy_start = doc.get("first_session_start")
+    if isinstance(legacy_start, str):
+        legacy_utc = _parse_legacy_utc_datetime(session_date, legacy_start)
+        return _format_ist_time_12h(legacy_utc)
+
+    return None
+
+
+def _resolve_end_time_ist(doc: dict[str, Any], session_date: str) -> Optional[str]:
+    """Resolve session end display time in IST from MongoDB document."""
+    last_end_utc = doc.get("last_session_end_utc")
+    if isinstance(last_end_utc, datetime):
+        return _format_ist_time_12h(last_end_utc)
+
+    # For completed sessions, last_activity is the session end timestamp.
+    if not bool(doc.get("is_active", False)):
+        last_activity = doc.get("last_activity")
+        if isinstance(last_activity, datetime):
+            return _format_ist_time_12h(last_activity)
+
+    legacy_end = doc.get("last_session_end")
+    if isinstance(legacy_end, str):
+        legacy_utc = _parse_legacy_utc_datetime(session_date, legacy_end)
+        return _format_ist_time_12h(legacy_utc)
+
+    return None
 
 
 def _calculate_progress_percent(
@@ -423,6 +477,7 @@ async def get_status() -> StatusResponse:
     remaining = target_duration
     completed_4h = False
     start_time = None
+    target_completion_time_ist = None
 
     # Only read live session state while connected to office Wi-Fi.
     if manager and connected:
@@ -439,13 +494,14 @@ async def get_status() -> StatusResponse:
         if session_active and _mongo_store:
             date = get_today_date_ist()
             doc = await _mongo_store.get_daily_status(date)
-            if doc and doc.get("first_session_start"):
-                start_time = doc["first_session_start"]
-            else:
-                start_time = None
+            if doc:
+                start_time = _resolve_start_time_ist(doc, date)
 
     elapsed_seconds = int(elapsed.total_seconds())
     remaining_seconds = int(remaining.total_seconds())
+    if session_active:
+        target_completion_dt = now_ist() + timedelta(seconds=max(0, remaining_seconds))
+        target_completion_time_ist = _format_ist_time_12h(target_completion_dt)
 
     return StatusResponse(
         connected=connected,
@@ -463,6 +519,7 @@ async def get_status() -> StatusResponse:
             completed=completed_4h,
         ),
         target_display=_format_target_display(target_hours, target_minutes),
+        target_completion_time_ist=target_completion_time_ist,
     )
 
 
@@ -481,10 +538,11 @@ async def get_today_data() -> TodayResponse:
             # MongoDB stores cumulative daily tracking
             # Create a single session entry representing all office time today
             sessions = []
-            if doc.get("first_session_start"):
+            session_start = _resolve_start_time_ist(doc, date)
+            if session_start:
                 sessions.append(TodaySessionResponse(
-                    start_time=doc["first_session_start"],
-                    end_time=doc.get("last_session_end"),
+                    start_time=session_start,
+                    end_time=_resolve_end_time_ist(doc, date),
                     duration_minutes=doc.get("total_minutes", 0),
                     completed_4h=doc.get("completed_4h", False),
                 ))

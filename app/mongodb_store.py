@@ -16,7 +16,7 @@ from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ReturnDocument
 import certifi
-from app.timezone_utils import now_utc
+from app.timezone_utils import format_time_ist, now_utc
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +154,7 @@ class MongoDBStore:
         Returns:
             UpdateResult
         """
-        first_session_start = start_time.strftime("%H:%M:%S")
+        first_session_start = format_time_ist(start_time, "%I:%M:%S %p IST")
         result = await self.db.daily_sessions.update_one(
             {"date": date},
             [
@@ -166,6 +166,7 @@ class MongoDBStore:
                         "session_start_total_minutes": {"$ifNull": ["$total_minutes", 0]},
                         "session_start_paused_minutes": {"$ifNull": ["$paused_duration_minutes", 0]},
                         "first_session_start": {"$ifNull": ["$first_session_start", first_session_start]},
+                        "first_session_start_utc": {"$ifNull": ["$first_session_start_utc", start_time]},
                         "last_activity": start_time,
                         "grace_period_start": None,  # Clear any grace period
                         "has_network_access": True,
@@ -237,7 +238,8 @@ class MongoDBStore:
                 "$set": {
                     "is_active": False,
                     "total_minutes": final_minutes,
-                    "last_session_end": end_time.strftime("%H:%M:%S"),
+                    "last_session_end": format_time_ist(end_time, "%I:%M:%S %p IST"),
+                    "last_session_end_utc": end_time,
                     "current_session_start": None,
                     "session_start_total_minutes": None,
                     "session_start_paused_minutes": None,
