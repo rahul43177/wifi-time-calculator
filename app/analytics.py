@@ -93,19 +93,23 @@ async def get_weekly_aggregation_async(week_str: Optional[str] = None) -> Dict[s
                 day_minutes = 0
                 session_count = 0
 
-            target_met = day_minutes >= target_total_minutes
+            # Changed: Target is now "days in office" not "hours worked"
+            # A day counts if you came to office (any time > 0)
+            was_in_office = day_minutes > 0
+            target_met = day_minutes >= target_total_minutes  # Keep for backward compatibility
 
             days_data.append({
                 "date": date_str,
                 "day": current_day.strftime("%a"),
                 "total_minutes": day_minutes,
                 "session_count": session_count,
-                "target_met": target_met
+                "target_met": target_met,
+                "was_in_office": was_in_office  # New field
             })
 
             total_week_minutes += day_minutes
-            if target_met:
-                days_target_met += 1
+            if was_in_office:
+                days_target_met += 1  # Now counts "days in office" not "days that met time target"
 
             current_day += timedelta(days=1)
     else:
@@ -133,30 +137,37 @@ async def get_weekly_aggregation_async(week_str: Optional[str] = None) -> Dict[s
                     day_minutes += max(0, int(duration))
                 session_count += 1
 
-            target_met = day_minutes >= target_total_minutes
+            # Changed: Target is now "days in office" not "hours worked"
+            was_in_office = day_minutes > 0
+            target_met = day_minutes >= target_total_minutes  # Keep for backward compatibility
 
             days_data.append({
                 "date": current_day.strftime("%d-%m-%Y"),
                 "day": current_day.strftime("%a"),
                 "total_minutes": day_minutes,
                 "session_count": session_count,
-                "target_met": target_met
+                "target_met": target_met,
+                "was_in_office": was_in_office  # New field
             })
 
             total_week_minutes += day_minutes
-            if target_met:
-                days_target_met += 1
+            if was_in_office:
+                days_target_met += 1  # Now counts "days in office"
 
             current_day += timedelta(days=1)
 
-    avg_minutes = total_week_minutes / 7
+    # Calculate average only for office days (days with time > 0)
+    office_days_count = sum(1 for day in days_data if day["total_minutes"] > 0)
+    avg_minutes = total_week_minutes / office_days_count if office_days_count > 0 else 0
 
     return {
         "week": effective_week_str,
         "days": days_data,
         "total_minutes": total_week_minutes,
         "avg_minutes_per_day": round(avg_minutes, 1),
-        "days_target_met": days_target_met
+        "days_target_met": days_target_met,  # Kept for backward compatibility
+        "days_in_office": days_target_met,  # NEW: Number of days you came to office (target: 3/week)
+        "office_days_count": office_days_count  # NEW: For debugging/display
     }
 
 

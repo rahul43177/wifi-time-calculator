@@ -79,17 +79,17 @@
         prevMonthBtn: null,
         nextMonthBtn: null,
         monthlyChartCanvas: null,
-        // Task 7.2: Status cards
+        // Status cards (simplified for clarity)
         cardConnection: null,
         cardConnectionValue: null,
         cardConnectionDetail: null,
-        cardSessionValue: null,
-        cardSessionDetail: null,
+        cardFreeAtValue: null,
+        cardFreeAtDetail: null,
         cardTodayValue: null,
         cardTodayDetail: null,
-        cardTarget: null,
-        cardTargetValue: null,
-        cardTargetDetail: null,
+        cardRemaining: null,
+        cardRemainingValue: null,
+        cardRemainingDetail: null,
         // Task 7.4: Timer section for celebration animation
         timerSection: null,
         // Task 7.6: Dark mode toggle
@@ -171,17 +171,17 @@
         dom.nextMonthBtn = document.getElementById("next-month");
         dom.monthlyChartCanvas = document.getElementById("monthly-chart");
 
-        // Task 7.2: Status cards
+        // Status cards (simplified)
         dom.cardConnection = document.getElementById("card-connection");
         dom.cardConnectionValue = document.getElementById("card-connection-value");
         dom.cardConnectionDetail = document.getElementById("card-connection-detail");
-        dom.cardSessionValue = document.getElementById("card-session-value");
-        dom.cardSessionDetail = document.getElementById("card-session-detail");
+        dom.cardFreeAtValue = document.getElementById("card-free-at-value");
+        dom.cardFreeAtDetail = document.getElementById("card-free-at-detail");
         dom.cardTodayValue = document.getElementById("card-today-value");
         dom.cardTodayDetail = document.getElementById("card-today-detail");
-        dom.cardTarget = document.getElementById("card-target");
-        dom.cardTargetValue = document.getElementById("card-target-value");
-        dom.cardTargetDetail = document.getElementById("card-target-detail");
+        dom.cardRemaining = document.getElementById("card-remaining");
+        dom.cardRemainingValue = document.getElementById("card-remaining-value");
+        dom.cardRemainingDetail = document.getElementById("card-remaining-detail");
 
         // Task 7.4: Timer section for celebration animation
         dom.timerSection = document.querySelector(".timer-section");
@@ -447,7 +447,9 @@
         
         dom.weeklyTotalHours.textContent = formatMinutes(state.weekly.total_minutes);
         dom.weeklyAvgHours.textContent = formatMinutes(Math.round(state.weekly.avg_minutes_per_day));
-        dom.weeklyTargetsMet.textContent = `${state.weekly.days_target_met} / 7`;
+        // Changed: Target is now 3 days in office per week (not 7 days with time target)
+        const daysInOffice = state.weekly.days_in_office || state.weekly.days_target_met || 0;
+        dom.weeklyTargetsMet.textContent = `${daysInOffice} / 3 days`;
         dom.currentWeekLabel.textContent = state.weekly.week;
     }
 
@@ -1085,7 +1087,7 @@
         }
     }
 
-    // Task 7.2: Render status cards
+    // Render status cards (simplified for clarity)
     function renderStatusCards() {
         if (!state.status) {
             return;
@@ -1097,8 +1099,6 @@
         const elapsedSeconds = getLiveElapsedSeconds();
         const remainingSeconds = getLiveRemainingSeconds(elapsedSeconds);
         const completed = Boolean(state.status.completed_4h) || remainingSeconds <= 0;
-        const progressValue = getLiveProgressPercent(elapsedSeconds, completed);
-        const targetDisplay = state.status.target_display || "4h 10m";
 
         // Card 1: Connection Status
         if (dom.cardConnection && dom.cardConnectionValue && dom.cardConnectionDetail) {
@@ -1108,15 +1108,36 @@
             dom.cardConnectionDetail.textContent = ssid;
         }
 
-        // Card 2: Session Details
-        if (dom.cardSessionValue && dom.cardSessionDetail) {
-            if (sessionActive) {
-                dom.cardSessionValue.textContent = formatHHMMSS(elapsedSeconds);
-                const startedAt = state.status.start_time || "--:--:--";
-                dom.cardSessionDetail.textContent = `Started ${startedAt} IST`;
+        // Card 2: Free At (when you can leave)
+        if (dom.cardFreeAtValue && dom.cardFreeAtDetail) {
+            if (!sessionActive) {
+                dom.cardFreeAtValue.textContent = "--:--:--";
+                dom.cardFreeAtDetail.textContent = "No active session";
+            } else if (completed) {
+                // Show when target was completed
+                const backendTime = state.status.target_completion_time_ist || "";
+                dom.cardFreeAtValue.textContent = backendTime || "Completed";
+                dom.cardFreeAtDetail.textContent = "Target completed";
             } else {
-                dom.cardSessionValue.textContent = "00:00:00";
-                dom.cardSessionDetail.textContent = "No active session";
+                // Calculate and show when you can leave
+                const backendTime = state.status.target_completion_time_ist || "";
+                if (backendTime.trim()) {
+                    // Use backend-provided time (more accurate)
+                    dom.cardFreeAtValue.textContent = backendTime;
+                } else {
+                    // Calculate from remaining seconds
+                    const safeRemaining = Math.max(0, toInt(remainingSeconds, 0));
+                    const completionTime = new Date(Date.now() + safeRemaining * 1000);
+                    const istTime = completionTime.toLocaleTimeString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: true,
+                    });
+                    dom.cardFreeAtValue.textContent = istTime;
+                }
+                dom.cardFreeAtDetail.textContent = "Target completion time";
             }
         }
 
@@ -1128,24 +1149,31 @@
             dom.cardTodayDetail.textContent = sessionCount === 1 ? "1 session" : `${sessionCount} sessions`;
         }
 
-        // Card 4: Target Progress
-        if (dom.cardTarget && dom.cardTargetValue && dom.cardTargetDetail) {
-            dom.cardTargetValue.textContent = formatPercent(progressValue);
-
-            // Apply color class based on Task 7.1 thresholds
-            dom.cardTarget.classList.remove("progress-low", "progress-medium", "progress-high", "progress-complete");
-            if (completed) {
-                dom.cardTarget.classList.add("progress-complete");
-                dom.cardTargetDetail.textContent = "Target completed!";
-            } else if (progressValue > 80) {
-                dom.cardTarget.classList.add("progress-high");
-                dom.cardTargetDetail.textContent = `${formatHHMMSS(Math.max(0, remainingSeconds))} remaining`;
-            } else if (progressValue >= 50) {
-                dom.cardTarget.classList.add("progress-medium");
-                dom.cardTargetDetail.textContent = `${formatHHMMSS(Math.max(0, remainingSeconds))} remaining`;
+        // Card 4: Time Remaining (countdown to target)
+        if (dom.cardRemaining && dom.cardRemainingValue && dom.cardRemainingDetail) {
+            if (!sessionActive) {
+                dom.cardRemainingValue.textContent = "00:00:00";
+                dom.cardRemainingDetail.textContent = "No active session";
+                dom.cardRemaining.classList.remove("progress-low", "progress-medium", "progress-high", "progress-complete");
+            } else if (completed) {
+                dom.cardRemainingValue.textContent = "00:00:00";
+                dom.cardRemainingDetail.textContent = "Target completed!";
+                dom.cardRemaining.classList.remove("progress-low", "progress-medium", "progress-high");
+                dom.cardRemaining.classList.add("progress-complete");
             } else {
-                dom.cardTarget.classList.add("progress-low");
-                dom.cardTargetDetail.textContent = `${targetDisplay} remaining`;
+                dom.cardRemainingValue.textContent = formatHHMMSS(Math.max(0, remainingSeconds));
+                dom.cardRemainingDetail.textContent = "Until target";
+
+                // Apply color coding based on progress
+                const progressValue = getLiveProgressPercent(elapsedSeconds, completed);
+                dom.cardRemaining.classList.remove("progress-low", "progress-medium", "progress-high", "progress-complete");
+                if (progressValue > 80) {
+                    dom.cardRemaining.classList.add("progress-high");
+                } else if (progressValue >= 50) {
+                    dom.cardRemaining.classList.add("progress-medium");
+                } else {
+                    dom.cardRemaining.classList.add("progress-low");
+                }
             }
         }
     }

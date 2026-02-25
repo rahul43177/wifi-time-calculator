@@ -43,7 +43,7 @@ from app.wifi_detector import (
 )
 from app.mongodb_store import MongoDBStore
 from app.network_checker import NetworkConnectivityChecker
-from app.timezone_utils import format_time_ist, get_today_date_ist, now_ist
+from app.timezone_utils import format_time_ist, get_today_date_ist, now_ist, utc_to_ist
 from app import analytics
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -226,10 +226,27 @@ def _format_total_display(total_minutes: int) -> str:
 
 
 def _format_ist_time_12h(dt: Optional[datetime]) -> Optional[str]:
-    """Format datetime as 12-hour IST with seconds."""
+    """
+    Format datetime as 12-hour IST with seconds and AM/PM.
+
+    Explicit formatting ensures consistent 12-hour display across all sessions.
+    Example output: "05:44:48 PM IST" or "11:30:00 AM IST"
+    """
     if dt is None:
         return None
-    return format_time_ist(dt, "%I:%M:%S %p IST")
+
+    # Convert to IST first.
+    # `utc_to_ist` also normalizes naive datetimes as UTC, which is important
+    # because MongoDB drivers can return naive datetime objects.
+    ist_dt = utc_to_ist(dt)
+
+    # Explicit 12-hour formatting (more reliable than strftime %p across locales)
+    hour_12 = ist_dt.hour % 12
+    if hour_12 == 0:
+        hour_12 = 12  # Midnight (0:00) = 12 AM, Noon (12:00) = 12 PM
+    am_pm = "AM" if ist_dt.hour < 12 else "PM"
+
+    return f"{hour_12:02d}:{ist_dt.minute:02d}:{ist_dt.second:02d} {am_pm} IST"
 
 
 def _parse_legacy_utc_datetime(session_date: str, session_time: str) -> Optional[datetime]:

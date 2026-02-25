@@ -53,12 +53,12 @@
                 </div>
             </section>
 
-            <!-- Card 2: Session Details -->
-            <section class="status-card" id="card-session">
+            <!-- Card 2: Free At (When you can leave) -->
+            <section class="status-card" id="card-free-at">
                 <div class="status-card-content">
-                    <div class="status-card-label">Session</div>
-                    <div id="card-session-value" class="status-card-value">--:--:--</div>
-                    <div id="card-session-detail" class="status-card-detail">Elapsed time</div>
+                    <div class="status-card-label">Free At</div>
+                    <div id="card-free-at-value" class="status-card-value">--:--:--</div>
+                    <div id="card-free-at-detail" class="status-card-detail">Target completion time</div>
                 </div>
             </section>
 
@@ -71,12 +71,12 @@
                 </div>
             </section>
 
-            <!-- Card 4: Target Progress -->
-            <section class="status-card" id="card-target">
+            <!-- Card 4: Time Remaining -->
+            <section class="status-card" id="card-remaining">
                 <div class="status-card-content">
-                    <div class="status-card-label">Target Progress</div>
-                    <div id="card-target-value" class="status-card-value">0%</div>
-                    <div id="card-target-detail" class="status-card-detail">{{ target_display }} remaining</div>
+                    <div class="status-card-label">Remaining</div>
+                    <div id="card-remaining-value" class="status-card-value">00:00:00</div>
+                    <div id="card-remaining-detail" class="status-card-detail">Until target</div>
                 </div>
             </section>
         </div>
@@ -165,12 +165,12 @@
                     <span id="weekly-total-hours" class="stat-value">0h 00m</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Daily Average</span>
+                    <span class="stat-label">Daily Avg (Office Days)</span>
                     <span id="weekly-avg-hours" class="stat-value">0h 00m</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Targets Met</span>
-                    <span id="weekly-targets-met" class="stat-value">0 / 7</span>
+                    <span class="stat-label">Days in Office</span>
+                    <span id="weekly-targets-met" class="stat-value">0 / 3 days</span>
                 </div>
             </div>
 
@@ -215,7 +215,7 @@
                     <span id="monthly-total-days" class="stat-value">0</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Daily Average</span>
+                    <span class="stat-label">Daily Avg (Office Days)</span>
                     <span id="monthly-avg-hours" class="stat-value">0h 00m</span>
                 </div>
             </div>

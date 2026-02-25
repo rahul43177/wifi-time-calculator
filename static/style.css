@@ -68,7 +68,7 @@
     --shadow-md: 0 10px 24px rgba(15, 23, 42, 0.08);
 
     --ring-size: clamp(196px, 30vh, 286px);
-    --ring-stroke: 9;
+    --ring-stroke: 10; /* Ultra-polish: increased from 9 for more prominence */
 
     --max-width: 1160px;
 }
@@ -100,6 +100,17 @@
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
     --shadow-md: 0 16px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Ultra-polish: Dark mode status card hover shadow */
+[data-theme="dark"] .status-card:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.40);
+}
+
+/* Elite polish: Dark mode countdown pill depth */
+[data-theme="dark"] .timer-countdown,
+[data-theme="dark"] .free-at-time {
+    box-shadow: inset 0 0.5px 1px rgba(0, 0, 0, 0.15);
 }
 
 * {
@@ -171,6 +182,8 @@ p {
     justify-content: space-between;
     gap: var(--space-4);
     flex-wrap: wrap;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); /* Elite polish: ultra-subtle separation */
+    padding-bottom: var(--space-5); /* Elite polish: add bottom padding to match top */
 }
 
 .header-left,
@@ -332,11 +345,14 @@ p {
     padding: var(--space-4);
     box-shadow: var(--shadow-sm);
     min-height: 110px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; /* Ultra-polish: smooth micro-interaction */
+    will-change: transform; /* Ultra-polish: GPU acceleration hint */
 }
 
 .status-card:hover {
     border-color: var(--border-strong);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10); /* Ultra-polish: softer, wider shadow */
+    transform: translateY(-1px); /* Ultra-polish: subtle premium lift */
 }
 
 .status-card-label {
@@ -345,15 +361,16 @@ p {
     text-transform: uppercase;
     letter-spacing: 0.12em;
     font-weight: var(--font-semibold);
-    margin-bottom: var(--space-2);
+    margin-bottom: 0.625rem; /* Ultra-polish: increased from 0.5rem for better scannability */
 }
 
 .status-card-value {
     font-size: clamp(1.6rem, 2.4vw, 2rem);
     line-height: var(--leading-tight);
     font-weight: var(--font-semibold);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em; /* Ultra-polish: tighter cohesion for large numbers */
     color: var(--text);
+    font-variant-numeric: tabular-nums; /* Elite polish: perfect numeric alignment */
 }
 
 #card-session-value,
@@ -382,21 +399,29 @@ p {
     color: var(--error);
 }
 
-#card-target.progress-low .status-card-value {
+/* Elite polish: "Free At" card prominence (most important info) */
+#card-free-at .status-card-value {
+    color: var(--primary);
+    font-weight: var(--font-bold); /* Stand out more */
+}
+
+/* Remaining time card color coding */
+#card-remaining.progress-low .status-card-value {
     color: var(--primary);
 }
 
-#card-target.progress-medium .status-card-value {
+#card-remaining.progress-medium .status-card-value {
     color: var(--warning);
 }
 
-#card-target.progress-high .status-card-value,
-#card-target.progress-complete .status-card-value {
+#card-remaining.progress-high .status-card-value,
+#card-remaining.progress-complete .status-card-value {
     color: var(--success);
 }
 
 .timer-section {
     padding: var(--space-4);
+    padding-bottom: calc(var(--space-4) + 0.5rem); /* Elite polish: +8px bottom breathing room */
 }
 
 #timer-mode-label {
@@ -412,7 +437,7 @@ p {
 .timer-ring-layout {
     display: flex;
     justify-content: center;
-    margin-bottom: var(--space-3);
+    margin-bottom: 0.875rem; /* Ultra-polish: slightly more space after ring (+0.125rem) */
 }
 
 .timer-ring-wrap {
@@ -421,7 +446,7 @@ p {
     block-size: var(--ring-size);
     display: grid;
     place-items: center;
-    --ring-size: min(28vh, 244px);
+    --ring-size: min(30vh, 260px); /* Ultra-polish: increased from min(28vh, 244px) for better optical balance with 10px stroke */
 }
 
 .progress-ring {
@@ -430,6 +455,7 @@ p {
     inline-size: 100%;
     block-size: 100%;
     transform: rotate(-90deg);
+    shape-rendering: geometricPrecision; /* Elite polish: crisp rendering, no blur */
 }
 
 .progress-ring-track,
@@ -439,23 +465,24 @@ p {
 }
 
 .progress-ring-track {
-    stroke: color-mix(in srgb, var(--progress-bg) 85%, transparent);
+    stroke: color-mix(in srgb, var(--progress-bg) 20%, transparent); /* Elite polish: near-invisible track (20% opacity) */
 }
 
 .progress-ring-fill {
-    stroke: var(--primary);
+    stroke: color-mix(in srgb, var(--primary) 92%, var(--text)); /* Elite polish: slightly soften intensity */
     stroke-linecap: round;
     stroke-dasharray: 603.19;
     stroke-dashoffset: 603.19;
     transition: stroke-dashoffset 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: stroke-dashoffset; /* Elite polish: smooth 60fps animation */
 }
 
 .progress-ring-fill.warning {
-    stroke: var(--progress-warning);
+    stroke: color-mix(in srgb, var(--progress-warning) 92%, var(--text)); /* Elite polish: slightly soften */
 }
 
 .progress-ring-fill.complete {
-    stroke: var(--progress-complete);
+    stroke: color-mix(in srgb, var(--progress-complete) 92%, var(--text)); /* Elite polish: slightly soften */
 }
 
 .elapsed-display {
@@ -471,10 +498,11 @@ p {
 
 #elapsed-time {
     font-size: clamp(1.55rem, 2.9vw, 2.35rem);
-    font-weight: var(--font-medium);
+    font-weight: 650; /* Ultra-polish: increased from 500 for dominant hierarchy */
     letter-spacing: -0.02em;
     line-height: 1;
     color: var(--text);
+    font-variant-numeric: tabular-nums; /* Elite polish: prevent layout shift on timer updates */
 }
 
 .elapsed-target {
@@ -483,6 +511,7 @@ p {
     gap: var(--space-2);
     font-size: clamp(0.95rem, 1.55vw, 1.2rem);
     color: var(--text-secondary);
+    opacity: 0.60; /* Ultra-polish: clearly secondary to elapsed time */
 }
 
 .elapsed-separator {
@@ -496,9 +525,10 @@ p {
 }
 
 .elapsed-percent {
-    font-size: var(--text-sm);
+    font-size: 0.8125rem; /* Ultra-polish: slightly smaller (13px) for tertiary hierarchy */
     color: var(--text-tertiary);
     font-weight: var(--font-medium);
+    opacity: 0.50; /* Ultra-polish: subtle tertiary reinforcement */
 }
 
 .elapsed-display.progress-low #elapsed-time {
@@ -515,7 +545,8 @@ p {
 }
 
 .progress-wrap {
-    margin-bottom: var(--space-3);
+    margin-bottom: 0.625rem; /* Ultra-polish: slightly less space, de-emphasized (-0.125rem) */
+    opacity: 0.35; /* Ultra-polish: clearly secondary to ring */
 }
 
 .progress-track {
@@ -530,16 +561,16 @@ p {
     block-size: 100%;
     inline-size: 0;
     border-radius: inherit;
-    background: var(--progress);
+    background: color-mix(in srgb, var(--progress) 75%, var(--text-secondary)); /* Ultra-polish: desaturated, less competitive */
     transition: inline-size 0.35s ease;
 }
 
 .progress-fill.warning {
-    background: var(--progress-warning);
+    background: color-mix(in srgb, var(--progress-warning) 75%, var(--text-secondary)); /* Ultra-polish: desaturated */
 }
 
 .progress-fill.complete {
-    background: var(--progress-complete);
+    background: color-mix(in srgb, var(--progress-complete) 75%, var(--text-secondary)); /* Ultra-polish: desaturated */
 }
 
 .countdown-section,
@@ -550,6 +581,11 @@ p {
     gap: var(--space-3);
     margin-bottom: var(--space-3);
     flex-wrap: wrap;
+}
+
+/* Ultra-polish: Add breathing room above countdown */
+.countdown-section {
+    padding-top: var(--space-2); /* +0.5rem = ~8px above countdown */
 }
 
 .countdown-label,
@@ -563,23 +599,26 @@ p {
 
 .timer-countdown,
 .free-at-time {
-    border: 1px solid var(--border);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent); /* Elite polish: softer border */
     background: var(--surface-muted);
+    box-shadow: inset 0 0.5px 1px rgba(0, 0, 0, 0.04); /* Elite polish: subtle depth */
     border-radius: var(--radius-sm);
     color: var(--text);
     font-size: clamp(1.2rem, 1.9vw, 1.65rem);
-    font-weight: var(--font-semibold);
+    font-weight: 600; /* Elite polish: increased from semibold for instrument-grade feel */
     padding: var(--space-2) var(--space-4);
     line-height: 1.2;
+    font-variant-numeric: tabular-nums; /* Elite polish: ensure perfect numeric alignment */
 }
 
 .free-at-time {
     font-size: clamp(0.98rem, 1.5vw, 1.15rem);
     letter-spacing: -0.01em;
+    /* Elite polish: inherits tabular-nums and weight from .timer-countdown */
 }
 
 .contextual-message {
-    margin-top: var(--space-2);
+    margin-top: var(--space-4); /* Elite polish: increased from var(--space-2) for better top spacing */
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--surface-muted);
@@ -883,6 +922,7 @@ button:focus-visible,
 
     .timer-section {
         padding: var(--space-4);
+        padding-bottom: calc(var(--space-4) + 0.5rem); /* Elite polish: maintain bottom breathing on mobile */
     }
 
     .tab-content {
@@ -914,16 +954,28 @@ button:focus-visible,
         font-size: 1.7rem;
     }
 
+    /* Ultra-polish: Mobile ring stroke (lighter on small screens) */
+    :root {
+        --ring-stroke: 8;
+    }
+
     .timer-ring-wrap {
-        --ring-size: min(84vw, 264px);
+        --ring-size: min(84vw, 280px); /* Ultra-polish: increased from 264px for better optical balance */
     }
 
     #elapsed-time {
         font-size: clamp(1.8rem, 10vw, 2.75rem);
+        font-weight: 650; /* Ultra-polish: maintain dominant weight on mobile */
     }
 
     .elapsed-target {
         font-size: clamp(1rem, 5vw, 1.3rem);
+        opacity: 0.60; /* Ultra-polish: maintain hierarchy on mobile */
+    }
+
+    .elapsed-percent {
+        font-size: 0.8125rem; /* Ultra-polish: maintain tertiary size on mobile */
+        opacity: 0.50; /* Ultra-polish: maintain tertiary hierarchy on mobile */
     }
 
     .timer-countdown,
@@ -967,14 +1019,16 @@ button:focus-visible,
 
     .timer-section {
         padding: var(--space-3);
+        padding-bottom: calc(var(--space-3) + 0.5rem); /* Elite polish: maintain bottom breathing in compact mode */
     }
 
     .timer-ring-wrap {
-        --ring-size: min(24vh, 210px);
+        --ring-size: min(26vh, 224px); /* Ultra-polish: increased for better optical balance in compact mode */
     }
 
     #elapsed-time {
         font-size: clamp(1.4rem, 2.5vw, 2rem);
+        font-weight: 650; /* Ultra-polish: maintain dominant weight in compact mode */
     }
 
     .elapsed-target {
