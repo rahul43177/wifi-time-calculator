@@ -277,6 +277,23 @@ async def timer_polling_loop() -> None:
             completed_4h = doc.get("completed_4h", False)
             total_minutes = _safe_int_minutes(doc.get("total_minutes", 0))
 
+            # BUGFIX: Force-close stale sessions from previous days
+            from app.timezone_utils import get_today_date_ist
+            today_date = get_today_date_ist()
+            if date and date != today_date:
+                logger.warning(
+                    f"Timer detected stale active session from {date} (today: {today_date}). "
+                    "Force-closing..."
+                )
+                await store.end_session(
+                    date=date,
+                    end_time=now_utc(),
+                    final_minutes=total_minutes
+                )
+                logger.info(f"Stale session from {date} force-closed by timer")
+                notified_date = None
+                continue
+
             if not is_active:
                 logger.debug("Timer check skipped: session not active")
                 continue
