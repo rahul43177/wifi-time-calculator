@@ -162,6 +162,24 @@ class SessionManager:
             date = get_today_date_ist()  # DD-MM-YYYY in IST
             start_time = now_utc()
 
+            # BUGFIX: If we have an active session from a different day (app never restarted),
+            # force-close it before starting today's session
+            if self._current_date and self._current_date != date:
+                logger.warning(
+                    f"Detected stale session from {self._current_date} while starting session for {date}. "
+                    "Force-closing old session..."
+                )
+                old_doc = await self.store.get_daily_status(self._current_date)
+                if old_doc:
+                    old_total = old_doc.get("total_minutes", 0)
+                    await self.end_session(old_total)
+                else:
+                    # Clear stale in-memory state even if no doc found
+                    self._current_date = None
+                    self._current_session_start = None
+                    self.state = SessionState.IDLE
+                logger.info(f"Old session from {self._current_date} force-closed")
+
             # Get or create today's daily session record
             await self.store.get_or_create_daily_session(
                 date=date,

@@ -269,6 +269,10 @@ class MongoDBStore:
         """
         WiFi disconnected - start grace period for potential reconnection.
 
+        IMPORTANT: Sets is_active=false immediately to ensure session is marked
+        inactive even if grace period monitoring fails. If user reconnects during
+        grace period, start_session() will set it back to true.
+
         Args:
             date: DD-MM-YYYY format
             grace_start: UTC datetime when WiFi disconnected
@@ -280,6 +284,7 @@ class MongoDBStore:
             {"date": date, "is_active": True},
             {
                 "$set": {
+                    "is_active": False,  # CRITICAL: Mark inactive immediately
                     "grace_period_start": grace_start,
                     "updated_at": now_utc()
                 }
@@ -287,7 +292,7 @@ class MongoDBStore:
         )
 
         if result.modified_count > 0:
-            logger.info(f"Grace period started for {date}")
+            logger.info(f"Grace period started for {date} - session marked inactive")
 
         return result
 
