@@ -6,7 +6,7 @@ import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone, tzinfo
+from datetime import datetime, timedelta, timezone, tzinfo, UTC
 from logging.handlers import RotatingFileHandler
 from typing import Any, Optional
 
@@ -97,6 +97,7 @@ class StatusResponse(BaseModel):
     progress_percent: float
     target_display: str
     target_completion_time_ist: str | None
+    personal_leave_time_ist: str | None
 
 
 class TodaySessionResponse(BaseModel):
@@ -115,6 +116,7 @@ class TodayResponse(BaseModel):
     sessions: list[TodaySessionResponse]
     total_minutes: int
     total_display: str
+    personal_leave_time_ist: str | None
 
 
 class WeeklyDayResponse(BaseModel):
@@ -293,6 +295,38 @@ def _resolve_end_time_ist(doc: dict[str, Any], session_date: str) -> Optional[st
         return _format_ist_time_12h(legacy_utc)
 
     return None
+
+
+def _resolve_first_session_start_utc(
+    doc: dict[str, Any],
+    session_date: str,
+) -> Optional[datetime]:
+    """Resolve the day's first session start as UTC datetime."""
+    first_start_utc = doc.get("first_session_start_utc")
+    if isinstance(first_start_utc, datetime):
+        return first_start_utc if first_start_utc.tzinfo else first_start_utc.replace(tzinfo=UTC)
+
+    current_start_utc = doc.get("current_session_start")
+    if isinstance(current_start_utc, datetime):
+        return current_start_utc if current_start_utc.tzinfo else current_start_utc.replace(tzinfo=UTC)
+
+    legacy_start = doc.get("first_session_start")
+    if isinstance(legacy_start, str):
+        return _parse_legacy_utc_datetime(session_date, legacy_start)
+
+    return None
+
+
+def _resolve_personal_leave_time_ist(
+    doc: dict[str, Any],
+    session_date: str,
+    target_duration: timedelta,
+) -> Optional[str]:
+    """Compute fixed personal leave time as first-login + target duration."""
+    first_start_utc = _resolve_first_session_start_utc(doc, session_date)
+    if first_start_utc is None:
+        return None
+    return _format_ist_time_12h(first_start_utc + target_duration)
 
 
 def _calculate_progress_percent(
@@ -495,6 +529,9 @@ async def get_status() -> StatusResponse:
     completed_4h = False
     start_time = None
     target_completion_time_ist = None
+    personal_leave_time_ist = None
+
+    status: dict[str, Any] = {}
 
     # Only read live session state while connected to office Wi-Fi.
     if manager and connected:
@@ -509,10 +546,21 @@ async def get_status() -> StatusResponse:
 
         # Get today's session start time for display
         if session_active and _mongo_store:
-            date = get_today_date_ist()
-            doc = await _mongo_store.get_daily_status(date)
+            doc = None
+            status_date = status.get("date")
+            if isinstance(status_date, str) and status_date.strip():
+                doc = await _mongo_store.get_daily_status(status_date)
+            if not doc:
+                doc = await _mongo_store.get_active_session()
             if doc:
-                start_time = _resolve_start_time_ist(doc, date)
+                doc_date_raw = doc.get("date")
+                doc_date = doc_date_raw if isinstance(doc_date_raw, str) else get_today_date_ist()
+                start_time = _resolve_start_time_ist(doc, doc_date)
+                personal_leave_time_ist = _resolve_personal_leave_time_ist(
+                    doc,
+                    doc_date,
+                    target_duration,
+                )
 
     elapsed_seconds = int(elapsed.total_seconds())
     remaining_seconds = int(remaining.total_seconds())
@@ -537,6 +585,7 @@ async def get_status() -> StatusResponse:
         ),
         target_display=_format_target_display(target_hours, target_minutes),
         target_completion_time_ist=target_completion_time_ist,
+        personal_leave_time_ist=personal_leave_time_ist,
     )
 
 
@@ -546,6 +595,13 @@ async def get_today_data() -> TodayResponse:
     Return today's session history and total tracked minutes from MongoDB.
     """
     date = get_today_date_ist()  # DD-MM-YYYY in IST
+    target_hours, target_minutes = _resolve_target_components(
+        test_mode=getattr(settings, "test_mode", False),
+        test_duration_minutes=getattr(settings, "test_duration_minutes", 2),
+        work_duration_hours=getattr(settings, "work_duration_hours", 4),
+        buffer_minutes=getattr(settings, "buffer_minutes", 10),
+    )
+    target_duration = timedelta(hours=target_hours, minutes=target_minutes)
 
     # Get today's data from MongoDB
     if _mongo_store:
@@ -565,19 +621,27 @@ async def get_today_data() -> TodayResponse:
                 ))
 
             total_minutes = doc.get("total_minutes", 0)
+            personal_leave_time_ist = _resolve_personal_leave_time_ist(
+                doc,
+                date,
+                target_duration,
+            )
         else:
             sessions = []
             total_minutes = 0
+            personal_leave_time_ist = None
     else:
         # Fallback if MongoDB not initialized
         sessions = []
         total_minutes = 0
+        personal_leave_time_ist = None
 
     return TodayResponse(
         date=date,
         sessions=sessions,
         total_minutes=total_minutes,
         total_display=_format_total_display(total_minutes),
+        personal_leave_time_ist=personal_leave_time_ist,
     )
 
 

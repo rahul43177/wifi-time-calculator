@@ -888,6 +888,74 @@
         return `${formatted} IST`;
     }
 
+    function parseTargetDisplayToSeconds(targetDisplay) {
+        if (typeof targetDisplay !== "string") {
+            return null;
+        }
+        const text = targetDisplay.trim().toLowerCase();
+        if (!text) {
+            return null;
+        }
+
+        const hoursMatch = text.match(/(\d+)\s*h/);
+        const minutesMatch = text.match(/(\d+)\s*m/);
+        if (!hoursMatch && !minutesMatch) {
+            return null;
+        }
+
+        const hours = hoursMatch ? toInt(hoursMatch[1], 0) : 0;
+        const minutes = minutesMatch ? toInt(minutesMatch[1], 0) : 0;
+        return Math.max(0, (hours * 3600) + (minutes * 60));
+    }
+
+    function parseIstClockToEpochMs(clockText) {
+        if (typeof clockText !== "string") {
+            return null;
+        }
+
+        const match = clockText.trim().match(/^(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)\s*IST$/i);
+        if (!match) {
+            return null;
+        }
+
+        let hour = toInt(match[1], -1);
+        const minute = toInt(match[2], -1);
+        const second = toInt(match[3], -1);
+        const meridiem = match[4].toUpperCase();
+
+        if (hour < 1 || hour > 12 || minute < 0 || minute > 59 || second < 0 || second > 59) {
+            return null;
+        }
+
+        // Convert 12-hour IST to 24-hour clock.
+        if (hour === 12) {
+            hour = 0;
+        }
+        if (meridiem === "PM") {
+            hour += 12;
+        }
+
+        // Build today's date in IST and convert to UTC epoch milliseconds.
+        const dateParts = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Kolkata",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        }).formatToParts(new Date());
+
+        const year = toInt(dateParts.find((part) => part.type === "year")?.value, 0);
+        const month = toInt(dateParts.find((part) => part.type === "month")?.value, 0) - 1;
+        const day = toInt(dateParts.find((part) => part.type === "day")?.value, 0);
+
+        if (year <= 0 || month < 0 || day <= 0) {
+            return null;
+        }
+
+        const IST_OFFSET_MINUTES = 5 * 60 + 30;
+        const utcMs = Date.UTC(year, month, day, hour, minute, second) - (IST_OFFSET_MINUTES * 60 * 1000);
+        return Number.isFinite(utcMs) ? utcMs : null;
+    }
+
     function initializeProgressRing() {
         if (!dom.progressRingFill) {
             return;
@@ -1141,12 +1209,47 @@
             }
         }
 
-        // Card 3: Today's Total
+        // Card 3: Personal Leave At (fixed from first office login + target)
         if (dom.cardTodayValue && dom.cardTodayDetail) {
-            const todayTotal = state.today ? state.today.total_display : "0h 00m";
-            const sessionCount = state.today && Array.isArray(state.today.sessions) ? state.today.sessions.length : 0;
-            dom.cardTodayValue.textContent = todayTotal;
-            dom.cardTodayDetail.textContent = sessionCount === 1 ? "1 session" : `${sessionCount} sessions`;
+            const fromToday = state.today && typeof state.today.personal_leave_time_ist === "string"
+                ? state.today.personal_leave_time_ist
+                : "";
+            const fromStatus = state.status && typeof state.status.personal_leave_time_ist === "string"
+                ? state.status.personal_leave_time_ist
+                : "";
+            const personalLeaveAt = fromToday.trim() || fromStatus.trim();
+
+            if (personalLeaveAt) {
+                dom.cardTodayValue.textContent = personalLeaveAt;
+                dom.cardTodayDetail.textContent = "Fixed from first office login";
+            } else {
+                const startTimeText = state.status && typeof state.status.start_time === "string"
+                    ? state.status.start_time.trim()
+                    : "";
+                const startEpochMs = parseIstClockToEpochMs(startTimeText);
+                let targetSeconds = Number.isFinite(state.targetSeconds) && state.targetSeconds > 0
+                    ? Math.trunc(state.targetSeconds)
+                    : null;
+                if (targetSeconds === null && state.status) {
+                    targetSeconds = parseTargetDisplayToSeconds(state.status.target_display);
+                }
+
+                if (startEpochMs !== null && Number.isFinite(targetSeconds) && targetSeconds > 0) {
+                    const computedLeaveAt = new Date(startEpochMs + (targetSeconds * 1000));
+                    dom.cardTodayValue.textContent = formatIst12HourTime(computedLeaveAt);
+                    dom.cardTodayDetail.textContent = "Start + target duration";
+                } else if (
+                    state.status &&
+                    typeof state.status.target_completion_time_ist === "string" &&
+                    state.status.target_completion_time_ist.trim()
+                ) {
+                    dom.cardTodayValue.textContent = state.status.target_completion_time_ist;
+                    dom.cardTodayDetail.textContent = "From active timer";
+                } else {
+                    dom.cardTodayValue.textContent = "--:--:-- -- IST";
+                    dom.cardTodayDetail.textContent = "No office session today";
+                }
+            }
         }
 
         // Card 4: Time Remaining (countdown to target)
