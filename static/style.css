@@ -663,7 +663,7 @@ p {
 .progress-ring-track,
 .progress-ring-fill {
     fill: none;
-    stroke-width: var(--ring-stroke);
+    stroke-width: 14; /* Hero: Increased authority for larger ring */
 }
 
 .progress-ring-track {
@@ -673,7 +673,7 @@ p {
 
 .progress-ring-fill {
     stroke: color-mix(in srgb, var(--primary) 92%, var(--text));
-    stroke-width: 10;
+    stroke-width: 14; /* Hero: Matched confidence */
     stroke-linecap: round;
     stroke-dasharray: 603.19;
     stroke-dashoffset: 603.19;
@@ -1373,18 +1373,18 @@ button:focus-visible,
     }
 
     .hero-timer .timer-ring-wrap {
-        --ring-size: clamp(220px, 38vh, 340px);
+        --ring-size: clamp(280px, 45vh, 380px);
     }
 
     /* hero-timer-column is display:contents on desktop, no padding needed */
 
     #elapsed-time {
-        font-size: clamp(1.4rem, 2.5vw, 2rem);
-        font-weight: 650;
+        font-size: clamp(2.2rem, 4vw, 3.2rem);
+        font-weight: 700;
     }
 
     .elapsed-target {
-        font-size: clamp(0.86rem, 1.2vw, 1rem);
+        font-size: clamp(1rem, 1.5vw, 1.4rem);
     }
 
     .timer-countdown,
