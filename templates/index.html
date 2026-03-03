@@ -81,6 +81,17 @@
             </section>
         </div>
 
+        <!-- Arrival Time Display -->
+        <section class="card arrival-section" id="arrival-section" style="display: none;">
+            <div class="arrival-content">
+                <div class="arrival-icon">🏢</div>
+                <div class="arrival-text">
+                    <div class="arrival-label">Came to office at</div>
+                    <div id="arrival-time" class="arrival-time">--:--:-- -- IST</div>
+                </div>
+            </div>
+        </section>
+
         <p id="sync-status" class="muted sync-status hidden" aria-live="polite"></p>
 
         <!-- Timer Display Section -->
@@ -237,6 +248,40 @@
         </section>
     </div>
 </main>
+
+<!-- Edit Start Time Modal -->
+<div id="edit-start-time-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Session Start Time</h2>
+            <button class="modal-close" id="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-warning">⚠️ This will update Personal Leave At, Target completion, and all related calculations.</p>
+            <div class="form-group">
+                <label for="edit-date">Date:</label>
+                <input type="text" id="edit-date" readonly />
+            </div>
+            <div class="form-group form-group-vertical">
+                <label for="edit-time">Time (IST) <span class="helper-text">— type or pick from list</span></label>
+                <div class="time-picker-wrap">
+                    <input 
+                        type="text" 
+                        id="edit-time"
+                        placeholder="e.g., 11:15 AM or 14:30"
+                        autocomplete="off"
+                    />
+                    <div id="time-dropdown" class="time-dropdown" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="modal-cancel-btn" class="btn btn-cancel">Cancel</button>
+            <button id="modal-save-btn" class="btn btn-primary">Save Changes</button>
+        </div>
+    </div>
+</div>
+
 <script>window.OFFICE_WIFI_NAME = "{{ office_wifi_name }}";</script>
 <script src="/static/app.js" defer></script>
 </body>

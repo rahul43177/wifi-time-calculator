@@ -1,7 +1,7 @@
 {
-  "current_streak": 0,
-  "longest_streak": 0,
-  "last_streak_date": null,
+  "current_streak": 1,
+  "longest_streak": 1,
+  "last_streak_date": "2026-02-15",
   "achievements": [],
-  "total_days_met_target": 0
+  "total_days_met_target": 1
 }

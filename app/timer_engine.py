@@ -306,9 +306,19 @@ async def timer_polling_loop() -> None:
             # Calculate and persist running cumulative total.
             computed_total_minutes = _compute_running_total_minutes(doc)
             if computed_total_minutes != total_minutes:
-                updated = await store.update_elapsed_time(date, computed_total_minutes)
+                # Use current_session_start and session_start_total_minutes as preconditions
+                # to ensure we don't accidentally overwrite a manual edit from main.py
+                updated = await store.update_elapsed_time(
+                    date, 
+                    computed_total_minutes,
+                    expected_session_start=doc.get("current_session_start"),
+                    expected_baseline_minutes=doc.get("session_start_total_minutes")
+                )
                 if updated:
                     total_minutes = computed_total_minutes
+                else:
+                    logger.debug("Timer update skipped: document changed between fetch and update (likely manual edit)")
+
 
             # Calculate remaining time
             remaining_minutes = target_minutes - total_minutes

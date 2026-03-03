@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone, tzinfo, UTC
 from logging.handlers import RotatingFileHandler
 from typing import Any, Optional
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -179,6 +179,19 @@ class GamificationResponse(BaseModel):
     total_days_met_target: int
     achievements: list[AchievementResponse]
 
+class EditStartTimeRequest(BaseModel):
+    """Request to edit session start time."""
+
+    date: str  # DD-MM-YYYY format
+    new_start_time_ist: str  # HH:MM:SS AM/PM format (e.g., "12:30:00 PM IST")
+
+
+class EditStartTimeResponse(BaseModel):
+    """Response after editing start time."""
+
+    success: bool
+    message: str
+    new_personal_leave_time: Optional[str] = None
 
 def _get_now(tz: Optional[tzinfo] = None) -> datetime:
     """Return current time, optionally timezone-aware."""
@@ -283,11 +296,14 @@ def _resolve_end_time_ist(doc: dict[str, Any], session_date: str) -> Optional[st
     if isinstance(last_end_utc, datetime):
         return _format_ist_time_12h(last_end_utc)
 
+    # For active sessions, show current time as the end time
+    if bool(doc.get("is_active", False)):
+        return _format_ist_time_12h(datetime.now(UTC))
+
     # For completed sessions, last_activity is the session end timestamp.
-    if not bool(doc.get("is_active", False)):
-        last_activity = doc.get("last_activity")
-        if isinstance(last_activity, datetime):
-            return _format_ist_time_12h(last_activity)
+    last_activity = doc.get("last_activity")
+    if isinstance(last_activity, datetime):
+        return _format_ist_time_12h(last_activity)
 
     legacy_end = doc.get("last_session_end")
     if isinstance(legacy_end, str):
@@ -686,6 +702,138 @@ async def get_gamification_data() -> GamificationResponse:
         total_days_met_target=streak_info["total_days_met_target"],
         achievements=[AchievementResponse(**a) for a in achievements]
     )
+
+@app.post("/api/session/edit-start-time", response_model=EditStartTimeResponse)
+async def edit_session_start_time(request: EditStartTimeRequest) -> EditStartTimeResponse:
+    """
+    Edit the start time of a session.
+    This will recalculate personal leave time and all related times.
+    """
+    try:
+        # Parse the date (DD-MM-YYYY)
+        date_parts = request.date.split("-")
+        if len(date_parts) != 3:
+            raise HTTPException(status_code=400, detail="Invalid date format. Expected DD-MM-YYYY")
+        
+        day, month, year = int(date_parts[0]), int(date_parts[1]), int(date_parts[2])
+        
+        # Parse the time string - support multiple formats
+        time_str = request.new_start_time_ist.replace(" IST", "").strip()
+        
+        # Try multiple time formats
+        new_time_ist = None
+        time_formats = [
+            "%I:%M:%S %p",  # 12:30:00 PM
+            "%I:%M %p",     # 12:30 PM
+            "%H:%M:%S",     # 14:30:00 (24-hour)
+            "%H:%M",        # 14:30 (24-hour)
+        ]
+        
+        for fmt in time_formats:
+            try:
+                new_time_ist = datetime.strptime(time_str, fmt)
+                break
+            except ValueError:
+                continue
+        
+        if new_time_ist is None:
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid time format. Supported formats: 11:15 AM, 11:15:30 AM, 14:30, 14:30:00"
+            )
+        
+        # Combine date and time in IST
+        new_start_ist = datetime(year, month, day, new_time_ist.hour, new_time_ist.minute, new_time_ist.second)
+        
+        # Convert to UTC for MongoDB storage
+        from app.timezone_utils import ist_to_utc
+        new_start_utc = ist_to_utc(new_start_ist)
+        
+        # Update in MongoDB
+        if not _mongo_store:
+            raise HTTPException(status_code=500, detail="MongoDB not available")
+        
+        doc = await _mongo_store.get_daily_status(request.date)
+        if not doc:
+            raise HTTPException(status_code=404, detail=f"No session found for date {request.date}")
+            
+        old_start_utc = _resolve_first_session_start_utc(doc, request.date)
+        
+        # Calculate new personal leave time (first_start + 4h 10m)
+        target_hours, target_minutes = _resolve_target_components(
+            test_mode=getattr(settings, "test_mode", False),
+            test_duration_minutes=getattr(settings, "test_duration_minutes", 2),
+            work_duration_hours=getattr(settings, "work_duration_hours", 4),
+            buffer_minutes=getattr(settings, "buffer_minutes", 10),
+        )
+        target_duration = timedelta(hours=target_hours, minutes=target_minutes)
+        target_duration_mins = target_duration.total_seconds() / 60.0
+        
+        new_total_minutes = None
+        new_session_start_total_minutes = None
+        new_completed_4h = None
+        new_current_session_start = None
+        
+        if old_start_utc:
+            adjustment_minutes = (old_start_utc - new_start_utc).total_seconds() / 60.0
+            
+            new_total_minutes = max(0, int(doc.get("total_minutes", 0) + adjustment_minutes))
+            new_completed_4h = new_total_minutes >= target_duration_mins
+            
+            sess_start_mins = doc.get("session_start_total_minutes")
+            
+            # Use max(0, total_minutes) as fallback if we don't have a baseline yet
+            current_sess_baseline = sess_start_mins if sess_start_mins is not None else max(0, doc.get("total_minutes", 0))
+            
+            new_baseline_raw = current_sess_baseline + adjustment_minutes
+            
+            # If the adjustment pushes the baseline below zero, it means the start
+            # time was pushed so far forward that it eats into the active session chunk.
+            # We enforce baseline >= 0, and absorb the remaining negative offset by shifting
+            # the active session's start time forward!
+            if new_baseline_raw < 0:
+                residual_minutes = new_baseline_raw # e.g. -120
+                new_session_start_total_minutes = 0
+                
+                curr_start = doc.get("current_session_start")
+                if curr_start:
+                    # Subtracting a negative number adds to the time (moves it later)
+                    new_current_session_start = curr_start - timedelta(minutes=residual_minutes)
+            else:
+                new_session_start_total_minutes = int(new_baseline_raw)
+            
+            print(f"DEBUG ADJUSTMENT: old_start_utc={old_start_utc}, new_start_utc={new_start_utc}, adj_mins={adjustment_minutes}")
+            print(f"DEBUG ADJUSTMENT: old_total={doc.get('total_minutes')}, new_total={new_total_minutes}, new_sess_start_total={new_session_start_total_minutes}, new_curr_start={new_current_session_start}")
+        else:
+            print("DEBUG ADJUSTMENT: old_start_utc was None! Skipping total_minutes adjustment.")
+            
+        success = await _mongo_store.update_first_session_start(
+            request.date,
+            new_start_utc,
+            new_total_minutes=new_total_minutes,
+            new_session_start_total_minutes=new_session_start_total_minutes,
+            new_completed_4h=new_completed_4h,
+            new_current_session_start=new_current_session_start
+        )
+        
+        if not success:
+            raise HTTPException(status_code=404, detail=f"No session found for date {request.date}")
+            
+        new_leave_time_utc = new_start_utc + target_duration
+        new_leave_time_ist = utc_to_ist(new_leave_time_utc)
+        new_leave_time_str = format_time_ist(new_leave_time_ist)
+        
+        return EditStartTimeResponse(
+            success=True,
+            message=f"Start time updated successfully for {request.date}",
+            new_personal_leave_time=new_leave_time_str
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error editing start time: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 if __name__ == "__main__":

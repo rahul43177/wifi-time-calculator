@@ -186,6 +186,10 @@
         // Task 7.4: Timer section for celebration animation
         dom.timerSection = document.querySelector(".timer-section");
 
+        // Arrival section
+        dom.arrivalSection = document.getElementById("arrival-section");
+        dom.arrivalTime = document.getElementById("arrival-time");
+
         // Task 7.6: Dark mode toggle
         dom.themeToggle = document.getElementById("theme-toggle");
         dom.themeIcon = document.getElementById("theme-icon");
@@ -233,13 +237,13 @@
         if (!match) return weekStr;
         const year = parseInt(match[1]);
         const week = parseInt(match[2]);
-        
+
         // Simple but effective: move to a Thursday in that week, then add 7*n days
         const jan4 = new Date(year, 0, 4);
         const dayNum = jan4.getDay() || 7;
         const thursOfFirstWeek = new Date(jan4.getTime() + (4 - dayNum) * 86400000);
         const targetThurs = new Date(thursOfFirstWeek.getTime() + (week - 1) * 7 * 86400000 + n * 7 * 86400000);
-        
+
         return getISOWeek(targetThurs);
     }
 
@@ -340,7 +344,7 @@
     function getCurrentTheme() {
         return document.documentElement.getAttribute("data-theme") || "light";
     }
-    
+
     function isDarkMode() {
         return getCurrentTheme() === "dark";
     }
@@ -416,27 +420,32 @@
 
     function renderWeeklyTable() {
         if (!state.weekly || !dom.weeklyTableBody) return;
-        
+
         dom.weeklyTableBody.innerHTML = "";
-        state.weekly.days.forEach(day => {
+        // Filter out weekends (Enhancement 3)
+        const weekdaysOnly = state.weekly.days.filter(day => day.day !== "Sat" && day.day !== "Sun");
+
+        weekdaysOnly.forEach(day => {
             const row = document.createElement("tr");
-            
+
             const dateCell = document.createElement("td");
             dateCell.textContent = day.date;
-            
+
             const dayCell = document.createElement("td");
-            dayCell.textContent = day.day;
-            
+            // Show day name with formatted date (e.g., "Mon 24 Feb")
+            const formattedDate = formatDayWithDate(day.date, day.day);
+            dayCell.textContent = formattedDate;
+
             const hoursCell = document.createElement("td");
             hoursCell.textContent = formatMinutes(day.total_minutes);
-            
+
             const sessionsCell = document.createElement("td");
             sessionsCell.textContent = day.session_count;
-            
+
             const statusCell = document.createElement("td");
             statusCell.textContent = day.target_met ? "Met" : "Not Met";
             statusCell.className = day.target_met ? "status-met" : "status-missed";
-            
+
             row.appendChild(dateCell);
             row.appendChild(dayCell);
             row.appendChild(hoursCell);
@@ -444,7 +453,7 @@
             row.appendChild(statusCell);
             dom.weeklyTableBody.appendChild(row);
         });
-        
+
         dom.weeklyTotalHours.textContent = formatMinutes(state.weekly.total_minutes);
         dom.weeklyAvgHours.textContent = formatMinutes(Math.round(state.weekly.avg_minutes_per_day));
         // Changed: Target is now 3 days in office per week (not 7 days with time target)
@@ -455,7 +464,7 @@
 
     function renderWeeklyChart() {
         if (!state.weekly || !dom.weeklyChartCanvas) return;
-        
+
         const ctx = dom.weeklyChartCanvas.getContext("2d");
         const rootStyles = getComputedStyle(document.documentElement);
         const textColor = rootStyles.getPropertyValue("--text").trim() || "#0f172a";
@@ -466,9 +475,13 @@
         const warningColor = rootStyles.getPropertyValue("--warning").trim() || "#f59e0b";
         const fontSans = rootStyles.getPropertyValue("--font-sans").trim() ||
             '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-        const labels = state.weekly.days.map(d => d.day);
-        const data = state.weekly.days.map(d => d.total_minutes / 60);
-        const colors = state.weekly.days.map(d => d.target_met ? successColor : errorColor);
+
+        // Filter out weekends (Enhancement 3)
+        const weekdaysOnly = state.weekly.days.filter(day => day.day !== "Sat" && day.day !== "Sun");
+
+        const labels = weekdaysOnly.map(d => d.day);
+        const data = weekdaysOnly.map(d => d.total_minutes / 60);
+        const colors = weekdaysOnly.map(d => d.target_met ? successColor : errorColor);
 
         if (state.charts.weekly) {
             state.charts.weekly.destroy();
@@ -491,7 +504,7 @@
                     },
                     {
                         label: `Target (${formatMinutes(Math.round(targetHours * 60))})`,
-                        data: Array(7).fill(targetHours),
+                        data: Array(weekdaysOnly.length).fill(targetHours),
                         type: "line",
                         borderColor: warningColor,
                         borderWidth: 2,
@@ -582,14 +595,14 @@
                             weight: 400
                         },
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 const label = context.dataset.label || '';
                                 const value = context.parsed.y;
                                 const hours = Math.floor(value);
                                 const minutes = Math.round((value - hours) * 60);
                                 return `${label}: ${hours}h ${String(minutes).padStart(2, '0')}m`;
                             },
-                            afterLabel: function(context) {
+                            afterLabel: function (context) {
                                 // Show session count if available
                                 const dayIndex = context.dataIndex;
                                 if (state.weekly && state.weekly.days[dayIndex]) {
@@ -627,29 +640,29 @@
 
     function renderMonthlyTable() {
         if (!state.monthly || !dom.monthlyTableBody) return;
-        
+
         dom.monthlyTableBody.innerHTML = "";
         state.monthly.weeks.forEach(week => {
             const row = document.createElement("tr");
-            
+
             const weekCell = document.createElement("td");
             weekCell.textContent = week.week;
-            
+
             const startCell = document.createElement("td");
             startCell.textContent = week.start_date;
-            
+
             const endCell = document.createElement("td");
             endCell.textContent = week.end_date;
-            
+
             const hoursCell = document.createElement("td");
             hoursCell.textContent = formatMinutes(week.total_minutes);
-            
+
             const daysCell = document.createElement("td");
             daysCell.textContent = week.days_present;
-            
+
             const avgCell = document.createElement("td");
             avgCell.textContent = formatMinutes(Math.round(week.avg_daily_minutes));
-            
+
             row.appendChild(weekCell);
             row.appendChild(startCell);
             row.appendChild(endCell);
@@ -658,7 +671,7 @@
             row.appendChild(avgCell);
             dom.monthlyTableBody.appendChild(row);
         });
-        
+
         dom.monthlyTotalHours.textContent = formatMinutes(state.monthly.total_minutes);
         dom.monthlyTotalDays.textContent = state.monthly.total_days_present;
         dom.monthlyAvgHours.textContent = formatMinutes(Math.round(state.monthly.avg_daily_minutes));
@@ -667,7 +680,7 @@
 
     function renderMonthlyChart() {
         if (!state.monthly || !dom.monthlyChartCanvas) return;
-        
+
         const ctx = dom.monthlyChartCanvas.getContext("2d");
         const rootStyles = getComputedStyle(document.documentElement);
         const textColor = rootStyles.getPropertyValue("--text").trim() || "#0f172a";
@@ -782,16 +795,16 @@
                             weight: 400
                         },
                         callbacks: {
-                            title: function(context) {
+                            title: function (context) {
                                 return context[0].label || '';
                             },
-                            label: function(context) {
+                            label: function (context) {
                                 const value = context.parsed.y;
                                 const hours = Math.floor(value);
                                 const minutes = Math.round((value - hours) * 60);
                                 return `Total: ${hours}h ${String(minutes).padStart(2, '0')}m`;
                             },
-                            afterLabel: function(context) {
+                            afterLabel: function (context) {
                                 // Show additional week details if available
                                 const weekIndex = context.dataIndex;
                                 if (state.monthly && state.monthly.weeks[weekIndex]) {
@@ -864,6 +877,23 @@
         const hours = Math.floor(safeMinutes / 60);
         const minutes = safeMinutes % 60;
         return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+    }
+
+    function formatDayWithDate(dateStr, dayName) {
+        // dateStr format: DD-MM-YYYY
+        // Return format: "Mon 24 Feb"
+        try {
+            const parts = dateStr.split("-");
+            if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10);
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                return `${dayName} ${day} ${monthNames[month - 1] || ""}`;
+            }
+        } catch (e) {
+            // Fallback to just day name
+        }
+        return dayName;
     }
 
     function formatPercent(value) {
@@ -1174,6 +1204,19 @@
             dom.cardConnection.classList.toggle("disconnected", !isConnected);
             dom.cardConnectionValue.textContent = isConnected ? "Connected" : "Disconnected";
             dom.cardConnectionDetail.textContent = ssid;
+        }
+
+        // Arrival time display (Enhancement 2)
+        if (dom.arrivalSection && dom.arrivalTime && state.today && state.today.sessions && state.today.sessions.length > 0) {
+            const firstSession = state.today.sessions[0];
+            if (firstSession.start_time) {
+                dom.arrivalTime.textContent = firstSession.start_time;
+                dom.arrivalSection.style.display = "block";
+            } else {
+                dom.arrivalSection.style.display = "none";
+            }
+        } else if (dom.arrivalSection) {
+            dom.arrivalSection.style.display = "none";
         }
 
         // Card 2: Free At (when you can leave)
@@ -1546,8 +1589,32 @@
                 const durationCell = document.createElement("td");
                 const statusCell = document.createElement("td");
 
-                startCell.textContent = session.start_time || "-";
-                endCell.textContent = session.end_time || "-";
+                // Add start time with edit icon
+                const startTimeText = document.createTextNode(session.start_time || "-");
+                startCell.appendChild(startTimeText);
+
+                if (session.start_time) {
+                    const editIcon = document.createElement("span");
+                    editIcon.className = "edit-icon";
+                    editIcon.innerHTML = " ✏️";
+                    editIcon.title = "Edit start time";
+                    editIcon.style.cursor = "pointer";
+                    editIcon.style.fontSize = "0.9em";
+                    editIcon.onclick = () => openEditStartTimeModal(state.today.date, session.start_time);
+                    startCell.appendChild(editIcon);
+                }
+
+                // Show active badge for ongoing sessions, otherwise show end time
+                const isActive = session.end_time === null;
+                if (isActive) {
+                    const badge = document.createElement("span");
+                    badge.className = "badge badge-success";
+                    badge.textContent = "Active";
+                    endCell.appendChild(badge);
+                } else {
+                    endCell.textContent = session.end_time || "-";
+                }
+
                 durationCell.textContent = formatMinutes(session.duration_minutes);
                 statusCell.textContent = getSessionStatusText(session);
 
@@ -1581,7 +1648,7 @@
     }
 
     async function fetchJson(url) {
-        const response = await fetch(url, {cache: "no-store"});
+        const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) {
             throw new Error(`Request failed: ${url} (${response.status})`);
         }
@@ -1666,6 +1733,7 @@
 
         requestNotificationPermission();
         updateNotificationBadge();
+        setupModalEventListeners();
         void syncFromBackend();
         setInterval(renderTimer, TICK_INTERVAL_MS);
         setInterval(() => {
@@ -1677,6 +1745,279 @@
             }
         }, SYNC_INTERVAL_MS);
     }
+
+    // =========================================================================
+    // Edit Start Time Modal Functions
+    // =========================================================================
+
+    // Generate all 15-minute time slots from 6:00 AM to 10:00 PM
+    const ALL_TIME_SLOTS = (function () {
+        const slots = [];
+        for (let h = 6; h <= 22; h++) {
+            for (let m = 0; m < 60; m += 15) {
+                const ampm = h < 12 ? "AM" : "PM";
+                const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                const label = `${String(displayH).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
+                slots.push(label);
+            }
+        }
+        return slots;
+    })();
+
+    function renderTimeDropdown(filter) {
+        const dropdown = document.getElementById("time-dropdown");
+        if (!dropdown) return;
+        dropdown.innerHTML = "";
+
+        const lower = (filter || "").toLowerCase().replace(/\s+/g, " ").trim();
+        const filtered = lower
+            ? ALL_TIME_SLOTS.filter(s => s.toLowerCase().startsWith(lower) || s.toLowerCase().includes(lower))
+            : ALL_TIME_SLOTS;
+
+        if (filtered.length === 0) {
+            dropdown.style.display = "none";
+            return;
+        }
+
+        filtered.forEach((slot, idx) => {
+            const item = document.createElement("div");
+            item.className = "time-dropdown-item";
+            item.textContent = slot;
+            if (idx === 0) item.classList.add("highlighted");
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault(); // prevent blur before click
+                e.stopPropagation();
+                document.getElementById("edit-time").value = slot;
+                dropdown.style.display = "none";
+            });
+            dropdown.appendChild(item);
+        });
+
+        dropdown.style.display = "block";
+        // Scroll highlighted item into view
+        const highlighted = dropdown.querySelector(".highlighted");
+        if (highlighted) highlighted.scrollIntoView({ block: "nearest" });
+    }
+
+    function openEditStartTimeModal(date, currentStartTime) {
+        const modal = document.getElementById("edit-start-time-modal");
+        const dateInput = document.getElementById("edit-date");
+        const timeInput = document.getElementById("edit-time");
+        const dropdown = document.getElementById("time-dropdown");
+
+        // Set the date
+        dateInput.value = date;
+
+        // Parse current time and set in input (e.g., "12:50:05 PM IST" -> "12:50 PM")
+        const timeMatch = currentStartTime.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)/i);
+        if (timeMatch) {
+            const hour = timeMatch[1].padStart(2, "0");
+            const minute = timeMatch[2];
+            const ampm = timeMatch[4].toUpperCase();
+            timeInput.value = `${hour}:${minute} ${ampm}`;
+        } else {
+            timeInput.value = currentStartTime.replace(" IST", "").trim();
+        }
+
+        modal.style.display = "flex";
+        modal.dataset.editDate = date;
+        dropdown.style.display = "none";
+
+        // Focus and show full dropdown
+        setTimeout(() => {
+            timeInput.focus();
+            renderTimeDropdown("");
+        }, 120);
+    }
+
+    function closeEditStartTimeModal() {
+        const modal = document.getElementById("edit-start-time-modal");
+        modal.style.display = "none";
+    }
+
+    async function saveEditStartTime() {
+        const modal = document.getElementById("edit-start-time-modal");
+        const date = modal.dataset.editDate;
+        const timeInput = document.getElementById("edit-time");
+        const timeValue = timeInput.value.trim();
+
+        if (!timeValue) {
+            alert("❌ Please enter a time");
+            return;
+        }
+
+        // Parse various time formats and normalize to HH:MM:SS AM/PM
+        const newStartTime = parseAndFormatTime(timeValue);
+
+        if (!newStartTime) {
+            alert("❌ Invalid time format. Please use formats like:\n• 11:15 AM\n• 2:30 PM\n• 14:30 (24-hour)\n• 11:15:30 AM");
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/session/edit-start-time", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    date: date,
+                    new_start_time_ist: newStartTime,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || "Failed to update start time");
+            }
+
+            // Success! Close modal and refresh data
+            closeEditStartTimeModal();
+            alert(`✅ Start time updated successfully!\n\nNew Personal Leave At: ${data.new_personal_leave_time}`);
+
+            // Refresh all data
+            await syncFromBackend();
+            if (state.activeTab === "today") {
+                renderTodaySessions();
+            }
+        } catch (error) {
+            console.error("Error updating start time:", error);
+            alert(`❌ Error: ${error.message}`);
+        }
+    }
+
+    // Wire up modal event listeners
+    function setupModalEventListeners() {
+        const modal = document.getElementById("edit-start-time-modal");
+        const closeBtn = document.getElementById("modal-close-btn");
+        const cancelBtn = document.getElementById("modal-cancel-btn");
+        const saveBtn = document.getElementById("modal-save-btn");
+        const timeInput = document.getElementById("edit-time");
+        const dropdown = document.getElementById("time-dropdown");
+
+        if (closeBtn) closeBtn.addEventListener("click", closeEditStartTimeModal);
+        if (cancelBtn) cancelBtn.addEventListener("click", closeEditStartTimeModal);
+        if (saveBtn) saveBtn.addEventListener("click", saveEditStartTime);
+
+        // Close modal when clicking outside
+        if (modal) {
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) closeEditStartTimeModal();
+            });
+        }
+
+        // Custom dropdown wiring
+        if (timeInput && dropdown) {
+            // Show full list on focus
+            timeInput.addEventListener("focus", () => {
+                renderTimeDropdown(timeInput.value);
+            });
+
+            // Filter as user types
+            timeInput.addEventListener("input", () => {
+                renderTimeDropdown(timeInput.value);
+            });
+
+            // Keyboard navigation
+            timeInput.addEventListener("keydown", (e) => {
+                const items = dropdown.querySelectorAll(".time-dropdown-item");
+                const current = dropdown.querySelector(".highlighted");
+                let idx = Array.from(items).indexOf(current);
+
+                if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    const next = items[Math.min(idx + 1, items.length - 1)];
+                    if (next) {
+                        if (current) current.classList.remove("highlighted");
+                        next.classList.add("highlighted");
+                        next.scrollIntoView({ block: "nearest" });
+                    }
+                } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    const prev = items[Math.max(idx - 1, 0)];
+                    if (prev) {
+                        if (current) current.classList.remove("highlighted");
+                        prev.classList.add("highlighted");
+                        prev.scrollIntoView({ block: "nearest" });
+                    }
+                } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (current && dropdown.style.display !== "none") {
+                        timeInput.value = current.textContent;
+                        dropdown.style.display = "none";
+                    } else {
+                        saveEditStartTime();
+                    }
+                } else if (e.key === "Escape") {
+                    dropdown.style.display = "none";
+                }
+            });
+            // Hide dropdown when focus leaves both input and dropdown
+            // Increase timeout so the click event on the dropdown item has time to fire
+            timeInput.addEventListener("blur", () => {
+                setTimeout(() => { dropdown.style.display = "none"; }, 250);
+            });
+        }
+    }
+
+    // Parse various time formats and convert to HH:MM:SS AM/PM IST
+    function parseAndFormatTime(input) {
+        input = input.trim();
+
+        // Pattern 1: HH:MM AM/PM or HH:MM:SS AM/PM (12-hour with AM/PM)
+        let match = input.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)$/i);
+        if (match) {
+            const hour = match[1].padStart(2, "0");
+            const minute = match[2];
+            const second = match[3] || "00";
+            const ampm = match[4].toUpperCase();
+            return `${hour}:${minute}:${second} ${ampm} IST`;
+        }
+
+        // Pattern 2: HH:MM (assume AM/PM based on hour, or default to 24-hour)
+        match = input.match(/^(\d{1,2}):(\d{2})$/);
+        if (match) {
+            let hour = parseInt(match[1], 10);
+            const minute = match[2];
+
+            // If hour > 12, treat as 24-hour format
+            if (hour > 12) {
+                const ampm = "PM";
+                hour = hour - 12;
+                return `${hour.toString().padStart(2, "0")}:${minute}:00 ${ampm} IST`;
+            } else if (hour === 0) {
+                return `12:${minute}:00 AM IST`;
+            } else {
+                // Ambiguous - let's ask or default to PM for work hours
+                const ampm = hour < 8 ? "AM" : (hour === 12 ? "PM" : "AM");
+                return `${hour.toString().padStart(2, "0")}:${minute}:00 ${ampm} IST`;
+            }
+        }
+
+        // Pattern 3: HH:MM:SS (24-hour format)
+        match = input.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+        if (match) {
+            let hour = parseInt(match[1], 10);
+            const minute = match[2];
+            const second = match[3];
+
+            if (hour >= 12) {
+                const ampm = "PM";
+                if (hour > 12) hour = hour - 12;
+                return `${hour.toString().padStart(2, "0")}:${minute}:${second} ${ampm} IST`;
+            } else if (hour === 0) {
+                return `12:${minute}:${second} AM IST`;
+            } else {
+                return `${hour.toString().padStart(2, "0")}:${minute}:${second} AM IST`;
+            }
+        }
+
+        return null; // Invalid format
+    }
+
+    // Make function globally accessible for onclick handler
+    window.openEditStartTimeModal = openEditStartTimeModal;
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", start);

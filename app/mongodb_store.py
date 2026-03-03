@@ -190,20 +190,33 @@ class MongoDBStore:
     async def update_elapsed_time(
         self,
         date: str,
-        current_total_minutes: int
+        current_total_minutes: int,
+        expected_session_start: Optional[datetime] = None,
+        expected_baseline_minutes: Optional[int] = None,
     ) -> bool:
         """
         Update cumulative total minutes (called periodically by timer).
+        Only updates if the session's internal timing hasn't changed (manual edit).
 
         Args:
             date: DD-MM-YYYY format
             current_total_minutes: Current cumulative total for today
+            expected_session_start: The current_session_start we used to calculate this
+            expected_baseline_minutes: The session_start_total_minutes we used to calculate this
 
         Returns:
-            True if updated, False if no active session
+            True if updated, False if no active session or timing changed
         """
+        filter_doc = {"date": date, "is_active": True}
+        
+        # If we have expectations, enforce them to avoid race conditions with manual edits
+        if expected_session_start:
+            filter_doc["current_session_start"] = expected_session_start
+        if expected_baseline_minutes is not None:
+            filter_doc["session_start_total_minutes"] = expected_baseline_minutes
+
         result = await self.db.daily_sessions.update_one(
-            {"date": date, "is_active": True},
+            filter_doc,
             {
                 "$set": {
                     "total_minutes": current_total_minutes,
@@ -475,6 +488,53 @@ class MongoDBStore:
             }
         )
 
+    async def update_first_session_start(
+        self,
+        date: str,
+        new_start_utc: datetime,
+        new_total_minutes: Optional[int] = None,
+        new_session_start_total_minutes: Optional[int] = None,
+        new_completed_4h: Optional[bool] = None,
+        new_current_session_start: Optional[datetime] = None,
+    ) -> bool:
+        """
+        Update the first session start time for a specific date.
+
+        Args:
+            date: DD-MM-YYYY format
+            new_start_utc: New start time in UTC (timezone-aware)
+            new_total_minutes: Optionally update total_minutes
+            new_session_start_total_minutes: Optionally update session_start_total_minutes
+            new_completed_4h: Optionally update completed_4h status
+            new_current_session_start: Optionally update current active session chunk start time
+
+
+        Returns:
+            True if updated successfully, False otherwise
+        """
+        set_doc = {
+            "first_session_start_utc": new_start_utc,
+            "updated_at": now_utc()
+        }
+        
+        if new_total_minutes is not None:
+            set_doc["total_minutes"] = new_total_minutes
+            
+        if new_session_start_total_minutes is not None:
+            set_doc["session_start_total_minutes"] = new_session_start_total_minutes
+            
+        if new_completed_4h is not None:
+            set_doc["completed_4h"] = new_completed_4h
+            
+        if new_current_session_start is not None:
+            set_doc["current_session_start"] = new_current_session_start
+
+        result = await self.db.daily_sessions.update_one(
+            {"date": date},
+            {"$set": set_doc}
+        )
+        return result.modified_count > 0
+
     # =========================================================================
     # Completion Tracking
     # =========================================================================
@@ -519,6 +579,25 @@ class MongoDBStore:
             Daily session document or None if not found
         """
         return await self.db.daily_sessions.find_one({"date": date})
+
+    async def get_sessions_in_date_range(self, date_list: list[str]) -> dict[str, dict]:
+        """
+        Get daily status for multiple dates in a single query (batch operation).
+
+        Args:
+            date_list: List of dates in DD-MM-YYYY format
+
+        Returns:
+            Dictionary mapping date -> daily session document
+        """
+        if not date_list:
+            return {}
+        
+        cursor = self.db.daily_sessions.find({"date": {"$in": date_list}})
+        results = {}
+        async for doc in cursor:
+            results[doc["date"]] = doc
+        return results
 
     async def get_active_session(self) -> Optional[dict]:
         """

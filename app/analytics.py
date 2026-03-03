@@ -80,11 +80,21 @@ async def get_weekly_aggregation_async(week_str: Optional[str] = None) -> Dict[s
     # Use MongoDB if available, otherwise fallback to file-based
     store = get_mongo_store()
     if _is_mongo_store_ready(store):
-        # MongoDB aggregation pipeline
+        # MongoDB batch query - fetch all days in one query
+        date_list = []
+        current_day = start_date
+        while current_day <= end_date:
+            date_list.append(current_day.strftime("%d-%m-%Y"))
+            current_day += timedelta(days=1)
+        
+        # Single batch query instead of 7 separate queries
+        docs_by_date = await store.get_sessions_in_date_range(date_list)
+
+        # Build response for each day
         current_day = start_date
         while current_day <= end_date:
             date_str = current_day.strftime("%d-%m-%Y")
-            doc = await store.get_daily_status(date_str)
+            doc = docs_by_date.get(date_str)
 
             if doc:
                 day_minutes = doc.get("total_minutes", 0)
@@ -245,6 +255,19 @@ async def get_monthly_aggregation_async(month_str: Optional[str] = None) -> Dict
     # Use MongoDB if available, otherwise fallback to file-based
     store = get_mongo_store()
 
+    # Build full date list for the month upfront
+    all_dates = []
+    d = month_start
+    while d <= month_end:
+        all_dates.append(d.strftime("%d-%m-%Y"))
+        d += timedelta(days=1)
+
+    # Single batch query instead of one-per-day
+    if _is_mongo_store_ready(store):
+        docs_by_date = await store.get_sessions_in_date_range(all_dates)
+    else:
+        docs_by_date = {}
+
     week_index = 1
     week_start = month_start
     while week_start <= month_end:
@@ -255,15 +278,10 @@ async def get_monthly_aggregation_async(month_str: Optional[str] = None) -> Dict
 
         current_day = week_start
         while current_day <= week_end:
+            date_str = current_day.strftime("%d-%m-%Y")
             if _is_mongo_store_ready(store):
-                # MongoDB query
-                date_str = current_day.strftime("%d-%m-%Y")
-                try:
-                    doc = await store.get_daily_status(date_str)
-                    day_minutes = doc.get("total_minutes", 0) if doc else 0
-                except Exception:
-                    logger.warning("Failed to get MongoDB status for %s", date_str)
-                    day_minutes = 0
+                doc = docs_by_date.get(date_str)
+                day_minutes = doc.get("total_minutes", 0) if doc else 0
             else:
                 # Fallback to file-based (legacy)
                 try:
