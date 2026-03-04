@@ -472,6 +472,7 @@
     color: var(--text);
     /* Remove gradient effect for cleaner look */
     background: none;
+    background-clip: unset;
     -webkit-background-clip: unset;
     -webkit-text-fill-color: unset;
 }
