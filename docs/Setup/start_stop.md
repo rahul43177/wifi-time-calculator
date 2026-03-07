@@ -33,3 +33,43 @@ tail -f /Users/rahulmishra/Desktop/Personal/wifi-tracking/logs/stderr.log
 The plist has RunAtLoad: true and KeepAlive: true — so it starts on login and auto-restarts if it crashes. Make sure the logs/ directory exists before loading:
 
 mkdir -p /Users/rahulmishra/Desktop/Personal/wifi-tracking/logs
+
+
+
+---
+
+## Menu Bar App (com.officetracker.menubar)
+
+The menu bar app runs as a LaunchAgent — it auto-starts on login and restarts if it crashes.
+No terminal needed.
+
+### Install (first time only):
+```
+cp /Users/rahulmishra/Desktop/Personal/wifi-tracking/com.officetracker.menubar.plist ~/Library/LaunchAgents/
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.officetracker.menubar.plist
+```
+
+### Check if it's running:
+```
+launchctl list | grep menubar
+```
+
+### Stop:
+```
+launchctl bootout gui/$(id -u)/com.officetracker.menubar
+```
+
+### Start:
+```
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.officetracker.menubar.plist
+```
+
+### Restart:
+```
+launchctl bootout gui/$(id -u)/com.officetracker.menubar 2>/dev/null; launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.officetracker.menubar.plist
+```
+
+### View logs:
+```
+tail -f /Users/rahulmishra/Desktop/Personal/wifi-tracking/logs/menubar.log
+```
