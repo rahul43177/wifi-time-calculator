@@ -322,7 +322,7 @@ class SessionManager:
             if status.get("active") and status.get("expired"):
                 # Grace period expired without reconnection - end session
                 # Logical end time is when the disconnect happened (grace_period_start)
-                grace_start = status.get("start_time")
+                grace_start = status.get("grace_start")
                 
                 # Calculate total minutes until grace_period_start
                 final_minutes = await self._calculate_current_total(reference_now=grace_start)

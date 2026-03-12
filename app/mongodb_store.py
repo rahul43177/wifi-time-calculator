@@ -249,7 +249,13 @@ class MongoDBStore:
             UpdateResult
         """
         result = await self.db.daily_sessions.update_one(
-            {"date": date, "is_active": True},
+            {
+                "date": date,
+                "$or": [
+                    {"is_active": True},
+                    {"grace_period_start": {"$ne": None}},
+                ],
+            },
             {
                 "$set": {
                     "is_active": False,
@@ -329,7 +335,6 @@ class MongoDBStore:
         doc = await self.db.daily_sessions.find_one(
             {
                 "date": date,
-                "is_active": True,
                 "grace_period_start": {"$ne": None}
             }
         )

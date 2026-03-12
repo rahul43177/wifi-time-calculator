@@ -294,8 +294,8 @@ def _resolve_start_time_ist(doc: dict[str, Any], session_date: str) -> Optional[
 
 def _resolve_end_time_ist(doc: dict[str, Any], session_date: str) -> Optional[str]:
     """Resolve session end display time in IST from MongoDB document."""
-    # For active sessions or sessions in grace period, do not show an end time (it's still ongoing)
-    if bool(doc.get("is_active", False)) or doc.get("grace_period_start"):
+    # For active sessions, do not show an end time (it's still ongoing)
+    if bool(doc.get("is_active", False)):
         return None
 
     last_end_utc = doc.get("last_session_end_utc")
