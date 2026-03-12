@@ -26,12 +26,15 @@ def _fmt_time(raw: str | None) -> str:
 
 
 def _fmt_remaining(remaining_seconds: int) -> str:
-    """Convert seconds to 'Xh Ym' or 'Ym'."""
+    """Convert seconds to 'Xh Ym Zs' or 'Ym Zs'."""
     if remaining_seconds <= 0:
-        return "0m"
+        return "0s"
     h = remaining_seconds // 3600
     m = (remaining_seconds % 3600) // 60
-    return f"{h}h {m}m" if h > 0 else f"{m}m"
+    s = remaining_seconds % 60
+    if h > 0:
+        return f"{h}h {m:02d}m {s:02d}s"
+    return f"{m}m {s:02d}s"
 
 
 class ThreeFourMenuApp(rumps.App):
@@ -57,12 +60,22 @@ class ThreeFourMenuApp(rumps.App):
 
         self.menu["ThreeFour"].set_callback(None)
 
-        self._timer = rumps.Timer(self.update_status, 5)
+        # Cache last API response for local ticking between syncs
+        self._last_data = None
+        self._sync_counter = 0
+
+        # Tick every 1s for live display; API is fetched every 10 ticks (10s)
+        self._timer = rumps.Timer(self._tick, 1)
         self._timer.start()
 
-    def update_status(self, _):
-        data = get_status()
+    def _tick(self, _):
+        self._sync_counter += 1
+        if self._last_data is None or self._sync_counter >= 10:
+            self._sync_counter = 0
+            self._last_data = get_status()
+        self._render(self._last_data)
 
+    def _render(self, data):
         if data is None:
             self.title = "--"
             self._reset_menu_items()
@@ -76,13 +89,18 @@ class ThreeFourMenuApp(rumps.App):
             self._reset_menu_items()
             return
 
-        elapsed    = data.get("elapsed_seconds", 0)
-        remaining  = data.get("remaining_seconds", 0)
+        server_epoch = data.get("server_epoch_ms", 0)
+        now_ms = int(time.time() * 1000)
+        drift_s = max(0, (now_ms - server_epoch) // 1000) if server_epoch > 0 else 0
+
+        elapsed    = data.get("elapsed_seconds", 0) + drift_s
+        remaining  = data.get("remaining_seconds", 0) - drift_s
         completed  = data.get("completed_4h", False)
 
         h = elapsed // 3600
         m = (elapsed % 3600) // 60
-        self.title = "Done" if completed else f"{h}h {m}m"
+        s = elapsed % 60
+        self.title = "Done" if completed else f"{h}h {m:02d}m {s:02d}s"
 
         self.start_item.title     = f"Start:       {_fmt_time(data.get('start_time'))}"
         self.leave_item.title     = f"Leave:       {_fmt_time(data.get('personal_leave_time_ist'))}"

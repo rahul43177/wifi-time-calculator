@@ -1056,7 +1056,10 @@
 
         state.lastCompleted4h = newCompleted4h;
         state.status = statusPayload;
-        state.syncEpochMs = Date.now();
+        // Use server_epoch_ms as the drift anchor so all tabs/windows share the
+        // same reference point and show identical elapsed/remaining values.
+        const serverEpoch = toInt(statusPayload.server_epoch_ms, 0);
+        state.syncEpochMs = serverEpoch > 0 ? serverEpoch : Date.now();
         state.baseElapsedSeconds = toInt(statusPayload.elapsed_seconds, 0);
         state.baseRemainingSeconds = toInt(statusPayload.remaining_seconds, 0);
 

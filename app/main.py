@@ -28,6 +28,7 @@ from app.gamification import gamification_service  # Task 7.7
 from app.session_manager import SessionState
 from app.timer_engine import (
     _resolve_target_components,
+    _compute_running_total_seconds,
     format_time_display,
     get_elapsed_time,
     get_remaining_time,
@@ -98,6 +99,7 @@ class StatusResponse(BaseModel):
     target_display: str
     target_completion_time_ist: str | None
     personal_leave_time_ist: str | None
+    server_epoch_ms: int
 
 
 class TodaySessionResponse(BaseModel):
@@ -588,6 +590,14 @@ async def get_status() -> StatusResponse:
                     target_duration,
                 )
 
+                # Compute seconds-level precision for elapsed time so the
+                # frontend timer does not jump back on page refresh.
+                # MongoDB total_minutes is only updated at minute boundaries;
+                # this live calculation fills in the sub-minute gap.
+                live_total_seconds = _compute_running_total_seconds(doc)
+                elapsed = timedelta(seconds=live_total_seconds)
+                remaining = target_duration - elapsed
+
     elapsed_seconds = int(elapsed.total_seconds())
     remaining_seconds = int(remaining.total_seconds())
     if session_active:
@@ -612,6 +622,7 @@ async def get_status() -> StatusResponse:
         target_display=_format_target_display(target_hours, target_minutes),
         target_completion_time_ist=target_completion_time_ist,
         personal_leave_time_ist=personal_leave_time_ist,
+        server_epoch_ms=int(datetime.now(UTC).timestamp() * 1000),
     )
 
 

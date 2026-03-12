@@ -230,6 +230,58 @@ def _compute_running_total_minutes(doc: dict, now: Optional[datetime] = None) ->
     return session_start_total_minutes + effective_session_minutes
 
 
+def _compute_running_total_seconds(doc: dict, now: Optional[datetime] = None) -> int:
+    """
+    Compute cumulative daily total in seconds without double-counting the active session.
+
+    Same logic as _compute_running_total_minutes but returns second-level precision
+    instead of flooring to whole minutes. Used by the status API so the frontend
+    timer does not jump on page refresh.
+
+    total_seconds = session_start_total_minutes * 60 + effective_seconds_since_session_start
+    """
+    current_session_start = doc.get("current_session_start")
+    if current_session_start is None:
+        return _safe_int_minutes(doc.get("total_minutes", 0)) * 60
+
+    reference_now = now or now_utc()
+    start = (
+        current_session_start
+        if current_session_start.tzinfo
+        else current_session_start.replace(tzinfo=UTC)
+    )
+    elapsed_seconds = max(0.0, (reference_now - start).total_seconds())
+
+    paused_total_minutes = _safe_int_minutes(doc.get("paused_duration_minutes", 0))
+    session_start_paused_minutes = _safe_int_minutes(
+        doc.get("session_start_paused_minutes", paused_total_minutes),
+        default=paused_total_minutes,
+    )
+    paused_since_start_minutes = max(0, paused_total_minutes - session_start_paused_minutes)
+    paused_seconds = float(paused_since_start_minutes * 60)
+
+    # If currently paused, include ongoing pause so timer does not advance.
+    if not doc.get("has_network_access", True) and doc.get("paused_at"):
+        paused_at_raw = doc["paused_at"]
+        paused_at = paused_at_raw if paused_at_raw.tzinfo else paused_at_raw.replace(tzinfo=UTC)
+        paused_seconds += max(0.0, (reference_now - paused_at).total_seconds())
+
+    effective_seconds = int(max(0.0, elapsed_seconds - paused_seconds))
+
+    stored_total = _safe_int_minutes(doc.get("total_minutes", 0))
+    effective_session_minutes = int(max(0.0, elapsed_seconds - paused_seconds) // 60)
+    baseline_raw = doc.get("session_start_total_minutes")
+    if baseline_raw is None:
+        session_start_total_minutes = max(0, stored_total - effective_session_minutes)
+    else:
+        session_start_total_minutes = _safe_int_minutes(
+            baseline_raw,
+            default=max(0, stored_total - effective_session_minutes),
+        )
+
+    return (session_start_total_minutes * 60) + effective_seconds
+
+
 def _normalize_utc_datetime(value: Any) -> Optional[datetime]:
     """Normalize MongoDB datetime values to timezone-aware UTC."""
     if not isinstance(value, datetime):
