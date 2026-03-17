@@ -292,10 +292,14 @@ def _resolve_start_time_ist(doc: dict[str, Any], session_date: str) -> Optional[
     return None
 
 
-def _resolve_end_time_ist(doc: dict[str, Any], session_date: str) -> Optional[str]:
+def _resolve_end_time_ist(
+    doc: dict[str, Any],
+    session_date: str,
+    force_inactive: bool = False,
+) -> Optional[str]:
     """Resolve session end display time in IST from MongoDB document."""
     # For active sessions, do not show an end time (it's still ongoing)
-    if bool(doc.get("is_active", False)):
+    if not force_inactive and bool(doc.get("is_active", False)):
         return None
 
     last_end_utc = doc.get("last_session_end_utc")
@@ -640,6 +644,9 @@ async def get_today_data() -> TodayResponse:
     )
     target_duration = timedelta(hours=target_hours, minutes=target_minutes)
 
+    current_ssid = get_current_ssid(use_cache=True)
+    connected = is_office_ssid(current_ssid)
+
     # Get today's data from MongoDB
     if _mongo_store:
         doc = await _mongo_store.get_daily_status(date)
@@ -650,9 +657,22 @@ async def get_today_data() -> TodayResponse:
             sessions = []
             session_start = _resolve_start_time_ist(doc, date)
             if session_start:
+                end_time = _resolve_end_time_ist(
+                    doc,
+                    date,
+                    force_inactive=not connected,
+                )
+                if end_time is None and not connected:
+                    first_start_utc = _resolve_first_session_start_utc(doc, date)
+                    total_minutes_safe = _safe_duration_minutes(doc.get("total_minutes"))
+                    if first_start_utc and total_minutes_safe is not None:
+                        end_time = _format_ist_time_12h(
+                            first_start_utc + timedelta(minutes=total_minutes_safe)
+                        )
+
                 sessions.append(TodaySessionResponse(
                     start_time=session_start,
-                    end_time=_resolve_end_time_ist(doc, date),
+                    end_time=end_time,
                     duration_minutes=doc.get("total_minutes", 0),
                     completed_4h=doc.get("completed_4h", False),
                 ))
