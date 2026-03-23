@@ -5,27 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ThreeFour</title>
     <link rel="icon" type="image/png" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSfHpMcC4daqrDBNG72KOoGGfU9JfXo1V8BXa7cMNwQmQdKMy9kzslzdPU&s">
-    <link rel="stylesheet" href="/static/style.css?v=20260304-live-state-fix">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css?v=20260323-liquid-glass-revamp">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+<div class="video-stage" aria-hidden="true">
+    <video class="background-video" autoPlay loop muted playsInline poster="/static/images/logo.png">
+        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260307_083826_e938b29f-a43a-41ec-a153-3d4730578ab8.mp4" type="video/mp4">
+    </video>
+    <div class="video-stage-overlay"></div>
+    <div class="video-stage-gradient"></div>
+</div>
 <main class="dashboard">
-    <section class="card header">
+    <section class="card header liquid-glass">
         <div class="header-left">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSfHpMcC4daqrDBNG72KOoGGfU9JfXo1V8BXa7cMNwQmQdKMy9kzslzdPU&s" alt="DailyFour Logo" class="logo">
-            <h1 class="title">ThreeFour (TF)</h1>
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSfHpMcC4daqrDBNG72KOoGGfU9JfXo1V8BXa7cMNwQmQdKMy9kzslzdPU&s" alt="ThreeFour Logo" class="logo">
+            <div class="brand-lockup">
+                <span class="title">ThreeFour (TF)<sup class="title-mark">&reg;</sup></p>
+            </div>
         </div>
         <div class="header-right">
             <span id="notification-status-badge" class="badge hidden" title="Notification Status"></span>
-            <button id="theme-toggle" class="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
-                <span id="theme-icon" class="theme-icon theme-icon-moon" data-icon="moon" aria-hidden="true"></span>
-            </button>
             <nav class="tabs" aria-label="Dashboard sections">
                 <button id="live-tab" class="tab active" data-tab="live" role="tab" aria-selected="true" aria-controls="tab-live" tabindex="0">Live</button>
                 <button id="today-tab" class="tab" data-tab="today" role="tab" aria-selected="false" aria-controls="tab-today" tabindex="-1">Today</button>
                 <button id="weekly-tab" class="tab" data-tab="weekly" role="tab" aria-selected="false" aria-controls="tab-weekly" tabindex="-1">Weekly</button>
                 <button id="monthly-tab" class="tab" data-tab="monthly" role="tab" aria-selected="false" aria-controls="tab-monthly" tabindex="-1">Monthly</button>
             </nav>
+            <button id="theme-toggle" class="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+                <span id="theme-icon" class="theme-icon theme-icon-moon" data-icon="moon" aria-hidden="true"></span>
+            </button>
         </div>
     </section>
 
@@ -57,7 +69,7 @@
         <div class="main-content-grid">
             <!-- Left: Hero Timer Column -->
             <div class="hero-timer-column">
-                <section class="card timer-section hero-timer">
+                <section class="card timer-section hero-timer liquid-glass-strong">
                     <div class="timer-ring-layout">
                         <div class="timer-ring-wrap">
                             <svg class="progress-ring" viewBox="0 0 220 220" aria-hidden="true" focusable="false">
@@ -79,7 +91,7 @@
             <!-- Right: Info Cards Column -->
             <div class="info-cards-column">
                 <!-- Card 1: Connection -->
-                <section class="status-card info-card" id="card-connection">
+                <section class="status-card info-card liquid-glass-strong" id="card-connection">
                     <div class="status-card-content">
                         <div class="status-card-label">Connection</div>
                         <div id="card-connection-value" class="status-card-value">Connected</div>
@@ -88,7 +100,7 @@
                 </section>
 
                 <!-- Card 2: Free At -->
-                <section class="status-card info-card" id="card-free-at">
+                <section class="status-card info-card liquid-glass-strong" id="card-free-at">
                     <div class="status-card-content">
                         <div class="status-card-label">Free At</div>
                         <div id="card-free-at-value" class="status-card-value">--:--:--</div>
@@ -97,7 +109,7 @@
                 </section>
 
                 <!-- Card 3: Personal Leave At -->
-                <section class="status-card info-card" id="card-today">
+                <section class="status-card info-card liquid-glass-strong" id="card-today">
                     <div class="status-card-content">
                         <div class="status-card-label">Personal Leave At</div>
                         <div id="card-today-value" class="status-card-value">--:--:--</div>
@@ -106,7 +118,7 @@
                 </section>
 
                 <!-- Card 4: Remaining -->
-                <section class="status-card info-card" id="card-remaining">
+                <section class="status-card info-card liquid-glass-strong" id="card-remaining">
                     <div class="status-card-content">
                         <div class="status-card-label">Remaining</div>
                         <div id="card-remaining-value" class="status-card-value">00:00:00</div>
@@ -115,7 +127,7 @@
                 </section>
 
                 <!-- Card 5: Came to Office At -->
-                <section class="status-card info-card" id="card-office-arrival">
+                <section class="status-card info-card liquid-glass-strong" id="card-office-arrival">
                     <div class="status-card-content">
                         <div class="status-card-label">Came to Office At</div>
                         <div id="card-office-arrival-value" class="status-card-value">--:--:--</div>
@@ -149,7 +161,7 @@
     </div>
 
     <div id="tab-today" class="tab-content hidden" role="tabpanel" aria-labelledby="today-tab">
-        <section class="card">
+        <section class="card liquid-glass-strong">
             <h2>Today's Sessions</h2>
             <table id="today-sessions-table" aria-label="Today's sessions">
                 <thead>
@@ -171,7 +183,7 @@
     </div>
 
     <div id="tab-weekly" class="tab-content hidden" role="tabpanel" aria-labelledby="weekly-tab">
-        <section class="card">
+        <section class="card liquid-glass-strong">
             <div class="section-header">
                 <h2>Weekly Analytics</h2>
                 <div class="selector">
@@ -217,7 +229,7 @@
     </div>
 
     <div id="tab-monthly" class="tab-content hidden" role="tabpanel" aria-labelledby="monthly-tab">
-        <section class="card">
+        <section class="card liquid-glass-strong">
             <div class="section-header">
                 <h2>Monthly Analytics</h2>
                 <div class="selector">
@@ -298,6 +310,6 @@
 </div>
 
 <script>window.OFFICE_WIFI_NAME = "{{ office_wifi_name }}";</script>
-<script src="/static/app.js?v=20260304-live-state-fix" defer></script>
+<script src="/static/app.js?v=20260323-liquid-glass-revamp" defer></script>
 </body>
 </html>
